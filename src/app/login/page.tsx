@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -96,6 +97,13 @@ export default function LoginPage() {
           >
             Esqueci minha senha
           </button>
+
+          <p className="text-center text-sm text-gray-500 pt-2">
+            Não tem conta?{' '}
+            <Link href="/signup" className="text-blue-600 hover:underline">
+              Criar conta
+            </Link>
+          </p>
         </form>
       </div>
     </div>

@@ -30,11 +30,14 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser()
   const { pathname } = request.nextUrl
 
-  if (!user && pathname !== '/login') {
+  const rotasPublicas = ['/login', '/signup', '/auth/callback']
+  const isPublica = rotasPublicas.some(r => pathname.startsWith(r))
+
+  if (!user && !isPublica) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  if (user && pathname === '/login') {
+  if (user && (pathname === '/login' || pathname === '/signup')) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
