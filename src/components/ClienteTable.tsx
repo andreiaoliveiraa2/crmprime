@@ -24,7 +24,11 @@ export default function ClienteTable({ clientes }: Props) {
 
   async function handleExcluir(id: string) {
     if (!confirm('Deseja excluir este cliente?')) return
-    await supabase.from('clientes').delete().eq('id', id)
+    const { error } = await supabase.from('clientes').delete().eq('id', id)
+    if (error) {
+      alert('Erro ao excluir cliente. Tente novamente.')
+      return
+    }
     router.refresh()
   }
 

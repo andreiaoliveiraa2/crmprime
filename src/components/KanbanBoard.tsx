@@ -38,17 +38,24 @@ export default function KanbanBoard({ clientes: inicial }: Props) {
     if (destination.droppableId === source.droppableId) return
 
     const novaEtapa = destination.droppableId as Etapa
+    const etapaAnterior = source.droppableId as Etapa
 
     setClientes(prev =>
       prev.map(c => (c.id === draggableId ? { ...c, etapa: novaEtapa } : c))
     )
 
-    await supabase
+    const { error } = await supabase
       .from('clientes')
       .update({ etapa: novaEtapa })
       .eq('id', draggableId)
 
-    router.refresh()
+    if (error) {
+      setClientes(prev =>
+        prev.map(c => (c.id === draggableId ? { ...c, etapa: etapaAnterior } : c))
+      )
+    } else {
+      router.refresh()
+    }
   }
 
   return (
