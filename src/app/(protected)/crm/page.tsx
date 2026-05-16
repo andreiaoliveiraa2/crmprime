@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import ClienteTable from '@/components/ClienteTable'
+import CrmTabs from '@/components/CrmTabs'
 
 export default async function CrmPage() {
   const supabase = await createClient()
@@ -21,7 +21,7 @@ export default async function CrmPage() {
         </Link>
       </div>
 
-      <ClienteTable clientes={clientes ?? []} />
+      <CrmTabs clientes={clientes ?? []} />
     </div>
   )
 }
