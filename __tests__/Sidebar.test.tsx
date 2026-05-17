@@ -13,10 +13,13 @@ jest.mock('@/lib/supabase/client', () => ({
 }))
 
 describe('Sidebar', () => {
-  it('renders navigation links', () => {
+  it('renders all 5 navigation items', () => {
     render(<Sidebar />)
     expect(screen.getByText('Dashboard')).toBeInTheDocument()
     expect(screen.getByText('CRM')).toBeInTheDocument()
+    expect(screen.getByText('Pipeline')).toBeInTheDocument()
+    expect(screen.getByText('Clientes')).toBeInTheDocument()
+    expect(screen.getByText('Configurações')).toBeInTheDocument()
   })
 
   it('renders logout button', () => {
@@ -24,9 +27,14 @@ describe('Sidebar', () => {
     expect(screen.getByText('Sair')).toBeInTheDocument()
   })
 
-  it('highlights active link', () => {
+  it('highlights active Dashboard link', () => {
     render(<Sidebar />)
     const link = screen.getByText('Dashboard').closest('a')
-    expect(link).toHaveClass('text-blue-700')
+    expect(link).toHaveClass('text-violet-700')
+  })
+
+  it('renders brand name', () => {
+    render(<Sidebar />)
+    expect(screen.getByText('Gestão Seguros')).toBeInTheDocument()
   })
 })

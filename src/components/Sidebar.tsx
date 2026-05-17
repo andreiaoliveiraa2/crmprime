@@ -2,13 +2,25 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Users, Menu, X } from 'lucide-react'
+import {
+  LayoutDashboard,
+  Users,
+  Kanban,
+  UserCheck,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+} from 'lucide-react'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/crm', label: 'CRM', icon: Users },
+  { href: '/pipeline', label: 'Pipeline', icon: Kanban },
+  { href: '/clientes', label: 'Clientes', icon: UserCheck },
+  { href: '/configuracoes', label: 'Configurações', icon: Settings },
 ]
 
 export default function Sidebar() {
@@ -25,11 +37,15 @@ export default function Sidebar() {
   return (
     <>
       <button
-        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-md"
+        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-stone-100 rounded-lg shadow-md"
         onClick={() => setAberto(!aberto)}
         aria-label="Abrir menu"
       >
-        {aberto ? <X size={20} /> : <Menu size={20} />}
+        {aberto ? (
+          <X size={20} className="text-stone-700" />
+        ) : (
+          <Menu size={20} className="text-stone-700" />
+        )}
       </button>
 
       {aberto && (
@@ -41,15 +57,15 @@ export default function Sidebar() {
 
       <aside
         className={`
-          fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-200 z-40 flex flex-col
+          fixed top-0 left-0 h-full w-64 bg-stone-100 border-r border-stone-200 z-40 flex flex-col
           transition-transform duration-200
           ${aberto ? 'translate-x-0' : '-translate-x-full'}
           md:translate-x-0
         `}
       >
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-base font-bold text-gray-900">Gestão Seguros</h2>
-          <p className="text-xs text-gray-500 mt-0.5">Sistema de CRM</p>
+        <div className="p-6 border-b border-stone-200">
+          <h2 className="text-base font-bold text-stone-800">Gestão Seguros</h2>
+          <p className="text-xs text-stone-500 mt-0.5">CRM Profissional</p>
         </div>
 
         <nav className="flex-1 p-4 space-y-1">
@@ -59,11 +75,11 @@ export default function Sidebar() {
               href={href}
               onClick={() => setAberto(false)}
               className={`
-                flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
+                flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
                 ${
                   pathname === href || pathname.startsWith(href + '/')
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? 'bg-violet-100 text-violet-700 shadow-sm'
+                    : 'text-stone-600 hover:bg-stone-200 hover:text-stone-800'
                 }
               `}
             >
@@ -73,11 +89,12 @@ export default function Sidebar() {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-stone-200">
           <button
             onClick={handleLogout}
-            className="w-full text-sm text-gray-500 hover:text-red-600 transition-colors text-left px-4 py-2 rounded-lg hover:bg-red-50"
+            className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm font-medium text-stone-500 hover:text-red-600 hover:bg-red-50 transition-all duration-200"
           >
+            <LogOut size={18} />
             Sair
           </button>
         </div>
