@@ -39,7 +39,7 @@ describe('ConversaoModal', () => {
   it('shows error when valor is missing', async () => {
     render(<ConversaoModal lead={lead} onClose={jest.fn()} onCancelar={jest.fn()} />)
     fireEvent.click(screen.getByRole('button', { name: /salvar como cliente/i }))
-    expect(await screen.findByText('Valor do plano é obrigatório')).toBeInTheDocument()
+    expect(await screen.findByText(/informe um valor válido/i)).toBeInTheDocument()
   })
 
   it('calls onCancelar when cancel is clicked', () => {

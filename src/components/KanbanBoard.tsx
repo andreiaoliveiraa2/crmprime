@@ -55,20 +55,30 @@ export default function KanbanBoard({ leads: inicial }: Props) {
     }
 
     if (novaEtapa === 'Fechado') {
-      const lead = leads.find(l => l.id === draggableId)
-      if (lead) setLeadConvertendo(lead)
+      // Use inicial para identidade estável do lead (id, nome, telefone, tipo_plano)
+      const lead = inicial.find(l => l.id === draggableId) ?? leads.find(l => l.id === draggableId)
+      if (lead) setLeadConvertendo({ ...lead, etapa: 'Fechado' })
     } else {
       router.refresh()
     }
   }
 
-  function handleCancelarConversao() {
+  async function handleCancelarConversao() {
     if (!leadConvertendo) return
     setLeads(prev =>
       prev.map(l => (l.id === leadConvertendo.id ? { ...l, etapa: 'Negociação' } : l))
     )
-    supabase.from('leads').update({ etapa: 'Negociação' }).eq('id', leadConvertendo.id)
+    const { error } = await supabase
+      .from('leads')
+      .update({ etapa: 'Negociação' })
+      .eq('id', leadConvertendo.id)
+    if (error) {
+      setLeads(prev =>
+        prev.map(l => (l.id === leadConvertendo.id ? { ...l, etapa: 'Fechado' } : l))
+      )
+    }
     setLeadConvertendo(null)
+    router.refresh()
   }
 
   return (
@@ -142,6 +152,7 @@ export default function KanbanBoard({ leads: inicial }: Props) {
             router.refresh()
           }}
           onCancelar={handleCancelarConversao}
+          onReverteFechado={handleCancelarConversao}
         />
       )}
     </>

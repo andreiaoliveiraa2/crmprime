@@ -9,9 +9,10 @@ interface Props {
   lead: Lead
   onClose: () => void
   onCancelar: () => void
+  onReverteFechado?: () => void
 }
 
-export default function ConversaoModal({ lead, onClose, onCancelar }: Props) {
+export default function ConversaoModal({ lead, onClose, onCancelar, onReverteFechado }: Props) {
   const [email, setEmail] = useState('')
   const [telefone, setTelefone] = useState(lead.telefone ?? '')
   const [tipo_plano, setTipoPlano] = useState(lead.tipo_plano ?? '')
@@ -27,9 +28,11 @@ export default function ConversaoModal({ lead, onClose, onCancelar }: Props) {
     e.preventDefault()
     setErro('')
 
-    const valor = Number(valor_plano.replace(',', '.'))
-    if (!valor_plano || isNaN(valor)) {
-      setErro('Valor do plano é obrigatório')
+    // Remove separador de milhar BR (ponto) e converte vírgula decimal
+    const valorNormalizado = valor_plano.replace(/[^\d,]/g, '').replace(',', '.')
+    const valor = Number(valorNormalizado)
+    if (!valor_plano || isNaN(valor) || valor <= 0) {
+      setErro('Informe um valor válido (ex: 350,00)')
       return
     }
 
@@ -46,7 +49,13 @@ export default function ConversaoModal({ lead, onClose, onCancelar }: Props) {
     }
 
     const { error } = await supabase.from('clientes').insert(payload)
-    if (error) { setErro('Erro ao salvar cliente. Tente novamente.'); setLoading(false); return }
+    if (error) {
+      setErro('Erro ao salvar cliente. Tente novamente.')
+      setLoading(false)
+      // Reverte o lead para Negociação para evitar estado inconsistente
+      onReverteFechado?.()
+      return
+    }
 
     setLoading(false)
     router.refresh()
