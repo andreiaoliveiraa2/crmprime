@@ -1,13 +1,50 @@
-export type Etapa = 'Lead' | 'Contato' | 'Proposta' | 'Fechado' | 'Perdido'
+export type EtapaLead =
+  | 'Novo Lead'
+  | 'Contato Feito'
+  | 'Proposta Enviada'
+  | 'Negociação'
+  | 'Fechado'
+  | 'Perdido'
 
-export const ETAPAS: Etapa[] = ['Lead', 'Contato', 'Proposta', 'Fechado', 'Perdido']
+export const ETAPAS_LEAD: EtapaLead[] = [
+  'Novo Lead',
+  'Contato Feito',
+  'Proposta Enviada',
+  'Negociação',
+  'Fechado',
+  'Perdido',
+]
+
+export const TIPOS_PLANO = [
+  'Saúde',
+  'Odonto',
+  'Vida',
+  'Auto',
+  'Residencial',
+  'Empresarial',
+  'Outro',
+] as const
+
+export interface Lead {
+  id: string
+  nome: string
+  telefone: string | null
+  tipo_plano: string | null
+  etapa: EtapaLead
+  criado_em: string
+}
+
+export type LeadInsert = Omit<Lead, 'id' | 'criado_em'>
 
 export interface Cliente {
   id: string
   nome: string
   contato: string | null
-  data: string | null
-  etapa: Etapa
+  email: string | null
+  tipo_plano: string | null
+  valor_plano: number | null
+  observacoes: string | null
+  lead_id: string | null
   criado_em: string
 }
 
