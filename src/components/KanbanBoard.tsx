@@ -3,32 +3,26 @@
 import { useState } from 'react'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { Cliente, Etapa, ETAPAS } from '@/lib/types'
+import { Lead, EtapaLead, ETAPAS_LEAD } from '@/lib/types'
+import ConversaoModal from './ConversaoModal'
 
 interface Props {
-  clientes: Cliente[]
+  leads: Lead[]
 }
 
-const etapaColors: Record<Etapa, string> = {
-  Lead: 'border-blue-300 bg-blue-50',
-  Contato: 'border-yellow-300 bg-yellow-50',
-  Proposta: 'border-purple-300 bg-purple-50',
-  Fechado: 'border-green-300 bg-green-50',
-  Perdido: 'border-red-300 bg-red-50',
+const etapaStyle: Record<EtapaLead, { col: string; title: string }> = {
+  'Novo Lead': { col: 'bg-blue-50 border-blue-200', title: 'text-blue-700' },
+  'Contato Feito': { col: 'bg-yellow-50 border-yellow-200', title: 'text-yellow-700' },
+  'Proposta Enviada': { col: 'bg-purple-50 border-purple-200', title: 'text-purple-700' },
+  'Negociação': { col: 'bg-amber-50 border-amber-200', title: 'text-amber-700' },
+  'Fechado': { col: 'bg-emerald-50 border-emerald-200', title: 'text-emerald-700' },
+  'Perdido': { col: 'bg-red-50 border-red-200', title: 'text-red-600' },
 }
 
-const etapaTitleColors: Record<Etapa, string> = {
-  Lead: 'text-blue-700',
-  Contato: 'text-yellow-700',
-  Proposta: 'text-purple-700',
-  Fechado: 'text-green-700',
-  Perdido: 'text-red-700',
-}
-
-export default function KanbanBoard({ clientes: inicial }: Props) {
-  const [clientes, setClientes] = useState(inicial)
+export default function KanbanBoard({ leads: inicial }: Props) {
+  const [leads, setLeads] = useState(inicial)
+  const [leadConvertendo, setLeadConvertendo] = useState<Lead | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -37,95 +31,119 @@ export default function KanbanBoard({ clientes: inicial }: Props) {
     if (!destination) return
     if (destination.droppableId === source.droppableId) return
 
-    const novaEtapa = destination.droppableId as Etapa
-    const etapaAnterior = source.droppableId as Etapa
+    const novaEtapa = destination.droppableId as EtapaLead
+    const etapaAnterior = source.droppableId as EtapaLead
 
-    setClientes(prev =>
-      prev.map(c => (c.id === draggableId ? { ...c, etapa: novaEtapa } : c))
+    if (novaEtapa === 'Perdido') {
+      if (!confirm('Marcar este lead como Perdido?')) return
+    }
+
+    setLeads(prev =>
+      prev.map(l => (l.id === draggableId ? { ...l, etapa: novaEtapa } : l))
     )
 
     const { error } = await supabase
-      .from('clientes')
+      .from('leads')
       .update({ etapa: novaEtapa })
       .eq('id', draggableId)
 
     if (error) {
-      setClientes(prev =>
-        prev.map(c => (c.id === draggableId ? { ...c, etapa: etapaAnterior } : c))
+      setLeads(prev =>
+        prev.map(l => (l.id === draggableId ? { ...l, etapa: etapaAnterior } : l))
       )
+      return
+    }
+
+    if (novaEtapa === 'Fechado') {
+      const lead = leads.find(l => l.id === draggableId)
+      if (lead) setLeadConvertendo(lead)
     } else {
       router.refresh()
     }
   }
 
-  return (
-    <DragDropContext onDragEnd={onDragEnd}>
-      <div className="flex gap-4 overflow-x-auto pb-4">
-        {ETAPAS.map(etapa => {
-          const cartoes = clientes.filter(c => c.etapa === etapa)
-          return (
-            <div key={etapa} className="flex-shrink-0 w-60">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className={`text-sm font-semibold ${etapaTitleColors[etapa]}`}>
-                  {etapa}
-                </h3>
-                <span className="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
-                  {cartoes.length}
-                </span>
-              </div>
+  function handleCancelarConversao() {
+    if (!leadConvertendo) return
+    setLeads(prev =>
+      prev.map(l => (l.id === leadConvertendo.id ? { ...l, etapa: 'Negociação' } : l))
+    )
+    supabase.from('leads').update({ etapa: 'Negociação' }).eq('id', leadConvertendo.id)
+    setLeadConvertendo(null)
+  }
 
-              <Droppable droppableId={etapa}>
-                {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className={`min-h-[120px] rounded-xl p-2 space-y-2 border-2 transition-colors ${
-                      snapshot.isDraggingOver
-                        ? etapaColors[etapa]
-                        : 'border-gray-200 bg-gray-50'
-                    }`}
-                  >
-                    {cartoes.map((c, index) => (
-                      <Draggable key={c.id} draggableId={c.id} index={index}>
-                        {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            className={`bg-white rounded-lg border border-gray-200 p-3 shadow-sm cursor-grab active:cursor-grabbing transition-shadow ${
-                              snapshot.isDragging ? 'shadow-lg' : ''
-                            }`}
-                          >
-                            <p className="text-sm font-medium text-gray-900 mb-1">
-                              {c.nome}
-                            </p>
-                            {c.contato && (
-                              <p className="text-xs text-gray-500">{c.contato}</p>
-                            )}
-                            {c.data && (
-                              <p className="text-xs text-orange-500 mt-1">
-                                {new Date(c.data + 'T00:00:00').toLocaleDateString('pt-BR')}
-                              </p>
-                            )}
-                            <Link
-                              href={`/crm/${c.id}`}
-                              className="text-xs text-blue-500 hover:underline mt-1 block"
-                              onClick={e => e.stopPropagation()}
+  return (
+    <>
+      <DragDropContext onDragEnd={onDragEnd}>
+        <div className="flex gap-4 overflow-x-auto pb-4">
+          {ETAPAS_LEAD.map(etapa => {
+            const cartoes = leads.filter(l => l.etapa === etapa)
+            const style = etapaStyle[etapa]
+            return (
+              <div key={etapa} className="flex-shrink-0 w-52">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className={`text-xs font-bold uppercase tracking-wide ${style.title}`}>
+                    {etapa}
+                  </h3>
+                  <span className="text-xs bg-white border border-stone-200 rounded-full px-2 py-0.5 text-stone-500">
+                    {cartoes.length}
+                  </span>
+                </div>
+
+                <Droppable droppableId={etapa}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={`min-h-[120px] rounded-2xl p-2 space-y-2 border-2 transition-colors ${
+                        snapshot.isDraggingOver ? style.col : 'border-stone-100 bg-stone-50'
+                      }`}
+                    >
+                      {cartoes.map((l, index) => (
+                        <Draggable key={l.id} draggableId={l.id} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className={`bg-white rounded-xl border border-stone-200 p-3 cursor-grab active:cursor-grabbing transition-shadow ${
+                                snapshot.isDragging ? 'shadow-lg' : 'shadow-sm hover:shadow-md'
+                              }`}
                             >
-                              Editar
-                            </Link>
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            </div>
-          )
-        })}
-      </div>
-    </DragDropContext>
+                              <p className="text-sm font-semibold text-stone-800 mb-1">
+                                {l.nome}
+                              </p>
+                              {l.telefone && (
+                                <p className="text-xs text-stone-400">{l.telefone}</p>
+                              )}
+                              {l.tipo_plano && (
+                                <span className="mt-1.5 inline-block text-xs px-2 py-0.5 rounded-full bg-violet-50 text-violet-600">
+                                  {l.tipo_plano}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </div>
+            )
+          })}
+        </div>
+      </DragDropContext>
+
+      {leadConvertendo && (
+        <ConversaoModal
+          lead={leadConvertendo}
+          onClose={() => {
+            setLeadConvertendo(null)
+            router.refresh()
+          }}
+          onCancelar={handleCancelarConversao}
+        />
+      )}
+    </>
   )
 }
