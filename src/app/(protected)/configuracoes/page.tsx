@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import AlterarSenhaForm from '@/components/AlterarSenhaForm'
 
 export default async function ConfiguracoesPage() {
   const supabase = await createClient()
@@ -38,6 +39,8 @@ export default async function ConfiguracoesPage() {
           </div>
         </div>
       </div>
+
+      <AlterarSenhaForm />
     </div>
   )
 }
