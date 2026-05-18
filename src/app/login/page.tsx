@@ -19,8 +19,13 @@ export default function LoginPage() {
       setErro('Digite seu e-mail antes de solicitar a recuperação')
       return
     }
-    await supabase.auth.resetPasswordForEmail(email)
-    setMensagem('E-mail de recuperação enviado. Verifique sua caixa de entrada.')
+    const redirectTo = `${window.location.origin}/auth/callback?next=/reset-senha`
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
+    if (error) {
+      setErro('Erro ao enviar e-mail. Tente novamente.')
+    } else {
+      setMensagem('E-mail de recuperação enviado. Verifique sua caixa de entrada.')
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
