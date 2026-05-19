@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Lead, ClienteInsert, TIPOS_PLANO } from '@/lib/types'
+import { useOperadoras } from '@/lib/useOperadoras'
 import { X, CheckCircle } from 'lucide-react'
 
 interface Props {
@@ -28,6 +29,7 @@ export default function ConversaoModal({ lead, onClose, onCancelar, onReverteFec
   const [observacoes, setObservacoes] = useState(lead.observacoes ?? '')
   const [erro, setErro]             = useState('')
   const [loading, setLoading]       = useState(false)
+  const operadorasLista             = useOperadoras()
 
   const router = useRouter()
   const supabase = createClient()
@@ -131,9 +133,11 @@ export default function ConversaoModal({ lead, onClose, onCancelar, onReverteFec
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelCls} style={labelStyle}>Operadora</label>
-              <input type="text" value={operadora} onChange={e => setOperadora(e.target.value)}
-                placeholder="Ex: Unimed, Amil..."
-                className={inputCls} style={inputStyle} />
+              <select value={operadora} onChange={e => setOperadora(e.target.value)}
+                className={inputCls} style={{ ...inputStyle, color: operadora ? '#1a1a1a' : '#9a918a' }}>
+                <option value="">Selecione...</option>
+                {operadorasLista.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
             </div>
             <div>
               <label className={labelCls} style={labelStyle}>Tipo de Plano</label>

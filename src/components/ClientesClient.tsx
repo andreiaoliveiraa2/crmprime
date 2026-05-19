@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Cliente, STATUS_CLIENTE } from '@/lib/types'
+import { useOperadoras } from '@/lib/useOperadoras'
 import ClienteExportModal from './ClienteExportModal'
 import { Plus, Download, Search, Eye, Pencil, Trash2 } from 'lucide-react'
 
@@ -33,6 +34,7 @@ export default function ClientesClient({ clientes }: Props) {
 
   const router = useRouter()
   const supabase = createClient()
+  const operadoras = useOperadoras()
 
   useEffect(() => {
     supabase
@@ -44,11 +46,6 @@ export default function ClientesClient({ clientes }: Props) {
         if (data) setVendedores(data.map((v: { nome: string }) => v.nome))
       })
   }, [])
-
-  const operadoras = useMemo(() => {
-    const vals = clientes.map(c => c.operadora).filter(Boolean) as string[]
-    return [...new Set(vals)].sort()
-  }, [clientes])
 
   const filtrados = useMemo(() => {
     return clientes.filter(c => {
@@ -185,7 +182,7 @@ export default function ClientesClient({ clientes }: Props) {
                   </td>
                 </tr>
               )}
-              {filtrados.map((c, i) => {
+              {filtrados.map((c: Cliente, i: number) => {
                 const sc = statusCor[c.status] ?? statusCor['Ativo']
                 return (
                   <tr key={c.id} className="border-t"

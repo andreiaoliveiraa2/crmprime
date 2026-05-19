@@ -62,6 +62,15 @@ export interface Vendedor {
   criado_em: string
 }
 
+export interface Operadora {
+  id: string
+  nome: string
+  ativo: boolean
+  criado_em: string
+}
+
+export type OperadoraInsert = Omit<Operadora, 'id' | 'criado_em'>
+
 export type LeadInsert = Omit<Lead, 'id' | 'criado_em'> & { criado_em?: string | null }
 export type VendedorInsert = Omit<Vendedor, 'id' | 'criado_em'>
 

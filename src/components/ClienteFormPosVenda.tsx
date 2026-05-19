@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Cliente, ClienteInsert, TIPOS_PLANO, STATUS_CLIENTE } from '@/lib/types'
+import { useOperadoras } from '@/lib/useOperadoras'
 
 interface Props {
   cliente?: Cliente
@@ -39,6 +40,7 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
   const [comissao, setComissao]           = useState(cliente?.comissao?.toString() ?? '')
   const [observacoes, setObservacoes]     = useState(cliente?.observacoes ?? '')
 
+  const operadorasLista = useOperadoras()
   const [vendedoresLista, setVendedoresLista] = useState<string[]>([])
   const [erro, setErro]   = useState('')
   const [loading, setLoading] = useState(false)
@@ -158,9 +160,11 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
 
           <div>
             <label className={labelCls} style={labelStyle}>Operadora</label>
-            <input type="text" value={operadora} onChange={e => setOperadora(e.target.value)}
-              placeholder="Ex: Unimed, Bradesco, Amil..."
-              className={inputCls} style={inputStyle} />
+            <select value={operadora} onChange={e => setOperadora(e.target.value)}
+              className={inputCls} style={{ ...inputStyle, color: operadora ? '#1a1a1a' : '#9a918a' }}>
+              <option value="">Selecione a operadora...</option>
+              {operadorasLista.map(o => <option key={o} value={o}>{o}</option>)}
+            </select>
           </div>
 
           <div>

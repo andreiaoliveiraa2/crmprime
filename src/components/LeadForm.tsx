@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Lead, LeadInsert, TIPOS_PLANO_LEAD, ORIGENS_LEAD } from '@/lib/types'
+import { useOperadoras } from '@/lib/useOperadoras'
 
 interface Props {
   lead?: Lead
@@ -31,6 +32,7 @@ export default function LeadForm({ lead }: Props) {
   const [dataEntrada, setDataEntrada] = useState(
     lead?.criado_em ? lead.criado_em.slice(0, 10) : hoje()
   )
+  const operadorasLista = useOperadoras()
   const [vendedoresLista, setVendedoresLista] = useState<string[]>([])
   const [erro, setErro] = useState('')
   const [loading, setLoading] = useState(false)
@@ -131,9 +133,11 @@ export default function LeadForm({ lead }: Props) {
         {/* Operadora */}
         <div>
           <label htmlFor="operadora" className={labelCls} style={labelStyle}>Operadora de Interesse</label>
-          <input id="operadora" type="text" value={operadora} onChange={e => setOperadora(e.target.value)}
-            placeholder="Ex: Unimed, Bradesco, Amil..."
-            className={inputCls} style={inputStyle} />
+          <select id="operadora" value={operadora} onChange={e => setOperadora(e.target.value)}
+            className={inputCls} style={{ ...inputStyle, color: operadora ? '#1a1a1a' : '#9a918a' }}>
+            <option value="">Selecione a operadora...</option>
+            {operadorasLista.map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
         </div>
 
         {/* Vendedor */}

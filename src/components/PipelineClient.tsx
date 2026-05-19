@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Lead, ETAPAS_LEAD } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
+import { useOperadoras } from '@/lib/useOperadoras'
 import KanbanBoard from './KanbanBoard'
 import LeadListView from './LeadListView'
 import LeadExportModal from './LeadExportModal'
@@ -23,6 +24,7 @@ export default function PipelineClient({ leads }: Props) {
   const [filtroFim, setFiltroFim]       = useState('')
   const [exportando, setExportando]     = useState(false)
   const [vendedores, setVendedores]     = useState<string[]>([])
+  const operadorasLista                 = useOperadoras()
 
   useEffect(() => {
     const supabase = createClient()
