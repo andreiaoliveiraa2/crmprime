@@ -5,6 +5,7 @@ import { Compromisso, TIPO_COR } from '@/lib/types'
 interface Props {
   eventos: Compromisso[]
   mes: Date
+  feriados: Record<string, string>
   onDiaClick: (data: string) => void
 }
 
@@ -19,7 +20,7 @@ function isHoje(y: number, m: number, d: number) {
   return h.getFullYear() === y && h.getMonth() === m && h.getDate() === d
 }
 
-export default function AgendaMes({ eventos, mes, onDiaClick }: Props) {
+export default function AgendaMes({ eventos, mes, feriados, onDiaClick }: Props) {
   const ano = mes.getFullYear()
   const mesNum = mes.getMonth()
 
@@ -55,6 +56,7 @@ export default function AgendaMes({ eventos, mes, onDiaClick }: Props) {
 
           const dateStr = isoDate(dia)
           const hoje = isHoje(ano, mesNum, dia.getDate())
+          const feriadoNome = feriados[dateStr]
           const evsDia = eventos.filter(ev => isoDate(new Date(ev.data_hora)) === dateStr)
 
           return (
@@ -71,7 +73,13 @@ export default function AgendaMes({ eventos, mes, onDiaClick }: Props) {
                 {dia.getDate()}
               </span>
               <div className="space-y-0.5">
-                {evsDia.slice(0, 2).map(ev => {
+                {feriadoNome && (
+                  <div className="text-xs px-1 py-0.5 rounded truncate font-medium"
+                    style={{ backgroundColor: '#fef9c3', color: '#854d0e' }}>
+                    🎉 {feriadoNome}
+                  </div>
+                )}
+                {evsDia.slice(0, feriadoNome ? 1 : 2).map(ev => {
                   const cor = TIPO_COR[ev.tipo] ?? '#6b7280'
                   return (
                     <div key={ev.id}
@@ -81,10 +89,10 @@ export default function AgendaMes({ eventos, mes, onDiaClick }: Props) {
                     </div>
                   )
                 })}
-                {evsDia.length > 2 && (
+                {evsDia.length > (feriadoNome ? 1 : 2) && (
                   <div className="text-xs px-1.5 py-0.5 rounded-md font-medium"
                     style={{ backgroundColor: '#f0ece6', color: '#9a918a' }}>
-                    +{evsDia.length - 2}
+                    +{evsDia.length - (feriadoNome ? 1 : 2)}
                   </div>
                 )}
               </div>

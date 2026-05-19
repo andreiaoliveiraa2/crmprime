@@ -5,6 +5,7 @@ import { Compromisso, TIPO_COR } from '@/lib/types'
 interface Props {
   eventos: Compromisso[]
   semanaInicio: Date
+  feriados: Record<string, string>
   onEditar: (e: Compromisso) => void
   onDiaClick: (data: string) => void
 }
@@ -25,7 +26,7 @@ function isHoje(d: Date) {
   return d.getDate() === h.getDate() && d.getMonth() === h.getMonth() && d.getFullYear() === h.getFullYear()
 }
 
-export default function AgendaSemana({ eventos, semanaInicio, onEditar, onDiaClick }: Props) {
+export default function AgendaSemana({ eventos, semanaInicio, feriados, onEditar, onDiaClick }: Props) {
   const dias = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(semanaInicio)
     d.setDate(d.getDate() + i)
@@ -37,6 +38,7 @@ export default function AgendaSemana({ eventos, semanaInicio, onEditar, onDiaCli
       {dias.map((dia, idx) => {
         const dateStr = isoDate(dia)
         const hoje = isHoje(dia)
+        const feriadoNome = feriados[dateStr]
         const evsDia = eventos
           .filter(ev => isoDate(new Date(ev.data_hora)) === dateStr)
           .sort((a, b) => a.data_hora.localeCompare(b.data_hora))
@@ -53,6 +55,13 @@ export default function AgendaSemana({ eventos, semanaInicio, onEditar, onDiaCli
               <p className="text-xs font-semibold">{DIAS[dia.getDay()]}</p>
               <p className="text-lg font-bold">{dia.getDate()}</p>
             </button>
+
+            {feriadoNome && (
+              <div className="text-xs px-1.5 py-0.5 rounded-md mb-1 truncate font-medium"
+                style={{ backgroundColor: '#fef9c3', color: '#854d0e' }}>
+                🎉 {feriadoNome}
+              </div>
+            )}
 
             <div className="space-y-1">
               {evsDia.slice(0, 3).map(ev => {

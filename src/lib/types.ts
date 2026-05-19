@@ -109,11 +109,11 @@ export type StatusCompromisso = 'Agendado' | 'Concluído' | 'Cancelado'
 export const STATUS_COMPROMISSO: StatusCompromisso[] = ['Agendado', 'Concluído', 'Cancelado']
 
 export const TIPO_COR: Record<string, string> = {
-  'Consultas Médicas': '#dc2626',
-  'Coworking':         '#2563eb',
-  'Criar Conteúdo':    '#7c3aed',
-  'Fazenda Aluguel':   '#16a34a',
-  'Reunião':           '#ea580c',
+  'Consultas Médicas': '#039be5',
+  'Coworking':         '#7986cb',
+  'Criar Conteúdo':    '#8e24aa',
+  'Fazenda Aluguel':   '#d50000',
+  'Reunião':           '#616161',
 }
 
 export interface TipoAgenda {

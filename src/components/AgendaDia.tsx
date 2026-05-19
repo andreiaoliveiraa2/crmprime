@@ -1,10 +1,11 @@
 'use client'
 
 import { Compromisso, TIPO_COR, STATUS_COR } from '@/lib/types'
-import { Clock, Pencil } from 'lucide-react'
+import { Pencil } from 'lucide-react'
 
 interface Props {
   eventos: Compromisso[]
+  feriado?: string
   onEditar: (e: Compromisso) => void
 }
 
@@ -18,22 +19,27 @@ function isUrgente(iso: string) {
   return diff > 0 && diff < 60 * 60 * 1000
 }
 
-export default function AgendaDia({ eventos, onEditar }: Props) {
-  if (eventos.length === 0) {
-    return (
-      <div className="bg-white rounded-2xl border p-12 text-center" style={{ borderColor: '#e8e4dd' }}>
-        <p className="text-sm" style={{ color: '#9a918a' }}>Nenhum compromisso para este dia.</p>
-      </div>
-    )
-  }
-
+export default function AgendaDia({ eventos, feriado, onEditar }: Props) {
   const ordenados = [...eventos].sort((a, b) =>
     new Date(a.data_hora).getTime() - new Date(b.data_hora).getTime()
   )
 
   return (
     <div className="space-y-2">
-      {ordenados.map(ev => {
+
+      {/* Banner de feriado nacional */}
+      {feriado && (
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold"
+          style={{ backgroundColor: '#fef9c3', color: '#854d0e', border: '1px solid #fde68a' }}>
+          🎉 Feriado Nacional — {feriado}
+        </div>
+      )}
+
+      {ordenados.length === 0 ? (
+        <div className="bg-white rounded-2xl border p-12 text-center" style={{ borderColor: '#e8e4dd' }}>
+          <p className="text-sm" style={{ color: '#9a918a' }}>Nenhum compromisso para este dia.</p>
+        </div>
+      ) : ordenados.map(ev => {
         const cor = TIPO_COR[ev.tipo] ?? '#6b7280'
         const sc = STATUS_COR[ev.status]
         const urgente = isUrgente(ev.data_hora)
@@ -44,18 +50,13 @@ export default function AgendaDia({ eventos, onEditar }: Props) {
               borderColor: urgente ? '#fca5a5' : '#e8e4dd',
               boxShadow: urgente ? '0 0 0 2px #fca5a540' : undefined,
             }}>
-            {/* Hora */}
             <div className="shrink-0 text-center w-14">
               <p className="text-lg font-bold" style={{ color: '#2d1f4e' }}>{fmt(ev.data_hora)}</p>
               {urgente && (
                 <span className="text-xs font-semibold" style={{ color: '#dc2626' }}>em breve</span>
               )}
             </div>
-
-            {/* Barra de cor do tipo */}
             <div className="w-1 rounded-full self-stretch shrink-0" style={{ backgroundColor: cor }} />
-
-            {/* Conteúdo */}
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
                 <p className="text-sm font-semibold" style={{ color: '#2d1f4e' }}>{ev.titulo}</p>
@@ -67,7 +68,7 @@ export default function AgendaDia({ eventos, onEditar }: Props) {
               </div>
               <div className="flex items-center gap-2 mt-1 flex-wrap">
                 <span className="text-xs font-medium px-2 py-0.5 rounded-full"
-                  style={{ backgroundColor: `${cor}18`, color: cor }}>
+                  style={{ backgroundColor: cor, color: '#ffffff' }}>
                   {ev.tipo}
                 </span>
                 <span className="text-xs font-medium px-2 py-0.5 rounded-full"

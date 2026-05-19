@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Compromisso } from '@/lib/types'
+import { feriadosMapa } from '@/lib/feriados'
 import AgendaDia from './AgendaDia'
 import AgendaSemana from './AgendaSemana'
 import AgendaMes from './AgendaMes'
@@ -55,10 +56,12 @@ export default function AgendaClient({ eventos: inicial }: Props) {
 
   const router = useRouter()
 
-  // Sincroniza com dados frescos do servidor após router.refresh()
-  useEffect(() => {
-    setEventos(inicial)
-  }, [inicial])
+  useEffect(() => { setEventos(inicial) }, [inicial])
+
+  const feriados = useMemo(() => {
+    const ano = dataSelecionada.getFullYear()
+    return feriadosMapa([ano - 1, ano, ano + 1])
+  }, [dataSelecionada.getFullYear()])
 
   const reload = useCallback(() => {
     router.refresh()
@@ -155,6 +158,7 @@ export default function AgendaClient({ eventos: inicial }: Props) {
       {visao === 'dia' && (
         <AgendaDia
           eventos={eventosFiltrados()}
+          feriado={feriados[isoDate(dataSelecionada)]}
           onEditar={ev => { setEventoEditando(ev); setModalAberto(true) }}
         />
       )}
@@ -162,6 +166,7 @@ export default function AgendaClient({ eventos: inicial }: Props) {
         <AgendaSemana
           eventos={eventosFiltrados()}
           semanaInicio={semanaIni}
+          feriados={feriados}
           onEditar={ev => { setEventoEditando(ev); setModalAberto(true) }}
           onDiaClick={irParaDia}
         />
@@ -170,6 +175,7 @@ export default function AgendaClient({ eventos: inicial }: Props) {
         <AgendaMes
           eventos={eventosFiltrados()}
           mes={dataSelecionada}
+          feriados={feriados}
           onDiaClick={irParaDia}
         />
       )}
