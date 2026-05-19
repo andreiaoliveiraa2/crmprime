@@ -63,10 +63,10 @@ export default function LeadForm({ lead }: Props) {
 
     if (editando) {
       const { error } = await supabase.from('leads').update(payload).eq('id', lead.id)
-      if (error) { setErro('Erro ao salvar. Tente novamente.'); setLoading(false); return }
+      if (error) { setErro(`Erro: ${error.message}`); setLoading(false); return }
     } else {
       const { error } = await supabase.from('leads').insert(payload)
-      if (error) { setErro('Erro ao salvar. Tente novamente.'); setLoading(false); return }
+      if (error) { setErro(`Erro: ${error.message}`); setLoading(false); return }
     }
 
     setLoading(false)
