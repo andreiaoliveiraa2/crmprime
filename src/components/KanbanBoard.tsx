@@ -91,7 +91,7 @@ export default function KanbanBoard({ leads: inicial }: Props) {
                 {/* Cabeçalho da coluna */}
                 <div
                   className="flex items-center justify-between px-3 py-2.5 rounded-t-xl"
-                  style={{ backgroundColor: '#b89a6a' }}
+                  style={{ backgroundColor: '#2d1f4e' }}
                 >
                   <div className="flex items-center gap-2">
                     <span
