@@ -54,3 +54,14 @@ export interface Cliente {
 }
 
 export type ClienteInsert = Omit<Cliente, 'id' | 'criado_em'>
+
+export type StatusCompromisso = 'Agendado' | 'Pendente'
+
+export interface Compromisso {
+  id: string
+  titulo: string
+  data_hora: string
+  observacao: string | null
+  status: StatusCompromisso
+  criado_em: string
+}

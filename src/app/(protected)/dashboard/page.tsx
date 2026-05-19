@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import DashboardCard from '@/components/DashboardCard'
 import { Users, ArrowLeftRight, FileText, CheckCircle, Activity, Calendar, ChevronRight, BarChart3 } from 'lucide-react'
-import { Lead, Cliente, ETAPAS_LEAD } from '@/lib/types'
+import { Lead, Cliente, Compromisso } from '@/lib/types'
 import Link from 'next/link'
 
 const etapaBadge: Record<string, { bg: string; color: string }> = {
@@ -25,13 +25,27 @@ export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const [{ data: leadsData }, { data: clientesData }] = await Promise.all([
+  const inicioSemana = new Date()
+  inicioSemana.setDate(inicioSemana.getDate() - inicioSemana.getDay() + 1)
+  inicioSemana.setHours(0, 0, 0, 0)
+  const fimSemana = new Date(inicioSemana)
+  fimSemana.setDate(inicioSemana.getDate() + 6)
+  fimSemana.setHours(23, 59, 59, 999)
+
+  const [{ data: leadsData }, { data: clientesData }, { data: compromissosData }] = await Promise.all([
     supabase.from('leads').select('*').order('criado_em', { ascending: false }),
     supabase.from('clientes').select('*').order('criado_em', { ascending: false }),
+    supabase.from('compromissos')
+      .select('*')
+      .gte('data_hora', inicioSemana.toISOString())
+      .lte('data_hora', fimSemana.toISOString())
+      .order('data_hora', { ascending: true })
+      .limit(4),
   ])
 
   const leads: Lead[] = leadsData ?? []
   const clientes: Cliente[] = clientesData ?? []
+  const compromissos: Compromisso[] = (compromissosData ?? []) as Compromisso[]
 
   // Métricas principais
   const emNegociacao = leads.filter(l =>
@@ -67,8 +81,31 @@ export default async function DashboardPage() {
     .sort((a, b) => b.total - a.total)
   const maxVendas = Math.max(...vendasPorTipo.map(v => v.total), 1)
 
-  const leadsRecentes = leads.slice(0, 6)
-  const clientesRecentes = clientes.slice(0, 6)
+  // Vendas do mês por operadora (donut)
+  const DONUT_COLORS = ['#5b3fb5', '#b89a6a', '#2e8b57', '#b5455a', '#c48a2a', '#4a90c4', '#7c6f9e']
+  const operadorasMap: Record<string, number> = {}
+  for (const c of clientesMes) {
+    const op = c.operadora ?? 'Sem operadora'
+    operadorasMap[op] = (operadorasMap[op] ?? 0) + 1
+  }
+  const vendasPorOperadora = Object.entries(operadorasMap)
+    .sort((a, b) => b[1] - a[1])
+    .map(([operadora, count], i) => ({ operadora, count, color: DONUT_COLORS[i % DONUT_COLORS.length] }))
+  const totalOperadoras = vendasPorOperadora.reduce((s, v) => s + v.count, 0)
+
+  // Donut SVG geometry
+  const R = 52
+  const CIRCUNF = 2 * Math.PI * R
+  let acumulado = 0
+  const segmentos = vendasPorOperadora.map(v => {
+    const comprimento = totalOperadoras > 0 ? (v.count / totalOperadoras) * CIRCUNF : 0
+    const offset = -acumulado
+    acumulado += comprimento
+    return { ...v, comprimento, offset }
+  })
+
+  const leadsRecentes = leads.slice(0, 5)
+  const clientesRecentes = clientes.slice(0, 5)
 
   const hoje = new Date()
   const dataFormatada = hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -361,18 +398,157 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Compromissos da Semana — placeholder até o módulo de agenda */}
-      <div className="bg-white rounded-2xl border border-dashed border-stone-300 p-6">
-        <div className="flex items-start gap-4">
-          <div className="p-2.5 rounded-xl bg-stone-100 text-stone-400 shrink-0">
-            <Calendar size={20} />
+      {/* Bloco Inferior — Agenda da Semana + Vendas por Operadora */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        {/* Agenda da Semana */}
+        <div className="bg-white p-6" style={{ border: '1px solid #e8e4dd', borderRadius: '12px' }}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold" style={{ color: '#2d1f4e' }}>Agenda da Semana</h3>
+            <Link
+              href="/agenda"
+              className="flex items-center gap-0.5 text-xs font-medium"
+              style={{ color: '#b89a6a' }}
+            >
+              Ver agenda <ChevronRight size={12} />
+            </Link>
           </div>
-          <div>
-            <p className="text-sm font-semibold text-stone-600">Compromissos da Semana</p>
-            <p className="text-xs text-stone-400 mt-0.5">
-              O módulo de agenda ainda será configurado. Quando estiver pronto, seus compromissos da semana aparecerão aqui.
-            </p>
+
+          {compromissos.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 text-center gap-2">
+              <div className="p-3 rounded-full" style={{ backgroundColor: 'rgba(184,154,106,0.1)' }}>
+                <Calendar size={22} style={{ color: '#b89a6a' }} />
+              </div>
+              <p className="text-sm" style={{ color: '#9a918a' }}>Nenhum compromisso esta semana.</p>
+              <Link href="/agenda" className="text-xs font-medium" style={{ color: '#b89a6a' }}>
+                Agendar compromisso
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {compromissos.map(c => {
+                const dt = new Date(c.data_hora)
+                const diaSemana = dt.toLocaleDateString('pt-BR', { weekday: 'short' })
+                const dia = dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+                const hora = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                const isAgendado = c.status === 'Agendado'
+                return (
+                  <div
+                    key={c.id}
+                    className="flex items-start gap-3 p-3 rounded-xl"
+                    style={{ backgroundColor: '#faf8f5' }}
+                  >
+                    <div className="text-center shrink-0 w-10">
+                      <p className="text-xs font-medium capitalize" style={{ color: '#9a918a' }}>{diaSemana}</p>
+                      <p className="text-xs font-bold" style={{ color: '#b89a6a' }}>{dia}</p>
+                      <p className="text-xs font-semibold mt-0.5" style={{ color: '#b89a6a' }}>{hora}</p>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate" style={{ color: '#1a1a1a' }}>
+                        {c.titulo}
+                      </p>
+                      {c.observacao && (
+                        <p className="text-xs mt-0.5 truncate" style={{ color: '#9a918a' }}>
+                          {c.observacao}
+                        </p>
+                      )}
+                    </div>
+                    <span
+                      className="shrink-0 text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap"
+                      style={
+                        isAgendado
+                          ? { backgroundColor: '#dbeafe', color: '#1d4ed8' }
+                          : { backgroundColor: '#fef9c3', color: '#a16207' }
+                      }
+                    >
+                      {c.status}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Vendas do Mês por Operadora — donut SVG */}
+        <div className="bg-white p-6" style={{ border: '1px solid #e8e4dd', borderRadius: '12px' }}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold" style={{ color: '#2d1f4e' }}>Vendas por Operadora</h3>
+            <span className="text-xs capitalize" style={{ color: '#9a918a' }}>{mesAtual}</span>
           </div>
+
+          {totalOperadoras === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 text-center gap-2">
+              <div className="p-3 rounded-full" style={{ backgroundColor: 'rgba(184,154,106,0.1)' }}>
+                <BarChart3 size={22} style={{ color: '#b89a6a' }} />
+              </div>
+              <p className="text-sm" style={{ color: '#9a918a' }}>Nenhuma venda com operadora registrada este mês.</p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-5">
+              {/* Donut SVG */}
+              <div className="relative">
+                <svg width="140" height="140" viewBox="0 0 140 140">
+                  {/* Trilha de fundo */}
+                  <circle
+                    cx="70" cy="70" r={R}
+                    fill="none"
+                    stroke="#f0ece6"
+                    strokeWidth="20"
+                  />
+                  {/* Segmentos */}
+                  {segmentos.map((seg, i) => (
+                    <circle
+                      key={i}
+                      cx="70" cy="70" r={R}
+                      fill="none"
+                      stroke={seg.color}
+                      strokeWidth="20"
+                      strokeDasharray={`${seg.comprimento} ${CIRCUNF}`}
+                      strokeDashoffset={seg.offset}
+                      strokeLinecap="butt"
+                      style={{ transform: 'rotate(-90deg)', transformOrigin: '70px 70px' }}
+                    />
+                  ))}
+                  {/* Total no centro */}
+                  <text x="70" y="66" textAnchor="middle" style={{ fontFamily: 'Segoe UI, sans-serif' }}>
+                    <tspan fontSize="22" fontWeight="700" fill="#2d1f4e">{totalOperadoras}</tspan>
+                  </text>
+                  <text x="70" y="82" textAnchor="middle" style={{ fontFamily: 'Segoe UI, sans-serif' }}>
+                    <tspan fontSize="10" fill="#9a918a">vendas</tspan>
+                  </text>
+                </svg>
+              </div>
+
+              {/* Legenda */}
+              <div className="w-full space-y-2">
+                {segmentos.map((seg, i) => {
+                  const pct = totalOperadoras > 0 ? Math.round((seg.count / totalOperadoras) * 100) : 0
+                  return (
+                    <div key={i} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span
+                          className="w-2.5 h-2.5 rounded-full shrink-0"
+                          style={{ backgroundColor: seg.color }}
+                        />
+                        <span className="text-xs truncate" style={{ color: '#5a4e3c' }}>
+                          {seg.operadora}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-xs font-semibold" style={{ color: '#2d1f4e' }}>
+                          {seg.count}
+                        </span>
+                        <span className="text-xs w-8 text-right" style={{ color: '#9a918a' }}>
+                          {pct}%
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
