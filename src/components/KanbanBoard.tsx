@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Lead, EtapaLead, ETAPAS_LEAD } from '@/lib/types'
 import ConversaoModal from './ConversaoModal'
 import Link from 'next/link'
-import { Plus, Calendar, User } from 'lucide-react'
+import { Plus, Calendar, User, ArrowRight } from 'lucide-react'
 
 interface Props {
   leads: Lead[]
@@ -56,12 +56,7 @@ export default function KanbanBoard({ leads: inicial }: Props) {
       return
     }
 
-    if (novaEtapa === 'Vendido') {
-      const lead = inicial.find(l => l.id === draggableId) ?? leads.find(l => l.id === draggableId)
-      if (lead) setLeadConvertendo({ ...lead, etapa: 'Vendido' })
-    } else {
-      router.refresh()
-    }
+    router.refresh()
   }
 
   async function handleCancelarConversao() {
@@ -186,6 +181,18 @@ export default function KanbanBoard({ leads: inicial }: Props) {
                                   {l.responsavel ?? '—'}
                                 </span>
                               </div>
+
+                              {/* Botão converter — só na coluna Vendido */}
+                              {etapa === 'Vendido' && (
+                                <button
+                                  onClick={e => { e.stopPropagation(); setLeadConvertendo(l) }}
+                                  className="mt-2.5 w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-80"
+                                  style={{ backgroundColor: '#2d1f4e', color: '#ffffff' }}
+                                >
+                                  <ArrowRight size={11} />
+                                  Converter em Cliente
+                                </button>
+                              )}
                             </div>
                           )}
                         </Draggable>
