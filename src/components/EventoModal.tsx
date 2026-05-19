@@ -6,7 +6,7 @@ import {
   Compromisso, CompromissoInsert, TipoAgenda,
   STATUS_COMPROMISSO, STATUS_COR,
 } from '@/lib/types'
-import { X, Calendar, Plus } from 'lucide-react'
+import { X, Calendar, Plus, Trash2 } from 'lucide-react'
 
 interface Props {
   evento?: Compromisso
@@ -67,6 +67,22 @@ export default function EventoModal({ evento, dataInicial, onClose, onSalvo }: P
       setTipo(nome)
     }
     setAdicionando(false)
+  }
+
+  async function handleExcluir() {
+    if (!evento) return
+    if (!confirm(`Excluir "${evento.titulo}"? Esta ação não pode ser desfeita.`)) return
+    setLoading(true)
+    try {
+      const { error } = await supabase.from('agenda').delete().eq('id', evento.id)
+      if (error) throw error
+      onSalvo()
+      onClose()
+    } catch {
+      setErro('Erro ao excluir. Tente novamente.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleSalvar(e: React.FormEvent) {
@@ -209,6 +225,13 @@ export default function EventoModal({ evento, dataInicial, onClose, onSalvo }: P
           {erro && <p className="text-sm font-medium" style={{ color: '#b5455a' }}>{erro}</p>}
 
           <div className="flex gap-3 pt-1">
+            {evento && (
+              <button type="button" onClick={handleExcluir} disabled={loading}
+                className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: '#fee2e2', color: '#b91c1c' }}>
+                <Trash2 size={14} /> Excluir
+              </button>
+            )}
             <button type="button" onClick={onClose}
               className="flex-1 py-2.5 rounded-xl text-sm font-medium"
               style={{ backgroundColor: '#e8e4dd', color: '#5a4e3c' }}>
