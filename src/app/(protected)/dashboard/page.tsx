@@ -213,25 +213,26 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
 
         {/* Leads por Etapa */}
-        <div className="bg-white rounded-2xl border border-stone-200 p-6">
+        <div className="bg-white p-6" style={{ border: '1px solid #e8e4dd', borderRadius: '12px' }}>
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h3 className="text-sm font-semibold text-stone-800">Leads por Etapa</h3>
-              <p className="text-xs text-stone-400 mt-0.5">{leadsAtivos} leads ativos no pipeline</p>
+              <h3 className="text-sm font-semibold" style={{ color: '#2d1f4e' }}>Leads por Etapa</h3>
+              <p className="text-xs mt-0.5" style={{ color: '#9a918a' }}>{leadsAtivos} leads ativos no pipeline</p>
             </div>
             <Link
-              href="/pipeline"
-              className="text-xs text-violet-600 hover:text-violet-700 flex items-center gap-0.5 transition-colors"
+              href="/crm"
+              className="flex items-center gap-0.5 text-xs font-medium"
+              style={{ color: '#b89a6a' }}
             >
-              Ver pipeline <ChevronRight size={12} />
+              Ver CRM <ChevronRight size={12} />
             </Link>
           </div>
 
           {leadsAtivos === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Activity size={28} className="text-stone-200 mb-2" />
-              <p className="text-sm text-stone-400">Nenhum lead ativo no momento.</p>
-              <Link href="/crm/novo" className="text-xs text-violet-600 mt-2 hover:underline">
+              <Activity size={28} className="mb-2" style={{ color: '#e0dbd4' }} />
+              <p className="text-sm" style={{ color: '#9a918a' }}>Nenhum lead ativo no momento.</p>
+              <Link href="/crm/novo" className="text-xs mt-2 font-medium" style={{ color: '#b89a6a' }}>
                 Adicionar primeiro lead
               </Link>
             </div>
@@ -240,8 +241,8 @@ export default async function DashboardPage() {
               {leadsPorEtapa.map(({ etapa, count }) => (
                 <div key={etapa}>
                   <div className="flex justify-between items-center mb-1.5">
-                    <span className="text-xs font-medium text-stone-600">{etapa}</span>
-                    <span className="text-xs font-bold text-stone-800 tabular-nums">
+                    <span className="text-xs font-medium" style={{ color: '#5a4e3c' }}>{etapa}</span>
+                    <span className="text-xs font-bold tabular-nums" style={{ color: '#2d1f4e' }}>
                       {count} {count === 1 ? 'lead' : 'leads'}
                     </span>
                   </div>
@@ -258,15 +259,16 @@ export default async function DashboardPage() {
         </div>
 
         {/* Vendas do Mês por Tipo de Plano */}
-        <div className="bg-white rounded-2xl border border-stone-200 p-6">
+        <div className="bg-white p-6" style={{ border: '1px solid #e8e4dd', borderRadius: '12px' }}>
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h3 className="text-sm font-semibold text-stone-800">Vendas por Tipo de Plano</h3>
-              <p className="text-xs text-stone-400 mt-0.5 capitalize">{mesAtual}</p>
+              <h3 className="text-sm font-semibold" style={{ color: '#2d1f4e' }}>Vendas por Tipo de Plano</h3>
+              <p className="text-xs mt-0.5 capitalize" style={{ color: '#9a918a' }}>{mesAtual}</p>
             </div>
             <Link
               href="/clientes"
-              className="text-xs text-violet-600 hover:text-violet-700 flex items-center gap-0.5 transition-colors"
+              className="flex items-center gap-0.5 text-xs font-medium"
+              style={{ color: '#b89a6a' }}
             >
               Ver clientes <ChevronRight size={12} />
             </Link>
@@ -274,26 +276,29 @@ export default async function DashboardPage() {
 
           {vendasPorTipo.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <BarChart3 size={28} className="text-stone-200 mb-2" />
-              <p className="text-sm text-stone-400">Nenhuma venda registrada este mês.</p>
+              <BarChart3 size={28} className="mb-2" style={{ color: '#e0dbd4' }} />
+              <p className="text-sm" style={{ color: '#9a918a' }}>Nenhuma venda registrada este mês.</p>
             </div>
           ) : (
             <div className="space-y-4">
               {vendasPorTipo.map(({ tipo, total, count }) => (
                 <div key={tipo}>
                   <div className="flex justify-between items-center mb-1.5">
-                    <span className="text-xs font-medium text-stone-600">{tipo}</span>
+                    <span className="text-xs font-medium" style={{ color: '#5a4e3c' }}>{tipo}</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-stone-400">({count})</span>
-                      <span className="text-xs font-bold text-emerald-700 tabular-nums">
+                      <span className="text-xs" style={{ color: '#9a918a' }}>({count})</span>
+                      <span className="text-xs font-bold tabular-nums" style={{ color: '#2e8b57' }}>
                         R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </span>
                     </div>
                   </div>
-                  <div className="h-2.5 bg-stone-100 rounded-full overflow-hidden">
+                  <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#f0ece6' }}>
                     <div
-                      className="h-full bg-emerald-400 rounded-full transition-all duration-700"
-                      style={{ width: `${Math.max((total / maxVendas) * 100, 4)}%` }}
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{
+                        width: `${Math.max((total / maxVendas) * 100, 4)}%`,
+                        backgroundColor: '#b89a6a',
+                      }}
                     />
                   </div>
                 </div>
