@@ -25,18 +25,36 @@ export const TIPOS_PLANO = [
   'Outro',
 ] as const
 
+export const TIPOS_PLANO_LEAD = [
+  'Individual',
+  'Familiar',
+  'Empresarial',
+  'Odontológico',
+] as const
+
+export const ORIGENS_LEAD = [
+  'Instagram',
+  'Indicação',
+  'WhatsApp',
+  'Site',
+  'Outro',
+] as const
+
 export interface Lead {
   id: string
-  nome: string
+  nome: string | null
   telefone: string | null
   tipo_plano: string | null
   operadora: string | null
   responsavel: string | null
+  origem: string | null
+  o_que_procura: string | null
+  observacoes: string | null
   etapa: EtapaLead
   criado_em: string
 }
 
-export type LeadInsert = Omit<Lead, 'id' | 'criado_em'>
+export type LeadInsert = Omit<Lead, 'id' | 'criado_em'> & { criado_em?: string | null }
 
 export interface Cliente {
   id: string

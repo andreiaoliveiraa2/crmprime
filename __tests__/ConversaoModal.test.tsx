@@ -21,6 +21,9 @@ const lead: Lead = {
   tipo_plano: 'Saúde',
   operadora: null,
   responsavel: null,
+  origem: null,
+  o_que_procura: null,
+  observacoes: null,
   etapa: 'Vendido',
   criado_em: '',
 }

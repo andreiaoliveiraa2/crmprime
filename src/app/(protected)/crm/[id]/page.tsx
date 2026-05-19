@@ -18,9 +18,11 @@ export default async function EditarLeadPage({ params }: Props) {
   if (!lead) notFound()
 
   return (
-    <div className="p-6 md:p-8">
-      <h1 className="text-2xl font-bold text-stone-800 mb-2">Editar Lead</h1>
-      <p className="text-sm text-stone-500 mb-6">{lead.nome}</p>
+    <div className="p-5 md:p-7">
+      <div className="mb-6">
+        <h1 className="text-xl font-bold" style={{ color: '#2d1f4e' }}>Editar Lead</h1>
+        <p className="text-sm mt-0.5" style={{ color: '#9a918a' }}>{lead.nome ?? lead.telefone ?? 'Lead sem nome'}</p>
+      </div>
       <LeadForm lead={lead} />
     </div>
   )

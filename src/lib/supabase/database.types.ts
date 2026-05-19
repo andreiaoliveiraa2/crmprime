@@ -69,8 +69,11 @@ export type Database = {
           criado_em: string | null
           etapa: string
           id: string
-          nome: string
+          nome: string | null
+          o_que_procura: string | null
+          observacoes: string | null
           operadora: string | null
+          origem: string | null
           responsavel: string | null
           telefone: string | null
           tipo_plano: string | null
@@ -79,8 +82,11 @@ export type Database = {
           criado_em?: string | null
           etapa?: string
           id?: string
-          nome: string
+          nome?: string | null
+          o_que_procura?: string | null
+          observacoes?: string | null
           operadora?: string | null
+          origem?: string | null
           responsavel?: string | null
           telefone?: string | null
           tipo_plano?: string | null
@@ -89,8 +95,11 @@ export type Database = {
           criado_em?: string | null
           etapa?: string
           id?: string
-          nome?: string
+          nome?: string | null
+          o_que_procura?: string | null
+          observacoes?: string | null
           operadora?: string | null
+          origem?: string | null
           responsavel?: string | null
           telefone?: string | null
           tipo_plano?: string | null

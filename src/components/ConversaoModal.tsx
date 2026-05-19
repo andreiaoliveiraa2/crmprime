@@ -39,7 +39,7 @@ export default function ConversaoModal({ lead, onClose, onCancelar, onReverteFec
     setLoading(true)
 
     const payload: ClienteInsert = {
-      nome: lead.nome,
+      nome: lead.nome ?? lead.telefone ?? 'Lead sem nome',
       contato: telefone || null,
       email: email || null,
       tipo_plano: tipo_plano || null,
@@ -80,7 +80,7 @@ export default function ConversaoModal({ lead, onClose, onCancelar, onReverteFec
         <form onSubmit={handleSalvar} className="p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1">Nome</label>
-            <input type="text" value={lead.nome} disabled
+            <input type="text" value={lead.nome ?? ''} disabled
               className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm bg-stone-50 text-stone-400" />
           </div>
 

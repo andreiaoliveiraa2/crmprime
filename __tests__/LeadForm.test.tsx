@@ -38,6 +38,9 @@ describe('LeadForm', () => {
       tipo_plano: 'Saúde',
       operadora: null,
       responsavel: null,
+      origem: null,
+      o_que_procura: null,
+      observacoes: null,
       etapa: 'Cotação',
       criado_em: '',
     }

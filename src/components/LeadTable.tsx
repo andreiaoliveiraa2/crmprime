@@ -33,7 +33,7 @@ export default function LeadTable({ leads }: Props) {
     const matchFiltro = filtro === 'Todos' || l.etapa === filtro
     const matchBusca =
       busca === '' ||
-      l.nome.toLowerCase().includes(busca.toLowerCase()) ||
+      (l.nome ?? '').toLowerCase().includes(busca.toLowerCase()) ||
       (l.telefone ?? '').includes(busca)
     return matchFiltro && matchBusca
   })

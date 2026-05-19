@@ -29,8 +29,8 @@ jest.mock('next/navigation', () => ({
 }))
 
 const leads: Lead[] = [
-  { id: '1', nome: 'Ana Lima',    telefone: null, tipo_plano: null,    operadora: null, responsavel: null, etapa: 'Novo Lead',  criado_em: '' },
-  { id: '2', nome: 'Bruno Costa', telefone: null, tipo_plano: 'Saúde', operadora: null, responsavel: null, etapa: 'Negociação', criado_em: '' },
+  { id: '1', nome: 'Ana Lima',    telefone: null, tipo_plano: null,    operadora: null, responsavel: null, origem: null, o_que_procura: null, observacoes: null, etapa: 'Novo Lead',  criado_em: '' },
+  { id: '2', nome: 'Bruno Costa', telefone: null, tipo_plano: 'Saúde', operadora: null, responsavel: null, origem: null, o_que_procura: null, observacoes: null, etapa: 'Negociação', criado_em: '' },
 ]
 
 describe('KanbanBoard', () => {
