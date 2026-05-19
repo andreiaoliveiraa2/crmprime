@@ -64,8 +64,8 @@ export default function Sidebar() {
         `}
       >
         <div className="p-6 border-b border-stone-200">
-          <h2 className="text-base font-bold text-stone-800">Gestão Seguros</h2>
-          <p className="text-xs text-stone-500 mt-0.5">CRM Profissional</p>
+          <h2 className="text-base font-bold text-stone-800">A2 Prime</h2>
+          <p className="text-xs text-stone-500 mt-0.5">Corretora de Seguros</p>
         </div>
 
         <nav className="flex-1 p-4 space-y-1">

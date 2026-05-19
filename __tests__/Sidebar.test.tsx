@@ -35,6 +35,6 @@ describe('Sidebar', () => {
 
   it('renders brand name', () => {
     render(<Sidebar />)
-    expect(screen.getByText('Gestão Seguros')).toBeInTheDocument()
+    expect(screen.getByText('A2 Prime')).toBeInTheDocument()
   })
 })

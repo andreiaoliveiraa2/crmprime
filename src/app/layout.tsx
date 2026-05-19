@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CRM Seguros",
-  description: "Sistema de gestão de clientes para corretora de seguros e planos de saúde",
+  title: "A2 Prime | Corretora de Seguros",
+  description: "Sistema de gestão da A2 Prime Corretora de Seguros",
 };
 
 export default function RootLayout({
