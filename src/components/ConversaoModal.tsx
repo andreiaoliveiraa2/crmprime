@@ -46,15 +46,25 @@ export default function ConversaoModal({ lead, onClose, onCancelar, onReverteFec
     setLoading(true)
 
     const payload: ClienteInsert = {
-      nome:            lead.nome ?? lead.telefone ?? 'Lead sem nome',
-      contato:         telefone || null,
-      email:           email || null,
-      tipo_plano:      tipo_plano || null,
-      operadora:       operadora || null,
+      nome:             lead.nome ?? lead.telefone ?? 'Lead sem nome',
+      contato:          telefone || null,
+      email:            email || null,
+      tipo_plano:       tipo_plano || null,
+      operadora:        operadora || null,
       quantidade_vidas: qtdVidas ? Number(qtdVidas) : null,
-      valor_plano:     valor,
-      observacoes:     observacoes || null,
-      lead_id:         lead.id,
+      valor_plano:      valor,
+      observacoes:      observacoes || null,
+      lead_id:          lead.id,
+      cpf:              null,
+      data_nascimento:  null,
+      endereco:         null,
+      administradora:   null,
+      numero_contrato:  null,
+      data_venda:       null,
+      data_implantacao: null,
+      status:           'Ativo',
+      vendedor:         lead.vendedor ?? null,
+      comissao:         null,
     }
 
     const { error } = await supabase.from('clientes').insert(payload)

@@ -43,6 +43,8 @@ describe('ClienteFormPosVenda', () => {
     const cliente: Cliente = {
       id: '1', nome: 'Maria Souza', contato: '(83) 99999-9999', email: 'maria@email.com',
       tipo_plano: 'Saúde', operadora: null, quantidade_vidas: null, valor_plano: 350, observacoes: 'Cliente VIP', lead_id: null, criado_em: '',
+      cpf: null, data_nascimento: null, endereco: null, administradora: null, numero_contrato: null,
+      data_venda: null, data_implantacao: null, status: 'Ativo', vendedor: null, comissao: null,
     }
     render(<ClienteFormPosVenda cliente={cliente} />)
     expect(screen.getByDisplayValue('Maria Souza')).toBeInTheDocument()

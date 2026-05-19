@@ -65,15 +65,28 @@ export interface Vendedor {
 export type LeadInsert = Omit<Lead, 'id' | 'criado_em'> & { criado_em?: string | null }
 export type VendedorInsert = Omit<Vendedor, 'id' | 'criado_em'>
 
+export type StatusCliente = 'Ativo' | 'Inativo' | 'Cancelado'
+export const STATUS_CLIENTE: StatusCliente[] = ['Ativo', 'Inativo', 'Cancelado']
+
 export interface Cliente {
   id: string
   nome: string
+  cpf: string | null
+  data_nascimento: string | null
+  endereco: string | null
   contato: string | null
   email: string | null
   tipo_plano: string | null
   operadora: string | null
+  administradora: string | null
   quantidade_vidas: number | null
   valor_plano: number | null
+  numero_contrato: string | null
+  data_venda: string | null
+  data_implantacao: string | null
+  status: StatusCliente
+  vendedor: string | null
+  comissao: number | null
   observacoes: string | null
   lead_id: string | null
   criado_em: string

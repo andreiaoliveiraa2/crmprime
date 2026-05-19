@@ -15,12 +15,16 @@ jest.mock('next/navigation', () => ({
   useRouter: () => ({ refresh: jest.fn() }),
 }))
 
+const base = { cpf: null, data_nascimento: null, endereco: null, administradora: null, numero_contrato: null, data_venda: null, data_implantacao: null, status: 'Ativo' as const, vendedor: null, comissao: null }
+
 const clientes: Cliente[] = [
   {
+    ...base,
     id: '1', nome: 'Ana Lima', contato: '(83) 99999-1111', email: 'ana@email.com',
     tipo_plano: 'Saúde', operadora: null, quantidade_vidas: null, valor_plano: 0, observacoes: null, lead_id: null, criado_em: '',
   },
   {
+    ...base,
     id: '2', nome: 'Bruno Costa', contato: null, email: null,
     tipo_plano: 'Odonto', operadora: null, quantidade_vidas: null, valor_plano: 0, observacoes: null, lead_id: null, criado_em: '',
   },
