@@ -104,27 +104,24 @@ export interface Cliente {
 export type ClienteInsert = Omit<Cliente, 'id' | 'criado_em'>
 
 export type TipoCompromisso =
-  | 'Reunião' | 'Ligação' | 'Follow-up' | 'Visita'
-  | 'Envio de Proposta' | 'Implantação' | 'Retorno' | 'Outro'
+  | 'Consultas Médicas' | 'Coworking' | 'Criar Conteúdo'
+  | 'Fazenda Aluguel'  | 'Reunião'
 
 export type StatusCompromisso = 'Agendado' | 'Concluído' | 'Cancelado'
 
 export const TIPOS_COMPROMISSO: TipoCompromisso[] = [
-  'Reunião', 'Ligação', 'Follow-up', 'Visita',
-  'Envio de Proposta', 'Implantação', 'Retorno', 'Outro',
+  'Consultas Médicas', 'Coworking', 'Criar Conteúdo',
+  'Fazenda Aluguel', 'Reunião',
 ]
 
 export const STATUS_COMPROMISSO: StatusCompromisso[] = ['Agendado', 'Concluído', 'Cancelado']
 
 export const TIPO_COR: Record<TipoCompromisso, string> = {
+  'Consultas Médicas': '#0891b2',
+  'Coworking':         '#1d4ed8',
+  'Criar Conteúdo':    '#7c3aed',
+  'Fazenda Aluguel':   '#15803d',
   'Reunião':           '#2d1f4e',
-  'Ligação':           '#1d4ed8',
-  'Follow-up':         '#b89a6a',
-  'Visita':            '#15803d',
-  'Envio de Proposta': '#c2410c',
-  'Implantação':       '#6b7280',
-  'Retorno':           '#be185d',
-  'Outro':             '#9a918a',
 }
 
 export const STATUS_COR: Record<StatusCompromisso, { bg: string; text: string }> = {

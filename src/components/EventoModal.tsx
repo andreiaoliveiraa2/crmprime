@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
-  Compromisso, CompromissoInsert,
+  Compromisso, CompromissoInsert, TipoCompromisso,
   TIPOS_COMPROMISSO, STATUS_COMPROMISSO, TIPO_COR, STATUS_COR,
 } from '@/lib/types'
 import { X, Calendar } from 'lucide-react'
@@ -32,7 +32,7 @@ export default function EventoModal({ evento, dataInicial, onClose, onSalvo }: P
     evento ? toLocalDateTimeInput(evento.data_hora)
     : dataInicial ? `${dataInicial}T09:00` : ''
   )
-  const [tipo, setTipo]             = useState(evento?.tipo ?? 'Reunião')
+  const [tipo, setTipo]             = useState<TipoCompromisso>(evento?.tipo ?? 'Reunião')
   const [status, setStatus]         = useState<Compromisso['status']>(evento?.status ?? 'Agendado')
   const [leadId, setLeadId]         = useState(evento?.lead_id ?? '')
   const [clienteId, setClienteId]   = useState(evento?.cliente_id ?? '')
@@ -64,7 +64,7 @@ export default function EventoModal({ evento, dataInicial, onClose, onSalvo }: P
     const payload: CompromissoInsert = {
       titulo: titulo.trim(),
       data_hora: new Date(dataHora).toISOString(),
-      tipo: tipo as Compromisso['tipo'],
+      tipo,
       status: status as Compromisso['status'],
       lead_id: leadId || null,
       cliente_id: clienteId || null,
