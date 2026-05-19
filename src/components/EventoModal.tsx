@@ -165,9 +165,10 @@ export default function EventoModal({ evento, dataInicial, onClose, onSalvo }: P
                 <button key={t.nome} type="button" onClick={() => setTipo(t.nome)}
                   className="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
                   style={{
-                    backgroundColor: tipo === t.nome ? t.cor : `${t.cor}15`,
-                    color:           tipo === t.nome ? '#ffffff' : t.cor,
-                    border:          `1px solid ${t.cor}40`,
+                    backgroundColor: tipo === t.nome ? t.cor : `${t.cor}30`,
+                    color:           '#ffffff',
+                    border:          `1px solid ${t.cor}`,
+                    opacity:         tipo === t.nome ? 1 : 0.65,
                   }}>
                   {t.nome}
                 </button>
