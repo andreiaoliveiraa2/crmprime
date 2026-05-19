@@ -111,8 +111,8 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
           <div className="md:col-span-2">
-            <label className={labelCls} style={labelStyle}>Nome Completo <span style={{ color: '#b5455a' }}>*</span></label>
-            <input type="text" value={nome} onChange={e => setNome(e.target.value)}
+            <label htmlFor="cf-nome" className={labelCls} style={labelStyle}>Nome Completo <span style={{ color: '#b5455a' }}>*</span></label>
+            <input id="cf-nome" type="text" value={nome} onChange={e => setNome(e.target.value)}
               placeholder="Nome completo do cliente"
               className={inputCls} style={inputStyle} />
           </div>
@@ -131,15 +131,15 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
           </div>
 
           <div>
-            <label className={labelCls} style={labelStyle}>Telefone / WhatsApp</label>
-            <input type="text" value={contato} onChange={e => setContato(e.target.value)}
+            <label htmlFor="cf-contato" className={labelCls} style={labelStyle}>Telefone / WhatsApp</label>
+            <input id="cf-contato" type="text" value={contato} onChange={e => setContato(e.target.value)}
               placeholder="(00) 00000-0000"
               className={inputCls} style={inputStyle} />
           </div>
 
           <div>
-            <label className={labelCls} style={labelStyle}>E-mail</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+            <label htmlFor="cf-email" className={labelCls} style={labelStyle}>E-mail</label>
+            <input id="cf-email" type="email" value={email} onChange={e => setEmail(e.target.value)}
               placeholder="email@exemplo.com"
               className={inputCls} style={inputStyle} />
           </div>
@@ -175,8 +175,8 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
           </div>
 
           <div>
-            <label className={labelCls} style={labelStyle}>Tipo de Plano</label>
-            <select value={tipo_plano} onChange={e => setTipoPlano(e.target.value)}
+            <label htmlFor="cf-tipo_plano" className={labelCls} style={labelStyle}>Tipo de Plano</label>
+            <select id="cf-tipo_plano" value={tipo_plano} onChange={e => setTipoPlano(e.target.value)}
               className={inputCls} style={{ ...inputStyle, color: tipo_plano ? '#1a1a1a' : '#9a918a' }}>
               <option value="">Selecione...</option>
               {TIPOS_PLANO.map(t => <option key={t} value={t}>{t}</option>)}
@@ -191,8 +191,8 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
           </div>
 
           <div>
-            <label className={labelCls} style={labelStyle}>Valor do Plano (R$)</label>
-            <input type="text" value={valor_plano} onChange={e => setValorPlano(e.target.value)}
+            <label htmlFor="cf-valor_plano" className={labelCls} style={labelStyle}>Valor do Plano (R$)</label>
+            <input id="cf-valor_plano" type="text" value={valor_plano} onChange={e => setValorPlano(e.target.value)}
               placeholder="0,00"
               className={inputCls} style={inputStyle} />
           </div>
@@ -248,8 +248,8 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
           </div>
 
           <div className="md:col-span-2">
-            <label className={labelCls} style={labelStyle}>Observações</label>
-            <textarea value={observacoes} onChange={e => setObservacoes(e.target.value)}
+            <label htmlFor="cf-observacoes" className={labelCls} style={labelStyle}>Observações</label>
+            <textarea id="cf-observacoes" value={observacoes} onChange={e => setObservacoes(e.target.value)}
               rows={3} placeholder="Informações adicionais..."
               className={`${inputCls} resize-none`} style={inputStyle} />
           </div>

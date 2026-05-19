@@ -77,7 +77,8 @@ export default function ConversaoModal({ lead, onClose, onCancelar, onReverteFec
       return
     }
 
-    await supabase.from('leads').delete().eq('id', lead.id)
+    const { error: deleteError } = await supabase.from('leads').delete().eq('id', lead.id)
+    if (deleteError) console.error('Lead não removido após conversão:', deleteError.message)
 
     setLoading(false)
     onClose()
@@ -117,14 +118,14 @@ export default function ConversaoModal({ lead, onClose, onCancelar, onReverteFec
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelCls} style={labelStyle}>Telefone</label>
-              <input type="text" value={telefone} onChange={e => setTelefone(e.target.value)}
+              <label htmlFor="conv-telefone" className={labelCls} style={labelStyle}>Telefone</label>
+              <input id="conv-telefone" type="text" value={telefone} onChange={e => setTelefone(e.target.value)}
                 placeholder="(00) 00000-0000"
                 className={inputCls} style={inputStyle} />
             </div>
             <div>
-              <label className={labelCls} style={labelStyle}>E-mail</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+              <label htmlFor="conv-email" className={labelCls} style={labelStyle}>E-mail</label>
+              <input id="conv-email" type="email" value={email} onChange={e => setEmail(e.target.value)}
                 placeholder="email@exemplo.com"
                 className={inputCls} style={inputStyle} />
             </div>
@@ -151,10 +152,10 @@ export default function ConversaoModal({ lead, onClose, onCancelar, onReverteFec
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelCls} style={labelStyle}>
+              <label htmlFor="conv-valor" className={labelCls} style={labelStyle}>
                 Valor do Plano (R$) <span style={{ color: '#b5455a' }}>*</span>
               </label>
-              <input type="text" value={valor_plano} onChange={e => setValorPlano(e.target.value)}
+              <input id="conv-valor" type="text" value={valor_plano} onChange={e => setValorPlano(e.target.value)}
                 placeholder="0,00"
                 className={inputCls} style={inputStyle} />
             </div>

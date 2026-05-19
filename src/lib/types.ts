@@ -50,7 +50,7 @@ export interface Lead {
   origem: string | null
   o_que_procura: string | null
   observacoes: string | null
-  vendedor?: string | null
+  vendedor: string | null
   etapa: EtapaLead
   criado_em: string
 }

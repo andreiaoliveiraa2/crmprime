@@ -1,11 +1,12 @@
 'use client'
 
-import { Compromisso, TIPO_COR, STATUS_COR } from '@/lib/types'
+import { Compromisso, STATUS_COR } from '@/lib/types'
 import { Pencil } from 'lucide-react'
 
 interface Props {
   eventos: Compromisso[]
   feriado?: string
+  tiposCores: Record<string, string>
   onEditar: (e: Compromisso) => void
 }
 
@@ -19,7 +20,7 @@ function isUrgente(iso: string) {
   return diff > 0 && diff < 60 * 60 * 1000
 }
 
-export default function AgendaDia({ eventos, feriado, onEditar }: Props) {
+export default function AgendaDia({ eventos, feriado, tiposCores, onEditar }: Props) {
   const ordenados = [...eventos].sort((a, b) =>
     new Date(a.data_hora).getTime() - new Date(b.data_hora).getTime()
   )
@@ -40,7 +41,7 @@ export default function AgendaDia({ eventos, feriado, onEditar }: Props) {
           <p className="text-sm" style={{ color: '#9a918a' }}>Nenhum compromisso para este dia.</p>
         </div>
       ) : ordenados.map(ev => {
-        const cor = TIPO_COR[ev.tipo] ?? '#6b7280'
+        const cor = tiposCores[ev.tipo] ?? '#6b7280'
         const sc = STATUS_COR[ev.status]
         const urgente = isUrgente(ev.data_hora)
         return (

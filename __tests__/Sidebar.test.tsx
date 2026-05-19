@@ -6,9 +6,21 @@ jest.mock('next/navigation', () => ({
   useRouter: () => ({ push: jest.fn() }),
 }))
 
+const mockAgendaChain = {
+  select: () => ({
+    gte: () => ({
+      lte: () => Promise.resolve({ count: 0, error: null }),
+    }),
+  }),
+}
+
 jest.mock('@/lib/supabase/client', () => ({
   createClient: () => ({
     auth: { signOut: jest.fn().mockResolvedValue({}) },
+    from: (table: string) => {
+      if (table === 'agenda') return mockAgendaChain
+      return {}
+    },
   }),
 }))
 

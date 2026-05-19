@@ -29,19 +29,19 @@ jest.mock('next/navigation', () => ({
 }))
 
 const leads: Lead[] = [
-  { id: '1', nome: 'Ana Lima',    telefone: null, tipo_plano: null,    operadora: null, responsavel: null, origem: null, o_que_procura: null, observacoes: null, etapa: 'Novo Lead',  criado_em: '' },
-  { id: '2', nome: 'Bruno Costa', telefone: null, tipo_plano: 'Saúde', operadora: null, responsavel: null, origem: null, o_que_procura: null, observacoes: null, etapa: 'Negociação', criado_em: '' },
+  { id: '1', nome: 'Ana Lima',    telefone: null, tipo_plano: null,    operadora: null, responsavel: null, origem: null, o_que_procura: null, observacoes: null, vendedor: null, etapa: 'Novo Lead',  criado_em: '' },
+  { id: '2', nome: 'Bruno Costa', telefone: null, tipo_plano: 'Saúde', operadora: null, responsavel: null, origem: null, o_que_procura: null, observacoes: null, vendedor: null, etapa: 'Negociação', criado_em: '' },
 ]
 
 describe('KanbanBoard', () => {
   it('renders all 6 stage columns in correct order', () => {
     render(<KanbanBoard leads={leads} />)
-    expect(screen.getByText('Novo Lead')).toBeInTheDocument()
-    expect(screen.getByText('Contato Feito')).toBeInTheDocument()
-    expect(screen.getByText('Cotação')).toBeInTheDocument()
-    expect(screen.getByText('Negociação')).toBeInTheDocument()
-    expect(screen.getByText('Vendido')).toBeInTheDocument()
-    expect(screen.getByText('Perdido')).toBeInTheDocument()
+    expect(screen.getAllByText('Novo Lead')[0]).toBeInTheDocument()
+    expect(screen.getAllByText('Contato Feito')[0]).toBeInTheDocument()
+    expect(screen.getAllByText('Cotação')[0]).toBeInTheDocument()
+    expect(screen.getAllByText('Negociação')[0]).toBeInTheDocument()
+    expect(screen.getAllByText('Vendido')[0]).toBeInTheDocument()
+    expect(screen.getAllByText('Perdido')[0]).toBeInTheDocument()
   })
 
   it('does not render removed stages', () => {

@@ -2,16 +2,23 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import ConversaoModal from '@/components/ConversaoModal'
 import { Lead } from '@/lib/types'
 
+jest.mock('@/lib/useOperadoras', () => ({ useOperadoras: () => [] }))
+
 jest.mock('@/lib/supabase/client', () => ({
   createClient: () => ({
-    from: () => ({
-      insert: jest.fn().mockResolvedValue({ error: null }),
-    }),
+    from: (table: string) => {
+      if (table === 'leads') return {
+        delete: () => ({ eq: jest.fn().mockResolvedValue({ error: null }) }),
+      }
+      return {
+        insert: jest.fn().mockResolvedValue({ error: null }),
+      }
+    },
   }),
 }))
 
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ refresh: jest.fn() }),
+  useRouter: () => ({ refresh: jest.fn(), push: jest.fn() }),
 }))
 
 const lead: Lead = {
@@ -24,6 +31,7 @@ const lead: Lead = {
   origem: null,
   o_que_procura: null,
   observacoes: null,
+  vendedor: null,
   etapa: 'Vendido',
   criado_em: '',
 }
@@ -31,7 +39,7 @@ const lead: Lead = {
 describe('ConversaoModal', () => {
   it('renders lead name pre-filled', () => {
     render(<ConversaoModal lead={lead} onClose={jest.fn()} onCancelar={jest.fn()} />)
-    expect(screen.getByDisplayValue('Maria Silva')).toBeInTheDocument()
+    expect(screen.getByText('Maria Silva')).toBeInTheDocument()
   })
 
   it('renders all required fields', () => {
@@ -43,7 +51,7 @@ describe('ConversaoModal', () => {
 
   it('shows error when valor is missing', async () => {
     render(<ConversaoModal lead={lead} onClose={jest.fn()} onCancelar={jest.fn()} />)
-    fireEvent.click(screen.getByRole('button', { name: /salvar como cliente/i }))
+    fireEvent.click(screen.getByRole('button', { name: /converter em cliente/i }))
     expect(await screen.findByText(/informe um valor válido/i)).toBeInTheDocument()
   })
 

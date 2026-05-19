@@ -1,11 +1,12 @@
 'use client'
 
-import { Compromisso, TIPO_COR } from '@/lib/types'
+import { Compromisso } from '@/lib/types'
 
 interface Props {
   eventos: Compromisso[]
   semanaInicio: Date
   feriados: Record<string, string>
+  tiposCores: Record<string, string>
   onEditar: (e: Compromisso) => void
   onDiaClick: (data: string) => void
 }
@@ -26,7 +27,7 @@ function isHoje(d: Date) {
   return d.getDate() === h.getDate() && d.getMonth() === h.getMonth() && d.getFullYear() === h.getFullYear()
 }
 
-export default function AgendaSemana({ eventos, semanaInicio, feriados, onEditar, onDiaClick }: Props) {
+export default function AgendaSemana({ eventos, semanaInicio, feriados, tiposCores, onEditar, onDiaClick }: Props) {
   const dias = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(semanaInicio)
     d.setDate(d.getDate() + i)
@@ -65,7 +66,7 @@ export default function AgendaSemana({ eventos, semanaInicio, feriados, onEditar
 
             <div className="space-y-1">
               {evsDia.slice(0, 3).map(ev => {
-                const cor = TIPO_COR[ev.tipo] ?? '#6b7280'
+                const cor = tiposCores[ev.tipo] ?? '#6b7280'
                 return (
                   <button key={ev.id} onClick={() => onEditar(ev)}
                     className="w-full text-left px-2 py-1.5 rounded-lg text-xs font-medium truncate hover:opacity-80 transition-opacity"

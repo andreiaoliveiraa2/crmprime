@@ -19,10 +19,9 @@ export default function OperadorasSection() {
   const supabase = createClient()
 
   async function carregar() {
-    try {
-      const { data } = await supabase.from('operadoras').select('*').order('nome')
-      if (data) setOperadoras(data)
-    } catch { /* silently ignore */ }
+    const { data, error } = await supabase.from('operadoras').select('*').order('nome')
+    if (error) { setErro('Erro ao carregar operadoras.'); return }
+    if (data) setOperadoras(data)
   }
 
   useEffect(() => { carregar() }, [])
@@ -56,18 +55,16 @@ export default function OperadorasSection() {
   }
 
   async function handleToggleAtivo(op: Operadora) {
-    try {
-      await supabase.from('operadoras').update({ ativo: !op.ativo }).eq('id', op.id)
-      await carregar()
-    } catch { /* silently ignore */ }
+    const { error } = await supabase.from('operadoras').update({ ativo: !op.ativo }).eq('id', op.id)
+    if (error) { setErro('Erro ao atualizar status.'); return }
+    await carregar()
   }
 
   async function handleExcluir(id: string, nome: string) {
     if (!confirm(`Excluir "${nome}"?`)) return
-    try {
-      await supabase.from('operadoras').delete().eq('id', id)
-      await carregar()
-    } catch { /* silently ignore */ }
+    const { error } = await supabase.from('operadoras').delete().eq('id', id)
+    if (error) { setErro('Erro ao excluir.'); return }
+    await carregar()
   }
 
   return (

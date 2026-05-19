@@ -1,11 +1,12 @@
 'use client'
 
-import { Compromisso, TIPO_COR } from '@/lib/types'
+import { Compromisso } from '@/lib/types'
 
 interface Props {
   eventos: Compromisso[]
   mes: Date
   feriados: Record<string, string>
+  tiposCores: Record<string, string>
   onDiaClick: (data: string) => void
 }
 
@@ -20,7 +21,7 @@ function isHoje(y: number, m: number, d: number) {
   return h.getFullYear() === y && h.getMonth() === m && h.getDate() === d
 }
 
-export default function AgendaMes({ eventos, mes, feriados, onDiaClick }: Props) {
+export default function AgendaMes({ eventos, mes, feriados, tiposCores, onDiaClick }: Props) {
   const ano = mes.getFullYear()
   const mesNum = mes.getMonth()
 
@@ -80,7 +81,7 @@ export default function AgendaMes({ eventos, mes, feriados, onDiaClick }: Props)
                   </div>
                 )}
                 {evsDia.slice(0, feriadoNome ? 1 : 2).map(ev => {
-                  const cor = TIPO_COR[ev.tipo] ?? '#6b7280'
+                  const cor = tiposCores[ev.tipo] ?? '#6b7280'
                   return (
                     <div key={ev.id}
                       className="text-xs px-1.5 py-0.5 rounded-md truncate font-medium"

@@ -21,7 +21,7 @@ const clientes: Cliente[] = [
   {
     ...base,
     id: '1', nome: 'Ana Lima', contato: '(83) 99999-1111', email: 'ana@email.com',
-    tipo_plano: 'Saúde', operadora: null, quantidade_vidas: null, valor_plano: 0, observacoes: null, lead_id: null, criado_em: '',
+    tipo_plano: 'Saúde', operadora: null, quantidade_vidas: null, valor_plano: 350, observacoes: null, lead_id: null, criado_em: '',
   },
   {
     ...base,

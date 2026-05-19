@@ -2,6 +2,8 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import LeadForm from '@/components/LeadForm'
 import { Lead } from '@/lib/types'
 
+jest.mock('@/lib/useOperadoras', () => ({ useOperadoras: () => ['Amil', 'Bradesco Saúde', 'Unimed'] }))
+
 const mockVendedoresChain = {
   select: () => ({
     eq: () => ({
@@ -52,6 +54,7 @@ describe('LeadForm', () => {
       origem: null,
       o_que_procura: null,
       observacoes: null,
+      vendedor: null,
       etapa: 'Cotação',
       criado_em: '2026-01-01T00:00:00Z',
     }

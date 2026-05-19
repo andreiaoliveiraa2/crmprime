@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { Compromisso } from '@/lib/types'
 import { feriadosMapa } from '@/lib/feriados'
 import AgendaDia from './AgendaDia'
@@ -53,15 +54,27 @@ export default function AgendaClient({ eventos: inicial }: Props) {
   const [modalAberto, setModalAberto] = useState(false)
   const [eventoEditando, setEventoEditando] = useState<Compromisso | undefined>()
   const [eventos, setEventos] = useState(inicial)
+  const [tiposCores, setTiposCores] = useState<Record<string, string>>({})
 
   const router = useRouter()
 
   useEffect(() => { setEventos(inicial) }, [inicial])
 
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.from('tipos_agenda').select('nome,cor').then(({ data }) => {
+      if (data) {
+        const map: Record<string, string> = {}
+        for (const t of data as { nome: string; cor: string }[]) map[t.nome] = t.cor
+        setTiposCores(map)
+      }
+    })
+  }, [])
+
   const feriados = useMemo(() => {
     const ano = dataSelecionada.getFullYear()
     return feriadosMapa([ano - 1, ano, ano + 1])
-  }, [dataSelecionada.getFullYear()])
+  }, [dataSelecionada])
 
   const reload = useCallback(() => {
     router.refresh()
@@ -159,6 +172,7 @@ export default function AgendaClient({ eventos: inicial }: Props) {
         <AgendaDia
           eventos={eventosFiltrados()}
           feriado={feriados[isoDate(dataSelecionada)]}
+          tiposCores={tiposCores}
           onEditar={ev => { setEventoEditando(ev); setModalAberto(true) }}
         />
       )}
@@ -167,6 +181,7 @@ export default function AgendaClient({ eventos: inicial }: Props) {
           eventos={eventosFiltrados()}
           semanaInicio={semanaIni}
           feriados={feriados}
+          tiposCores={tiposCores}
           onEditar={ev => { setEventoEditando(ev); setModalAberto(true) }}
           onDiaClick={irParaDia}
         />
@@ -176,6 +191,7 @@ export default function AgendaClient({ eventos: inicial }: Props) {
           eventos={eventosFiltrados()}
           mes={dataSelecionada}
           feriados={feriados}
+          tiposCores={tiposCores}
           onDiaClick={irParaDia}
         />
       )}

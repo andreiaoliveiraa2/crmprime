@@ -2,6 +2,8 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import ClienteFormPosVenda from '@/components/ClienteFormPosVenda'
 import { Cliente } from '@/lib/types'
 
+jest.mock('@/lib/useOperadoras', () => ({ useOperadoras: () => [] }))
+
 const mockVendedoresChain = {
   select: () => ({
     eq: () => ({
