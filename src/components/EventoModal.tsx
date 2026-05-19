@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
-  Compromisso, CompromissoInsert, TipoCompromisso,
-  TIPOS_COMPROMISSO, STATUS_COMPROMISSO, TIPO_COR, STATUS_COR,
+  Compromisso, CompromissoInsert, TipoAgenda,
+  STATUS_COMPROMISSO, STATUS_COR,
 } from '@/lib/types'
-import { X, Calendar } from 'lucide-react'
+import { X, Calendar, Plus } from 'lucide-react'
 
 interface Props {
   evento?: Compromisso
@@ -20,6 +20,8 @@ const inputStyle = { borderColor: '#e8e4dd' }
 const labelCls = 'block text-xs font-semibold mb-1.5'
 const labelStyle = { color: '#2d1f4e' }
 
+const PALETTE = ['#b89a6a','#c2410c','#be185d','#0891b2','#9333ea','#0d9488','#dc2626','#6b7280']
+
 function toLocalDateTimeInput(iso: string) {
   const d = new Date(iso)
   const pad = (n: number) => String(n).padStart(2, '0')
@@ -27,52 +29,64 @@ function toLocalDateTimeInput(iso: string) {
 }
 
 export default function EventoModal({ evento, dataInicial, onClose, onSalvo }: Props) {
-  const [titulo, setTitulo]         = useState(evento?.titulo ?? '')
-  const [dataHora, setDataHora]     = useState(
+  const [titulo, setTitulo]     = useState(evento?.titulo ?? '')
+  const [dataHora, setDataHora] = useState(
     evento ? toLocalDateTimeInput(evento.data_hora)
     : dataInicial ? `${dataInicial}T09:00` : ''
   )
-  const [tipo, setTipo]             = useState<TipoCompromisso>(evento?.tipo ?? 'Reunião')
-  const [status, setStatus]         = useState<Compromisso['status']>(evento?.status ?? 'Agendado')
-  const [leadId, setLeadId]         = useState(evento?.lead_id ?? '')
-  const [clienteId, setClienteId]   = useState(evento?.cliente_id ?? '')
-  const [observacoes, setObs]       = useState(evento?.observacoes ?? '')
-  const [leads, setLeads]           = useState<{ id: string; nome: string | null; telefone: string | null }[]>([])
-  const [clientes, setClientes]     = useState<{ id: string; nome: string }[]>([])
-  const [loading, setLoading]       = useState(false)
-  const [erro, setErro]             = useState('')
+  const [tipo, setTipo]         = useState(evento?.tipo ?? '')
+  const [status, setStatus]     = useState<Compromisso['status']>(evento?.status ?? 'Agendado')
+  const [observacoes, setObs]   = useState(evento?.observacoes ?? '')
+  const [tipos, setTipos]       = useState<TipoAgenda[]>([])
+  const [novoTipo, setNovoTipo] = useState('')
+  const [adicionando, setAdicionando] = useState(false)
+  const [loading, setLoading]   = useState(false)
+  const [erro, setErro]         = useState('')
 
   const supabase = createClient()
-  const editando = !!evento
 
-  useEffect(() => {
-    supabase.from('leads').select('id,nome,telefone').order('nome').then(({ data }) => {
-      if (data) setLeads(data)
-    })
-    supabase.from('clientes').select('id,nome').order('nome').then(({ data }) => {
-      if (data) setClientes(data)
-    })
-  }, [])
+  async function carregarTipos() {
+    const { data } = await supabase.from('tipos_agenda').select('*').order('nome')
+    if (data) {
+      setTipos(data)
+      if (!evento?.tipo && data.length > 0) setTipo(data[0].nome)
+    }
+  }
+
+  useEffect(() => { carregarTipos() }, [])
+
+  async function handleAdicionarTipo() {
+    const nome = novoTipo.trim()
+    if (!nome) return
+    setAdicionando(true)
+    const cor = PALETTE[tipos.length % PALETTE.length]
+    const { error } = await supabase.from('tipos_agenda').insert({ nome, cor })
+    if (!error) {
+      setNovoTipo('')
+      await carregarTipos()
+      setTipo(nome)
+    }
+    setAdicionando(false)
+  }
 
   async function handleSalvar(e: React.FormEvent) {
     e.preventDefault()
     if (!titulo.trim()) { setErro('Informe o título.'); return }
-    if (!dataHora) { setErro('Informe a data e horário.'); return }
+    if (!dataHora)       { setErro('Informe a data e horário.'); return }
+    if (!tipo)           { setErro('Selecione um tipo.'); return }
     setLoading(true)
     setErro('')
 
     const payload: CompromissoInsert = {
-      titulo: titulo.trim(),
-      data_hora: new Date(dataHora).toISOString(),
+      titulo:     titulo.trim(),
+      data_hora:  new Date(dataHora).toISOString(),
       tipo,
-      status: status as Compromisso['status'],
-      lead_id: leadId || null,
-      cliente_id: clienteId || null,
+      status,
       observacoes: observacoes.trim() || null,
     }
 
     try {
-      if (editando) {
+      if (evento) {
         const { error } = await supabase.from('agenda').update(payload).eq('id', evento.id)
         if (error) throw error
       } else {
@@ -88,7 +102,7 @@ export default function EventoModal({ evento, dataInicial, onClose, onSalvo }: P
     }
   }
 
-  const corTipo = TIPO_COR[tipo as keyof typeof TIPO_COR] ?? '#2d1f4e'
+  const corAtual = tipos.find(t => t.nome === tipo)?.cor ?? '#6b7280'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -103,7 +117,7 @@ export default function EventoModal({ evento, dataInicial, onClose, onSalvo }: P
               <Calendar size={16} style={{ color: '#b89a6a' }} />
             </div>
             <h2 className="text-base font-bold text-white">
-              {editando ? 'Editar Compromisso' : 'Novo Compromisso'}
+              {evento ? 'Editar Compromisso' : 'Novo Compromisso'}
             </h2>
           </div>
           <button onClick={onClose} className="text-white/50 hover:text-white transition-colors">
@@ -111,7 +125,7 @@ export default function EventoModal({ evento, dataInicial, onClose, onSalvo }: P
           </button>
         </div>
 
-        {/* Form */}
+        {/* Formulário */}
         <form onSubmit={handleSalvar} className="p-5 space-y-4"
           style={{ backgroundColor: '#f4f1ec' }}>
 
@@ -120,7 +134,7 @@ export default function EventoModal({ evento, dataInicial, onClose, onSalvo }: P
               Título <span style={{ color: '#b5455a' }}>*</span>
             </label>
             <input type="text" value={titulo} onChange={e => setTitulo(e.target.value)}
-              placeholder="Ex: Reunião com cliente..."
+              placeholder="Ex: Reunião com parceiro..."
               className={inputCls} style={inputStyle} />
           </div>
 
@@ -129,7 +143,8 @@ export default function EventoModal({ evento, dataInicial, onClose, onSalvo }: P
               <label className={labelCls} style={labelStyle}>
                 Data e Horário <span style={{ color: '#b5455a' }}>*</span>
               </label>
-              <input type="datetime-local" value={dataHora} onChange={e => setDataHora(e.target.value)}
+              <input type="datetime-local" value={dataHora}
+                onChange={e => setDataHora(e.target.value)}
                 className={inputCls} style={inputStyle} />
             </div>
             <div>
@@ -142,49 +157,43 @@ export default function EventoModal({ evento, dataInicial, onClose, onSalvo }: P
             </div>
           </div>
 
+          {/* Tipo — chips dinâmicos */}
           <div>
             <label className={labelCls} style={labelStyle}>Tipo</label>
-            <div className="flex flex-wrap gap-2">
-              {TIPOS_COMPROMISSO.map(t => {
-                const cor = TIPO_COR[t]
-                const ativo = tipo === t
-                return (
-                  <button key={t} type="button" onClick={() => setTipo(t)}
-                    className="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
-                    style={{
-                      backgroundColor: ativo ? cor : `${cor}15`,
-                      color: ativo ? '#ffffff' : cor,
-                      border: `1px solid ${cor}40`,
-                    }}>
-                    {t}
-                  </button>
-                )
-              })}
+            <div className="flex flex-wrap gap-2 mb-2">
+              {tipos.map(t => (
+                <button key={t.nome} type="button" onClick={() => setTipo(t.nome)}
+                  className="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
+                  style={{
+                    backgroundColor: tipo === t.nome ? t.cor : `${t.cor}15`,
+                    color:           tipo === t.nome ? '#ffffff' : t.cor,
+                    border:          `1px solid ${t.cor}40`,
+                  }}>
+                  {t.nome}
+                </button>
+              ))}
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelCls} style={labelStyle}>Lead relacionado</label>
-              <select value={leadId} onChange={e => { setLeadId(e.target.value); if (e.target.value) setClienteId('') }}
-                className={inputCls} style={{ ...inputStyle, color: leadId ? '#1a1a1a' : '#9a918a' }}>
-                <option value="">Nenhum</option>
-                {leads.map(l => (
-                  <option key={l.id} value={l.id}>
-                    {l.nome ?? l.telefone ?? 'Lead sem nome'}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className={labelCls} style={labelStyle}>Cliente relacionado</label>
-              <select value={clienteId} onChange={e => { setClienteId(e.target.value); if (e.target.value) setLeadId('') }}
-                className={inputCls} style={{ ...inputStyle, color: clienteId ? '#1a1a1a' : '#9a918a' }}>
-                <option value="">Nenhum</option>
-                {clientes.map(c => (
-                  <option key={c.id} value={c.id}>{c.nome}</option>
-                ))}
-              </select>
+            {/* Adicionar novo tipo */}
+            <div className="flex gap-2 mt-1">
+              <input
+                type="text"
+                value={novoTipo}
+                onChange={e => setNovoTipo(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAdicionarTipo() }}}
+                placeholder="Novo tipo personalizado..."
+                className="flex-1 border rounded-xl px-3 py-2 text-xs bg-white focus:outline-none focus:ring-2"
+                style={{ borderColor: '#e8e4dd' }}
+              />
+              <button
+                type="button"
+                onClick={handleAdicionarTipo}
+                disabled={adicionando || !novoTipo.trim()}
+                className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold disabled:opacity-40 hover:opacity-80 transition-opacity"
+                style={{ backgroundColor: '#2d1f4e', color: '#ffffff' }}
+              >
+                <Plus size={12} /> Adicionar
+              </button>
             </div>
           </div>
 
@@ -206,7 +215,7 @@ export default function EventoModal({ evento, dataInicial, onClose, onSalvo }: P
             <button type="submit" disabled={loading}
               className="flex-1 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity"
               style={{ backgroundColor: '#2d1f4e', color: '#ffffff' }}>
-              {loading ? 'Salvando...' : editando ? 'Salvar' : 'Criar Compromisso'}
+              {loading ? 'Salvando...' : evento ? 'Salvar' : 'Criar Compromisso'}
             </button>
           </div>
         </form>

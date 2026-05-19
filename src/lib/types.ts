@@ -103,25 +103,24 @@ export interface Cliente {
 
 export type ClienteInsert = Omit<Cliente, 'id' | 'criado_em'>
 
-export type TipoCompromisso =
-  | 'Consultas Médicas' | 'Coworking' | 'Criar Conteúdo'
-  | 'Fazenda Aluguel'  | 'Reunião'
-
+export type TipoCompromisso = string
 export type StatusCompromisso = 'Agendado' | 'Concluído' | 'Cancelado'
-
-export const TIPOS_COMPROMISSO: TipoCompromisso[] = [
-  'Consultas Médicas', 'Coworking', 'Criar Conteúdo',
-  'Fazenda Aluguel', 'Reunião',
-]
 
 export const STATUS_COMPROMISSO: StatusCompromisso[] = ['Agendado', 'Concluído', 'Cancelado']
 
-export const TIPO_COR: Record<TipoCompromisso, string> = {
+export const TIPO_COR: Record<string, string> = {
   'Consultas Médicas': '#0891b2',
   'Coworking':         '#1d4ed8',
   'Criar Conteúdo':    '#7c3aed',
   'Fazenda Aluguel':   '#15803d',
   'Reunião':           '#2d1f4e',
+}
+
+export interface TipoAgenda {
+  id: string
+  nome: string
+  cor: string
+  criado_em: string
 }
 
 export const STATUS_COR: Record<StatusCompromisso, { bg: string; text: string }> = {
@@ -134,10 +133,8 @@ export interface Compromisso {
   id: string
   titulo: string
   data_hora: string
-  tipo: TipoCompromisso
+  tipo: string
   status: StatusCompromisso
-  lead_id: string | null
-  cliente_id: string | null
   observacoes: string | null
   criado_em: string
 }
