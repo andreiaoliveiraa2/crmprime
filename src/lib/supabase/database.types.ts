@@ -23,6 +23,8 @@ export type Database = {
           lead_id: string | null
           nome: string
           observacoes: string | null
+          operadora: string | null
+          quantidade_vidas: number | null
           tipo_plano: string | null
           valor_plano: number | null
         }
@@ -34,6 +36,8 @@ export type Database = {
           lead_id?: string | null
           nome: string
           observacoes?: string | null
+          operadora?: string | null
+          quantidade_vidas?: number | null
           tipo_plano?: string | null
           valor_plano?: number | null
         }
@@ -45,6 +49,8 @@ export type Database = {
           lead_id?: string | null
           nome?: string
           observacoes?: string | null
+          operadora?: string | null
+          quantidade_vidas?: number | null
           tipo_plano?: string | null
           valor_plano?: number | null
         }
@@ -64,6 +70,7 @@ export type Database = {
           etapa: string
           id: string
           nome: string
+          operadora: string | null
           telefone: string | null
           tipo_plano: string | null
         }
@@ -72,6 +79,7 @@ export type Database = {
           etapa?: string
           id?: string
           nome: string
+          operadora?: string | null
           telefone?: string | null
           tipo_plano?: string | null
         }
@@ -80,6 +88,7 @@ export type Database = {
           etapa?: string
           id?: string
           nome?: string
+          operadora?: string | null
           telefone?: string | null
           tipo_plano?: string | null
         }

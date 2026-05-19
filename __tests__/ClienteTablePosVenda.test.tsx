@@ -18,11 +18,11 @@ jest.mock('next/navigation', () => ({
 const clientes: Cliente[] = [
   {
     id: '1', nome: 'Ana Lima', contato: '(83) 99999-1111', email: 'ana@email.com',
-    tipo_plano: 'Saúde', valor_plano: 350, observacoes: null, lead_id: null, criado_em: '',
+    tipo_plano: 'Saúde', operadora: null, quantidade_vidas: null, valor_plano: 0, observacoes: null, lead_id: null, criado_em: '',
   },
   {
     id: '2', nome: 'Bruno Costa', contato: null, email: null,
-    tipo_plano: 'Odonto', valor_plano: 120, observacoes: null, lead_id: null, criado_em: '',
+    tipo_plano: 'Odonto', operadora: null, quantidade_vidas: null, valor_plano: 0, observacoes: null, lead_id: null, criado_em: '',
   },
 ]
 

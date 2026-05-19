@@ -42,7 +42,7 @@ describe('ClienteFormPosVenda', () => {
   it('pre-fills fields when editing', () => {
     const cliente: Cliente = {
       id: '1', nome: 'Maria Souza', contato: '(83) 99999-9999', email: 'maria@email.com',
-      tipo_plano: 'Saúde', valor_plano: 350, observacoes: 'Cliente VIP', lead_id: null, criado_em: '',
+      tipo_plano: 'Saúde', operadora: null, quantidade_vidas: null, valor_plano: 350, observacoes: 'Cliente VIP', lead_id: null, criado_em: '',
     }
     render(<ClienteFormPosVenda cliente={cliente} />)
     expect(screen.getByDisplayValue('Maria Souza')).toBeInTheDocument()

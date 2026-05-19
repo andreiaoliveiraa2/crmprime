@@ -4,13 +4,14 @@ import { Users, ArrowLeftRight, FileText, CheckCircle, Activity, Calendar, Chevr
 import { Lead, Cliente, ETAPAS_LEAD } from '@/lib/types'
 import Link from 'next/link'
 
-const etapaColors: Record<string, string> = {
-  'Novo Lead': 'bg-blue-50 text-blue-600',
-  'Contato Feito': 'bg-sky-50 text-sky-600',
-  'Proposta Enviada': 'bg-amber-50 text-amber-600',
-  'Negociação': 'bg-orange-50 text-orange-600',
-  'Fechado': 'bg-emerald-50 text-emerald-600',
-  'Perdido': 'bg-red-50 text-red-600',
+const etapaBadge: Record<string, { bg: string; color: string }> = {
+  'Novo Lead':        { bg: '#f0f0f0',             color: '#6b7280' },
+  'Contato Feito':    { bg: '#dbeafe',             color: '#1d4ed8' },
+  'Cotação':          { bg: 'rgba(184,154,106,0.15)', color: '#92601a' },
+  'Proposta Enviada': { bg: '#fef3c7',             color: '#b45309' },
+  'Negociação':       { bg: '#ffedd5',             color: '#c2410c' },
+  'Fechado':          { bg: '#dcfce7',             color: '#15803d' },
+  'Perdido':          { bg: '#fce7f3',             color: '#be185d' },
 }
 
 const etapaBarColors: Record<string, string> = {
@@ -265,16 +266,17 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Últimos Leads + Últimos Clientes */}
+      {/* Bloco Central — Leads Recentes + Clientes Recentes */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
 
         {/* Leads Recentes */}
-        <div className="bg-white rounded-2xl border border-stone-200 p-6">
+        <div className="bg-white p-6" style={{ border: '1px solid #e8e4dd', borderRadius: '12px' }}>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-stone-800">Últimos Leads</h3>
+            <h3 className="text-sm font-semibold" style={{ color: '#2d1f4e' }}>Leads Recentes</h3>
             <Link
               href="/crm"
-              className="text-xs text-violet-600 hover:text-violet-700 flex items-center gap-0.5 transition-colors"
+              className="flex items-center gap-0.5 text-xs font-medium transition-colors"
+              style={{ color: '#b89a6a' }}
             >
               Ver todos <ChevronRight size={12} />
             </Link>
@@ -283,34 +285,45 @@ export default async function DashboardPage() {
           {leadsRecentes.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <p className="text-sm text-stone-400">Nenhum lead cadastrado.</p>
-              <Link href="/crm/novo" className="text-xs text-violet-600 mt-2 hover:underline">
+              <Link href="/crm/novo" className="text-xs mt-2" style={{ color: '#b89a6a' }}>
                 Cadastrar primeiro lead
               </Link>
             </div>
           ) : (
-            <ul className="divide-y divide-stone-100">
-              {leadsRecentes.map(l => (
-                <li key={l.id} className="py-3 flex justify-between items-center gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-stone-800 truncate">{l.nome}</p>
-                    <p className="text-xs text-stone-400">{l.tipo_plano ?? '—'}</p>
-                  </div>
-                  <span className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap ${etapaColors[l.etapa] ?? 'bg-stone-100 text-stone-600'}`}>
-                    {l.etapa}
-                  </span>
-                </li>
-              ))}
+            <ul className="divide-y" style={{ borderColor: '#f0ece6' }}>
+              {leadsRecentes.map(l => {
+                const badge = etapaBadge[l.etapa] ?? { bg: '#f0f0f0', color: '#6b7280' }
+                return (
+                  <li key={l.id} className="py-3 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate" style={{ color: '#1a1a1a' }}>
+                        {l.nome}
+                      </p>
+                      <p className="text-xs mt-0.5" style={{ color: '#9a918a' }}>
+                        {[l.tipo_plano, l.operadora].filter(Boolean).join(' · ') || '—'}
+                      </p>
+                    </div>
+                    <span
+                      className="shrink-0 text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap"
+                      style={{ backgroundColor: badge.bg, color: badge.color }}
+                    >
+                      {l.etapa}
+                    </span>
+                  </li>
+                )
+              })}
             </ul>
           )}
         </div>
 
         {/* Clientes Recentes */}
-        <div className="bg-white rounded-2xl border border-stone-200 p-6">
+        <div className="bg-white p-6" style={{ border: '1px solid #e8e4dd', borderRadius: '12px' }}>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-stone-800">Últimos Clientes</h3>
+            <h3 className="text-sm font-semibold" style={{ color: '#2d1f4e' }}>Clientes Recentes</h3>
             <Link
               href="/clientes"
-              className="text-xs text-violet-600 hover:text-violet-700 flex items-center gap-0.5 transition-colors"
+              className="flex items-center gap-0.5 text-xs font-medium transition-colors"
+              style={{ color: '#b89a6a' }}
             >
               Ver todos <ChevronRight size={12} />
             </Link>
@@ -318,18 +331,28 @@ export default async function DashboardPage() {
 
           {clientesRecentes.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <p className="text-sm text-stone-400">Nenhum cliente fechado ainda.</p>
+              <p className="text-sm text-stone-400">Nenhum cliente cadastrado ainda.</p>
             </div>
           ) : (
-            <ul className="divide-y divide-stone-100">
+            <ul className="divide-y" style={{ borderColor: '#f0ece6' }}>
               {clientesRecentes.map(c => (
-                <li key={c.id} className="py-3 flex justify-between items-center gap-3">
+                <li key={c.id} className="py-3 flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-stone-800 truncate">{c.nome}</p>
-                    <p className="text-xs text-stone-400">{c.tipo_plano ?? '—'}</p>
+                    <p className="text-sm font-medium truncate" style={{ color: '#1a1a1a' }}>
+                      {c.nome}
+                    </p>
+                    <p className="text-xs mt-0.5" style={{ color: '#9a918a' }}>
+                      {[
+                        c.operadora,
+                        c.quantidade_vidas ? `${c.quantidade_vidas} ${c.quantidade_vidas === 1 ? 'vida' : 'vidas'}` : null,
+                      ].filter(Boolean).join(' · ') || '—'}
+                    </p>
                   </div>
-                  <span className="shrink-0 text-sm font-semibold text-emerald-600 tabular-nums">
-                    R$ {(c.valor_plano ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  <span
+                    className="shrink-0 text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap"
+                    style={{ backgroundColor: '#dcfce7', color: '#15803d' }}
+                  >
+                    Ativo
                   </span>
                 </li>
               ))}

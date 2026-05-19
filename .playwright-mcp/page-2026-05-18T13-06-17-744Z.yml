@@ -1,0 +1,86 @@
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e22] [cursor=pointer]:
+    - img [ref=e23]
+  - alert [ref=e26]
+  - generic [ref=e27]:
+    - complementary [ref=e28]:
+      - generic [ref=e29]:
+        - heading "Gestão Seguros" [level=2] [ref=e30]
+        - paragraph [ref=e31]: CRM Profissional
+      - navigation [ref=e32]:
+        - link "Dashboard" [ref=e33] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e34]
+          - text: Dashboard
+        - link "CRM" [ref=e39] [cursor=pointer]:
+          - /url: /crm
+          - img [ref=e40]
+          - text: CRM
+        - link "Pipeline" [ref=e45] [cursor=pointer]:
+          - /url: /pipeline
+          - img [ref=e46]
+          - text: Pipeline
+        - link "Clientes" [ref=e47] [cursor=pointer]:
+          - /url: /clientes
+          - img [ref=e48]
+          - text: Clientes
+        - link "Configurações" [ref=e52] [cursor=pointer]:
+          - /url: /configuracoes
+          - img [ref=e53]
+          - text: Configurações
+      - button "Sair" [ref=e57]:
+        - img [ref=e58]
+        - text: Sair
+    - main [ref=e61]:
+      - generic [ref=e62]:
+        - generic [ref=e63]:
+          - heading "Dashboard" [level=1] [ref=e64]
+          - paragraph [ref=e65]: Visão geral do seu negócio
+        - generic [ref=e66]:
+          - generic [ref=e67]:
+            - generic [ref=e68]:
+              - paragraph [ref=e69]: Total de Clientes
+              - img [ref=e71]
+            - paragraph [ref=e76]: "0"
+            - paragraph [ref=e77]: clientes ativos
+          - generic [ref=e78]:
+            - generic [ref=e79]:
+              - paragraph [ref=e80]: Leads Ativos
+              - img [ref=e82]
+            - paragraph [ref=e84]: "1"
+            - paragraph [ref=e85]: em negociação
+          - generic [ref=e86]:
+            - generic [ref=e87]:
+              - paragraph [ref=e88]: Vendas em Andamento
+              - img [ref=e90]
+            - paragraph [ref=e93]: "0"
+            - paragraph [ref=e94]: proposta + negociação
+          - generic [ref=e95]:
+            - generic [ref=e96]:
+              - paragraph [ref=e97]: Ganhos no Mês
+              - img [ref=e99]
+            - paragraph [ref=e101]: R$ 0,00
+            - paragraph [ref=e102]: clientes fechados este mês
+        - generic [ref=e103]:
+          - generic [ref=e104]:
+            - generic [ref=e105]:
+              - heading "Leads Recentes" [level=3] [ref=e106]
+              - link "Ver todos" [ref=e107] [cursor=pointer]:
+                - /url: /crm
+            - list [ref=e108]:
+              - listitem [ref=e109]:
+                - generic [ref=e110]:
+                  - paragraph [ref=e111]: teste
+                  - paragraph [ref=e112]: Saúde
+                - generic [ref=e113]: Contato Feito
+              - listitem [ref=e114]:
+                - generic [ref=e115]:
+                  - paragraph [ref=e116]: ANDREIA FERREIRA DE OLIVEIRA
+                  - paragraph [ref=e117]: —
+                - generic [ref=e118]: Fechado
+          - generic [ref=e119]:
+            - generic [ref=e120]:
+              - heading "Clientes Recentes" [level=3] [ref=e121]
+              - link "Ver todos" [ref=e122] [cursor=pointer]:
+                - /url: /clientes
+            - paragraph [ref=e123]: Nenhum cliente fechado ainda.

@@ -1,0 +1,16 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - heading "Nova senha" [level=1] [ref=e4]
+    - paragraph [ref=e5]: Digite sua nova senha de acesso
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - generic [ref=e8]: Nova senha
+        - textbox "Nova senha" [ref=e9]:
+          - /placeholder: Mínimo 6 caracteres
+      - generic [ref=e10]:
+        - generic [ref=e11]: Confirmar nova senha
+        - textbox "Confirmar nova senha" [ref=e12]:
+          - /placeholder: Repita a nova senha
+      - button "Salvar nova senha" [ref=e13]
+  - button "Open Next.js Dev Tools" [ref=e19] [cursor=pointer]:
+    - img [ref=e20]

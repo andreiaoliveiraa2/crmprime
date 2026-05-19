@@ -36,6 +36,7 @@ describe('LeadForm', () => {
       nome: 'Carlos Mendes',
       telefone: '(83) 98888-9999',
       tipo_plano: 'Saúde',
+      operadora: null,
       etapa: 'Proposta Enviada',
       criado_em: '',
     }

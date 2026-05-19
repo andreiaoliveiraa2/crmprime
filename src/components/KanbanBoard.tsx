@@ -12,12 +12,13 @@ interface Props {
 }
 
 const etapaStyle: Record<EtapaLead, { col: string; title: string }> = {
-  'Novo Lead': { col: 'bg-blue-50 border-blue-200', title: 'text-blue-700' },
-  'Contato Feito': { col: 'bg-yellow-50 border-yellow-200', title: 'text-yellow-700' },
+  'Novo Lead':        { col: 'bg-blue-50 border-blue-200',     title: 'text-blue-700'   },
+  'Contato Feito':    { col: 'bg-yellow-50 border-yellow-200', title: 'text-yellow-700' },
+  'Cotação':          { col: 'bg-amber-50 border-amber-200',   title: 'text-amber-700'  },
   'Proposta Enviada': { col: 'bg-purple-50 border-purple-200', title: 'text-purple-700' },
-  'Negociação': { col: 'bg-amber-50 border-amber-200', title: 'text-amber-700' },
-  'Fechado': { col: 'bg-emerald-50 border-emerald-200', title: 'text-emerald-700' },
-  'Perdido': { col: 'bg-red-50 border-red-200', title: 'text-red-600' },
+  'Negociação':       { col: 'bg-orange-50 border-orange-200', title: 'text-orange-700' },
+  'Fechado':          { col: 'bg-emerald-50 border-emerald-200', title: 'text-emerald-700' },
+  'Perdido':          { col: 'bg-red-50 border-red-200',       title: 'text-red-600'    },
 }
 
 export default function KanbanBoard({ leads: inicial }: Props) {

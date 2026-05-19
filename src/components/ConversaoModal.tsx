@@ -43,6 +43,8 @@ export default function ConversaoModal({ lead, onClose, onCancelar, onReverteFec
       contato: telefone || null,
       email: email || null,
       tipo_plano: tipo_plano || null,
+      operadora: lead.operadora ?? null,
+      quantidade_vidas: null,
       valor_plano: valor,
       observacoes: observacoes || null,
       lead_id: lead.id,

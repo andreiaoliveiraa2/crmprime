@@ -1,0 +1,21 @@
+- generic [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e104] [cursor=pointer]:
+    - img [ref=e105]
+  - alert [ref=e108]
+  - generic [ref=e110]:
+    - heading "Bem-vinda" [level=1] [ref=e111]
+    - paragraph [ref=e112]: Acesse o seu sistema de gestão
+    - generic [ref=e113]:
+      - generic [ref=e114]:
+        - generic [ref=e115]: E-mail
+        - textbox "E-mail" [ref=e116]: andreiaimoveispb@gmail.com
+      - generic [ref=e117]:
+        - generic [ref=e118]: Senha
+        - textbox "Senha" [ref=e119]: Senha@2025
+      - paragraph [ref=e124]: E-mail de recuperação enviado. Verifique sua caixa de entrada.
+      - button "Entrar" [ref=e120]
+      - button "Esqueci minha senha" [active] [ref=e121]
+      - paragraph [ref=e122]:
+        - text: Não tem conta?
+        - link "Criar conta" [ref=e123] [cursor=pointer]:
+          - /url: /signup

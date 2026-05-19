@@ -31,6 +31,7 @@ export default function LeadForm({ lead }: Props) {
       nome: nome.trim(),
       telefone: telefone.trim() || null,
       tipo_plano: tipo_plano || null,
+      operadora: lead?.operadora ?? null,
       etapa,
     }
 

@@ -1,6 +1,7 @@
 export type EtapaLead =
   | 'Novo Lead'
   | 'Contato Feito'
+  | 'Cotação'
   | 'Proposta Enviada'
   | 'Negociação'
   | 'Fechado'
@@ -9,6 +10,7 @@ export type EtapaLead =
 export const ETAPAS_LEAD: EtapaLead[] = [
   'Novo Lead',
   'Contato Feito',
+  'Cotação',
   'Proposta Enviada',
   'Negociação',
   'Fechado',
@@ -30,6 +32,7 @@ export interface Lead {
   nome: string
   telefone: string | null
   tipo_plano: string | null
+  operadora: string | null
   etapa: EtapaLead
   criado_em: string
 }
@@ -42,6 +45,8 @@ export interface Cliente {
   contato: string | null
   email: string | null
   tipo_plano: string | null
+  operadora: string | null
+  quantidade_vidas: number | null
   valor_plano: number | null
   observacoes: string | null
   lead_id: string | null

@@ -16,8 +16,8 @@ jest.mock('next/navigation', () => ({
 }))
 
 const leads: Lead[] = [
-  { id: '1', nome: 'Ana Lima', telefone: '(83) 99999-1111', tipo_plano: 'Saúde', etapa: 'Novo Lead', criado_em: '' },
-  { id: '2', nome: 'Bruno Costa', telefone: null, tipo_plano: 'Odonto', etapa: 'Negociação', criado_em: '' },
+  { id: '1', nome: 'Ana Lima',    telefone: '(83) 99999-1111', tipo_plano: 'Saúde', operadora: null, etapa: 'Novo Lead',  criado_em: '' },
+  { id: '2', nome: 'Bruno Costa', telefone: null,              tipo_plano: 'Odonto', operadora: null, etapa: 'Negociação', criado_em: '' },
 ]
 
 describe('LeadTable', () => {

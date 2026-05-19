@@ -39,6 +39,8 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
       contato: contato.trim() || null,
       email: email.trim() || null,
       tipo_plano: tipo_plano || null,
+      operadora: cliente?.operadora ?? null,
+      quantidade_vidas: cliente?.quantidade_vidas ?? null,
       valor_plano: valor,
       observacoes: observacoes.trim() || null,
       lead_id: cliente?.lead_id ?? null,

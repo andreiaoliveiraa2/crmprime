@@ -19,6 +19,7 @@ const lead: Lead = {
   nome: 'Maria Silva',
   telefone: '(83) 99999-0000',
   tipo_plano: 'Saúde',
+  operadora: null,
   etapa: 'Fechado',
   criado_em: '',
 }
