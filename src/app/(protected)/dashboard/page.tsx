@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import DashboardCard from '@/components/DashboardCard'
-import { Users, Activity, TrendingUp, DollarSign, Calendar, ChevronRight, BarChart3 } from 'lucide-react'
+import { Users, ArrowLeftRight, FileText, CheckCircle, Activity, Calendar, ChevronRight, BarChart3 } from 'lucide-react'
 import { Lead, Cliente, ETAPAS_LEAD } from '@/lib/types'
 import Link from 'next/link'
 
@@ -33,9 +33,12 @@ export default async function DashboardPage() {
   const clientes: Cliente[] = clientesData ?? []
 
   // Métricas principais
+  const emNegociacao = leads.filter(l =>
+    l.etapa === 'Contato Feito' || (l.etapa as string) === 'Cotação' || l.etapa === 'Negociação'
+  ).length
+  const propostasEnviadas = leads.filter(l => l.etapa === 'Proposta Enviada').length
   const etapasAtivas = ['Novo Lead', 'Contato Feito', 'Proposta Enviada', 'Negociação'] as const
   const leadsAtivos = leads.filter(l => etapasAtivas.includes(l.etapa as typeof etapasAtivas[number])).length
-  const vendasAndamento = leads.filter(l => l.etapa === 'Proposta Enviada' || l.etapa === 'Negociação').length
 
   const inicioMes = new Date()
   inicioMes.setDate(1)
@@ -138,25 +141,33 @@ export default async function DashboardPage() {
           title="Total de Clientes"
           value={clientes.length}
           icon={Users}
-          subtitle="clientes ativos"
-        />
-        <DashboardCard
-          title="Leads Ativos"
-          value={leadsAtivos}
-          icon={Activity}
-          subtitle="no pipeline"
+          subtitle="clientes ativos na carteira"
+          iconBg="#ede9fb"
+          iconColor="#5b3fb5"
         />
         <DashboardCard
           title="Em Negociação"
-          value={vendasAndamento}
-          icon={TrendingUp}
-          subtitle="proposta + negociação"
+          value={emNegociacao}
+          icon={ArrowLeftRight}
+          subtitle="atendimentos em aberto"
+          iconBg="#fdf4e7"
+          iconColor="#c48a2a"
         />
         <DashboardCard
-          title="Ganhos no Mês"
-          value={`R$ ${ganhosMes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-          icon={DollarSign}
-          subtitle={`${clientesMes.length} ${clientesMes.length === 1 ? 'novo cliente' : 'novos clientes'}`}
+          title="Propostas Enviadas"
+          value={propostasEnviadas}
+          icon={FileText}
+          subtitle="aguardando retorno"
+          iconBg="#fbe9ef"
+          iconColor="#b5455a"
+        />
+        <DashboardCard
+          title="Fechados no Mês"
+          value={clientesMes.length}
+          icon={CheckCircle}
+          subtitle={`vendas concluídas em ${mesAtual}`}
+          iconBg="#e8f5ee"
+          iconColor="#2e8b57"
         />
       </div>
 
