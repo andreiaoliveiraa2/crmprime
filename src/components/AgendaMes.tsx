@@ -55,7 +55,7 @@ export default function AgendaMes({ eventos, mes, onDiaClick }: Props) {
 
           const dateStr = isoDate(dia)
           const hoje = isHoje(ano, mesNum, dia.getDate())
-          const evsDia = eventos.filter(ev => ev.data_hora.startsWith(dateStr))
+          const evsDia = eventos.filter(ev => isoDate(new Date(ev.data_hora)) === dateStr)
 
           return (
             <button key={idx}

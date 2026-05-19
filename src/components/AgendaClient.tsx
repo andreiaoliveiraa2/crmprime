@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Compromisso } from '@/lib/types'
 import AgendaDia from './AgendaDia'
@@ -55,7 +55,12 @@ export default function AgendaClient({ eventos: inicial }: Props) {
 
   const router = useRouter()
 
-  const reload = useCallback(async () => {
+  // Sincroniza com dados frescos do servidor após router.refresh()
+  useEffect(() => {
+    setEventos(inicial)
+  }, [inicial])
+
+  const reload = useCallback(() => {
     router.refresh()
   }, [router])
 
@@ -77,7 +82,7 @@ export default function AgendaClient({ eventos: inicial }: Props) {
   function eventosFiltrados() {
     if (visao === 'dia') {
       const ds = isoDate(dataSelecionada)
-      return eventos.filter(ev => ev.data_hora.startsWith(ds))
+      return eventos.filter(ev => isoDate(new Date(ev.data_hora)) === ds)
     }
     if (visao === 'semana') {
       const inicio = inicioSemana(dataSelecionada)
@@ -87,7 +92,6 @@ export default function AgendaClient({ eventos: inicial }: Props) {
         return d >= inicio && d < fim
       })
     }
-    // mes
     return eventos.filter(ev => {
       const d = new Date(ev.data_hora)
       return d.getMonth() === dataSelecionada.getMonth() && d.getFullYear() === dataSelecionada.getFullYear()

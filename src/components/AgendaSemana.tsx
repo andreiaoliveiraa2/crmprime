@@ -1,7 +1,6 @@
 'use client'
 
-import { Compromisso, TIPO_COR, STATUS_COR } from '@/lib/types'
-import { Pencil } from 'lucide-react'
+import { Compromisso, TIPO_COR } from '@/lib/types'
 
 interface Props {
   eventos: Compromisso[]
@@ -22,8 +21,8 @@ function isoDate(d: Date) {
 }
 
 function isHoje(d: Date) {
-  const hoje = new Date()
-  return d.getDate() === hoje.getDate() && d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear()
+  const h = new Date()
+  return d.getDate() === h.getDate() && d.getMonth() === h.getMonth() && d.getFullYear() === h.getFullYear()
 }
 
 export default function AgendaSemana({ eventos, semanaInicio, onEditar, onDiaClick }: Props) {
@@ -39,12 +38,11 @@ export default function AgendaSemana({ eventos, semanaInicio, onEditar, onDiaCli
         const dateStr = isoDate(dia)
         const hoje = isHoje(dia)
         const evsDia = eventos
-          .filter(ev => ev.data_hora.startsWith(dateStr))
+          .filter(ev => isoDate(new Date(ev.data_hora)) === dateStr)
           .sort((a, b) => a.data_hora.localeCompare(b.data_hora))
 
         return (
           <div key={idx} className="min-h-[160px]">
-            {/* Header do dia */}
             <button
               onClick={() => onDiaClick(dateStr)}
               className="w-full text-center py-2 rounded-xl mb-2 transition-colors hover:opacity-80"
@@ -53,10 +51,9 @@ export default function AgendaSemana({ eventos, semanaInicio, onEditar, onDiaCli
                 color: hoje ? '#ffffff' : '#5a4e3c',
               }}>
               <p className="text-xs font-semibold">{DIAS[dia.getDay()]}</p>
-              <p className={`text-lg font-bold`}>{dia.getDate()}</p>
+              <p className="text-lg font-bold">{dia.getDate()}</p>
             </button>
 
-            {/* Eventos */}
             <div className="space-y-1">
               {evsDia.slice(0, 3).map(ev => {
                 const cor = TIPO_COR[ev.tipo] ?? '#6b7280'
