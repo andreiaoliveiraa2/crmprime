@@ -113,7 +113,7 @@ export const TIPO_COR: Record<string, string> = {
   'Coworking':         '#7986cb',
   'Criar Conteúdo':    '#8e24aa',
   'Fazenda Aluguel':   '#d50000',
-  'Reunião':           '#616161',
+  'Reunião':           '#7c4d2e',
 }
 
 export interface TipoAgenda {
