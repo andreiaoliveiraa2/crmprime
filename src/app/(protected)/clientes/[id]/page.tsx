@@ -27,23 +27,33 @@ const statusCor: Record<string, { bg: string; text: string }> = {
   'Cancelado': { bg: '#fee2e2', text: '#b91c1c' },
 }
 
+function fmtData(val: string | null | undefined) {
+  if (!val) return null
+  try {
+    const d = new Date(val)
+    if (isNaN(d.getTime())) return null
+    const day = String(d.getUTCDate()).padStart(2, '0')
+    const month = String(d.getUTCMonth() + 1).padStart(2, '0')
+    const year = d.getUTCFullYear()
+    return `${day}/${month}/${year}`
+  } catch { return null }
+}
+
+function fmtMoeda(val: number | null | undefined) {
+  if (val == null) return null
+  try {
+    return `R$ ${Number(val).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`
+  } catch { return null }
+}
+
 export default async function FichaClientePage({ params }: Props) {
   const { id } = await params
   const supabase = await createClient()
-  const { data: c } = await supabase.from('clientes').select('*').eq('id', id).single()
+  const { data: c, error } = await supabase.from('clientes').select('*').eq('id', id).single()
 
-  if (!c) notFound()
+  if (error || !c) notFound()
 
-  const sc = statusCor[c.status] ?? statusCor['Ativo']
-
-  function fmtData(val: string | null) {
-    if (!val) return null
-    return new Date(val).toLocaleDateString('pt-BR')
-  }
-  function fmtMoeda(val: number | null) {
-    if (val == null) return null
-    return `R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-  }
+  const sc = statusCor[(c.status as string)] ?? statusCor['Ativo']
 
   return (
     <div className="p-6 md:p-8 max-w-3xl">
