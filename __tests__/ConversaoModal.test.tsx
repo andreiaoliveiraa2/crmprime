@@ -20,7 +20,7 @@ const lead: Lead = {
   telefone: '(83) 99999-0000',
   tipo_plano: 'Saúde',
   operadora: null,
-  etapa: 'Fechado',
+  etapa: 'Vendido',
   criado_em: '',
 }
 

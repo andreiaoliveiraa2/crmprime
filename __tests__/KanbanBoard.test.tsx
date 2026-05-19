@@ -11,7 +11,7 @@ jest.mock('@hello-pangea/dnd', () => ({
     ),
   Draggable: ({ children }: { children: (p: any, s: any) => React.ReactNode }) =>
     children(
-      { innerRef: jest.fn(), draggableProps: {}, dragHandleProps: {} },
+      { innerRef: jest.fn(), draggableProps: { style: {} }, dragHandleProps: {} },
       { isDragging: false }
     ),
 }))
@@ -34,14 +34,20 @@ const leads: Lead[] = [
 ]
 
 describe('KanbanBoard', () => {
-  it('renders all 6 stage columns', () => {
+  it('renders all 6 stage columns in correct order', () => {
     render(<KanbanBoard leads={leads} />)
     expect(screen.getByText('Novo Lead')).toBeInTheDocument()
     expect(screen.getByText('Contato Feito')).toBeInTheDocument()
-    expect(screen.getByText('Proposta Enviada')).toBeInTheDocument()
+    expect(screen.getByText('Cotação')).toBeInTheDocument()
     expect(screen.getByText('Negociação')).toBeInTheDocument()
-    expect(screen.getByText('Fechado')).toBeInTheDocument()
+    expect(screen.getByText('Vendido')).toBeInTheDocument()
     expect(screen.getByText('Perdido')).toBeInTheDocument()
+  })
+
+  it('does not render removed stages', () => {
+    render(<KanbanBoard leads={leads} />)
+    expect(screen.queryByText('Proposta Enviada')).not.toBeInTheDocument()
+    expect(screen.queryByText('Fechado')).not.toBeInTheDocument()
   })
 
   it('shows lead cards', () => {

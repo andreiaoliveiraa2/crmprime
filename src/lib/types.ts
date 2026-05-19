@@ -2,18 +2,16 @@ export type EtapaLead =
   | 'Novo Lead'
   | 'Contato Feito'
   | 'Cotação'
-  | 'Proposta Enviada'
   | 'Negociação'
-  | 'Fechado'
+  | 'Vendido'
   | 'Perdido'
 
 export const ETAPAS_LEAD: EtapaLead[] = [
   'Novo Lead',
   'Contato Feito',
   'Cotação',
-  'Proposta Enviada',
   'Negociação',
-  'Fechado',
+  'Vendido',
   'Perdido',
 ]
 

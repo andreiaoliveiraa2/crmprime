@@ -5,13 +5,12 @@ import { Lead, Cliente, Compromisso } from '@/lib/types'
 import Link from 'next/link'
 
 const etapaBadge: Record<string, { bg: string; color: string }> = {
-  'Novo Lead':        { bg: '#f0f0f0',             color: '#6b7280' },
-  'Contato Feito':    { bg: '#dbeafe',             color: '#1d4ed8' },
-  'Cotação':          { bg: 'rgba(184,154,106,0.15)', color: '#92601a' },
-  'Proposta Enviada': { bg: '#fef3c7',             color: '#b45309' },
-  'Negociação':       { bg: '#ffedd5',             color: '#c2410c' },
-  'Fechado':          { bg: '#dcfce7',             color: '#15803d' },
-  'Perdido':          { bg: '#fce7f3',             color: '#be185d' },
+  'Novo Lead':     { bg: '#f0f0f0',                color: '#6b7280' },
+  'Contato Feito': { bg: '#dbeafe',                color: '#1d4ed8' },
+  'Cotação':       { bg: 'rgba(184,154,106,0.15)', color: '#92601a' },
+  'Negociação':    { bg: '#ffedd5',                color: '#c2410c' },
+  'Vendido':       { bg: '#dcfce7',                color: '#15803d' },
+  'Perdido':       { bg: '#fce7f3',                color: '#be185d' },
 }
 
 const etapaBarColors: Record<string, string> = {
@@ -51,8 +50,8 @@ export default async function DashboardPage() {
   const emNegociacao = leads.filter(l =>
     l.etapa === 'Contato Feito' || (l.etapa as string) === 'Cotação' || l.etapa === 'Negociação'
   ).length
-  const propostasEnviadas = leads.filter(l => l.etapa === 'Proposta Enviada').length
-  const etapasAtivas = ['Novo Lead', 'Contato Feito', 'Proposta Enviada', 'Negociação'] as const
+  const propostasEnviadas = leads.filter(l => l.etapa === 'Cotação').length
+  const etapasAtivas = ['Novo Lead', 'Contato Feito', 'Cotação', 'Negociação'] as const
   const leadsAtivos = leads.filter(l => etapasAtivas.includes(l.etapa as typeof etapasAtivas[number])).length
 
   const inicioMes = new Date()
@@ -166,7 +165,7 @@ export default async function DashboardPage() {
           iconColor="#c48a2a"
         />
         <DashboardCard
-          title="Propostas Enviadas"
+          title="Em Cotação"
           value={propostasEnviadas}
           icon={FileText}
           subtitle="aguardando retorno"

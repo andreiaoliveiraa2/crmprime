@@ -6,19 +6,20 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Lead, EtapaLead, ETAPAS_LEAD } from '@/lib/types'
 import ConversaoModal from './ConversaoModal'
+import Link from 'next/link'
+import { Plus } from 'lucide-react'
 
 interface Props {
   leads: Lead[]
 }
 
-const etapaStyle: Record<EtapaLead, { col: string; title: string }> = {
-  'Novo Lead':        { col: 'bg-blue-50 border-blue-200',     title: 'text-blue-700'   },
-  'Contato Feito':    { col: 'bg-yellow-50 border-yellow-200', title: 'text-yellow-700' },
-  'Cotação':          { col: 'bg-amber-50 border-amber-200',   title: 'text-amber-700'  },
-  'Proposta Enviada': { col: 'bg-purple-50 border-purple-200', title: 'text-purple-700' },
-  'Negociação':       { col: 'bg-orange-50 border-orange-200', title: 'text-orange-700' },
-  'Fechado':          { col: 'bg-emerald-50 border-emerald-200', title: 'text-emerald-700' },
-  'Perdido':          { col: 'bg-red-50 border-red-200',       title: 'text-red-600'    },
+const etapaAccent: Record<EtapaLead, string> = {
+  'Novo Lead':     '#6b7280',
+  'Contato Feito': '#1d4ed8',
+  'Cotação':       '#b89a6a',
+  'Negociação':    '#c2410c',
+  'Vendido':       '#15803d',
+  'Perdido':       '#be185d',
 }
 
 export default function KanbanBoard({ leads: inicial }: Props) {
@@ -40,7 +41,7 @@ export default function KanbanBoard({ leads: inicial }: Props) {
     }
 
     setLeads(prev =>
-      prev.map(l => (l.id === draggableId ? { ...l, etapa: novaEtapa } : l))
+      prev.map(l => l.id === draggableId ? { ...l, etapa: novaEtapa } : l)
     )
 
     const { error } = await supabase
@@ -50,15 +51,14 @@ export default function KanbanBoard({ leads: inicial }: Props) {
 
     if (error) {
       setLeads(prev =>
-        prev.map(l => (l.id === draggableId ? { ...l, etapa: etapaAnterior } : l))
+        prev.map(l => l.id === draggableId ? { ...l, etapa: etapaAnterior } : l)
       )
       return
     }
 
-    if (novaEtapa === 'Fechado') {
-      // Use inicial para identidade estável do lead (id, nome, telefone, tipo_plano)
+    if (novaEtapa === 'Vendido') {
       const lead = inicial.find(l => l.id === draggableId) ?? leads.find(l => l.id === draggableId)
-      if (lead) setLeadConvertendo({ ...lead, etapa: 'Fechado' })
+      if (lead) setLeadConvertendo({ ...lead, etapa: 'Vendido' })
     } else {
       router.refresh()
     }
@@ -67,17 +67,12 @@ export default function KanbanBoard({ leads: inicial }: Props) {
   async function handleCancelarConversao() {
     if (!leadConvertendo) return
     setLeads(prev =>
-      prev.map(l => (l.id === leadConvertendo.id ? { ...l, etapa: 'Negociação' } : l))
+      prev.map(l => l.id === leadConvertendo.id ? { ...l, etapa: 'Negociação' } : l)
     )
-    const { error } = await supabase
+    await supabase
       .from('leads')
       .update({ etapa: 'Negociação' })
       .eq('id', leadConvertendo.id)
-    if (error) {
-      setLeads(prev =>
-        prev.map(l => (l.id === leadConvertendo.id ? { ...l, etapa: 'Fechado' } : l))
-      )
-    }
     setLeadConvertendo(null)
     router.refresh()
   }
@@ -85,29 +80,58 @@ export default function KanbanBoard({ leads: inicial }: Props) {
   return (
     <>
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className="flex gap-4 overflow-x-auto pb-4">
+        <div className="flex gap-3 overflow-x-auto pb-4 items-start">
           {ETAPAS_LEAD.map(etapa => {
             const cartoes = leads.filter(l => l.etapa === etapa)
-            const style = etapaStyle[etapa]
+            const accent = etapaAccent[etapa]
+
             return (
-              <div key={etapa} className="flex-shrink-0 w-52">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className={`text-xs font-bold uppercase tracking-wide ${style.title}`}>
-                    {etapa}
-                  </h3>
-                  <span className="text-xs bg-white border border-stone-200 rounded-full px-2 py-0.5 text-stone-500">
-                    {cartoes.length}
-                  </span>
+              <div key={etapa} className="flex-shrink-0 w-52 flex flex-col">
+
+                {/* Cabeçalho da coluna */}
+                <div
+                  className="flex items-center justify-between px-3 py-2.5 rounded-t-xl"
+                  style={{ backgroundColor: '#2d1f4e' }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="w-2 h-2 rounded-full shrink-0"
+                      style={{ backgroundColor: accent }}
+                    />
+                    <h3 className="text-xs font-semibold text-white truncate">{etapa}</h3>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className="text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[20px] text-center"
+                      style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.9)' }}
+                    >
+                      {cartoes.length}
+                    </span>
+                    <Link
+                      href={`/crm/novo`}
+                      className="flex items-center justify-center w-5 h-5 rounded-md transition-colors"
+                      style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white' }}
+                      title={`Novo lead em ${etapa}`}
+                    >
+                      <Plus size={11} />
+                    </Link>
+                  </div>
                 </div>
 
+                {/* Área droppable */}
                 <Droppable droppableId={etapa}>
                   {(provided, snapshot) => (
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
-                      className={`min-h-[120px] rounded-2xl p-2 space-y-2 border-2 transition-colors ${
-                        snapshot.isDraggingOver ? style.col : 'border-stone-100 bg-stone-50'
-                      }`}
+                      className="flex-1 rounded-b-xl p-2 space-y-2 min-h-[120px] transition-colors duration-150"
+                      style={{
+                        backgroundColor: snapshot.isDraggingOver
+                          ? 'rgba(45,31,78,0.06)'
+                          : '#f4f1ec',
+                        border: '1px solid #e8e4dd',
+                        borderTop: 'none',
+                      }}
                     >
                       {cartoes.map((l, index) => (
                         <Draggable key={l.id} draggableId={l.id} index={index}>
@@ -116,18 +140,29 @@ export default function KanbanBoard({ leads: inicial }: Props) {
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
-                              className={`bg-white rounded-xl border border-stone-200 p-3 cursor-grab active:cursor-grabbing transition-shadow ${
-                                snapshot.isDragging ? 'shadow-lg' : 'shadow-sm hover:shadow-md'
-                              }`}
+                              className="bg-white rounded-xl p-3 cursor-grab active:cursor-grabbing transition-shadow"
+                              style={{
+                                border: '1px solid #e8e4dd',
+                                boxShadow: snapshot.isDragging
+                                  ? '0 8px 24px rgba(45,31,78,0.15)'
+                                  : '0 1px 3px rgba(0,0,0,0.06)',
+                                ...provided.draggableProps.style,
+                              }}
                             >
-                              <p className="text-sm font-semibold text-stone-800 mb-1">
+                              <p className="text-sm font-semibold leading-snug" style={{ color: '#2d1f4e' }}>
                                 {l.nome}
                               </p>
-                              {l.telefone && (
-                                <p className="text-xs text-stone-400">{l.telefone}</p>
+                              {l.operadora && (
+                                <p className="text-xs mt-1" style={{ color: '#9a918a' }}>{l.operadora}</p>
+                              )}
+                              {l.telefone && !l.operadora && (
+                                <p className="text-xs mt-1" style={{ color: '#9a918a' }}>{l.telefone}</p>
                               )}
                               {l.tipo_plano && (
-                                <span className="mt-1.5 inline-block text-xs px-2 py-0.5 rounded-full bg-violet-50 text-violet-600">
+                                <span
+                                  className="mt-1.5 inline-block text-xs px-2 py-0.5 rounded-full font-medium"
+                                  style={{ backgroundColor: 'rgba(184,154,106,0.12)', color: '#92601a' }}
+                                >
                                   {l.tipo_plano}
                                 </span>
                               )}
@@ -139,6 +174,7 @@ export default function KanbanBoard({ leads: inicial }: Props) {
                     </div>
                   )}
                 </Droppable>
+
               </div>
             )
           })}
@@ -148,10 +184,7 @@ export default function KanbanBoard({ leads: inicial }: Props) {
       {leadConvertendo && (
         <ConversaoModal
           lead={leadConvertendo}
-          onClose={() => {
-            setLeadConvertendo(null)
-            router.refresh()
-          }}
+          onClose={() => { setLeadConvertendo(null); router.refresh() }}
           onCancelar={handleCancelarConversao}
           onReverteFechado={handleCancelarConversao}
         />

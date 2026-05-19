@@ -11,13 +11,12 @@ type Filtro = EtapaLead | 'Todos'
 const FILTROS: Filtro[] = ['Todos', ...ETAPAS_LEAD]
 
 const etapaBadge: Record<EtapaLead, string> = {
-  'Novo Lead':        'bg-stone-100 text-stone-600',
-  'Contato Feito':    'bg-blue-50 text-blue-700',
-  'Cotação':          'bg-amber-50 text-amber-700',
-  'Proposta Enviada': 'bg-purple-50 text-purple-700',
-  'Negociação':       'bg-orange-50 text-orange-700',
-  'Fechado':          'bg-emerald-50 text-emerald-700',
-  'Perdido':          'bg-pink-50 text-pink-700',
+  'Novo Lead':     'bg-stone-100 text-stone-600',
+  'Contato Feito': 'bg-blue-50 text-blue-700',
+  'Cotação':       'bg-amber-50 text-amber-700',
+  'Negociação':    'bg-orange-50 text-orange-700',
+  'Vendido':       'bg-emerald-50 text-emerald-700',
+  'Perdido':       'bg-pink-50 text-pink-700',
 }
 
 interface Props {
