@@ -32,7 +32,7 @@ export default function LeadListView({ leads }: Props) {
         <table className="w-full text-sm">
           <thead>
             <tr style={{ backgroundColor: '#2d1f4e' }}>
-              {['Nome', 'Telefone', 'Tipo de Plano', 'Operadora', 'Etapa', 'Responsável', 'Data de Entrada', 'Ações'].map(col => (
+              {['Nome', 'Telefone', 'Tipo de Plano', 'Operadora', 'Etapa', 'Vendedor', 'Responsável', 'Data de Entrada', 'Ações'].map(col => (
                 <th key={col} className="text-left px-4 py-3 text-xs font-semibold text-white whitespace-nowrap">
                   {col}
                 </th>
@@ -70,6 +70,9 @@ export default function LeadListView({ leads }: Props) {
                     >
                       {l.etapa}
                     </span>
+                  </td>
+                  <td className="px-4 py-3" style={{ color: '#5a4e3c' }}>
+                    {l.vendedor ?? '—'}
                   </td>
                   <td className="px-4 py-3" style={{ color: '#5a4e3c' }}>
                     {l.responsavel ?? '—'}

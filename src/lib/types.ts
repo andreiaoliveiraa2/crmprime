@@ -50,11 +50,20 @@ export interface Lead {
   origem: string | null
   o_que_procura: string | null
   observacoes: string | null
+  vendedor?: string | null
   etapa: EtapaLead
   criado_em: string
 }
 
+export interface Vendedor {
+  id: string
+  nome: string
+  ativo: boolean
+  criado_em: string
+}
+
 export type LeadInsert = Omit<Lead, 'id' | 'criado_em'> & { criado_em?: string | null }
+export type VendedorInsert = Omit<Vendedor, 'id' | 'criado_em'>
 
 export interface Cliente {
   id: string

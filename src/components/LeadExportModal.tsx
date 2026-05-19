@@ -22,6 +22,7 @@ export default function LeadExportModal({ leads, onClose }: Props) {
       'Tipo de Plano': l.tipo_plano ?? '',
       'Operadora': l.operadora ?? '',
       'Etapa': l.etapa,
+      'Vendedor': l.vendedor ?? '',
       'Responsável': l.responsavel ?? '',
       'Data de Entrada': l.criado_em ? new Date(l.criado_em).toLocaleDateString('pt-BR') : '',
       'Observações': l.observacoes ?? '',
@@ -50,7 +51,7 @@ export default function LeadExportModal({ leads, onClose }: Props) {
 
     autoTable(doc, {
       startY: 30,
-      head: [['Nome', 'Telefone', 'Origem', 'Tipo de Plano', 'Operadora', 'Etapa', 'Responsável', 'Data Entrada', 'Observações']],
+      head: [['Nome', 'Telefone', 'Origem', 'Tipo de Plano', 'Operadora', 'Etapa', 'Vendedor', 'Responsável', 'Data Entrada', 'Observações']],
       body: leads.map(l => [
         l.nome ?? '',
         l.telefone ?? '',
@@ -58,6 +59,7 @@ export default function LeadExportModal({ leads, onClose }: Props) {
         l.tipo_plano ?? '',
         l.operadora ?? '',
         l.etapa,
+        l.vendedor ?? '',
         l.responsavel ?? '',
         l.criado_em ? new Date(l.criado_em).toLocaleDateString('pt-BR') : '',
         l.observacoes ?? '',

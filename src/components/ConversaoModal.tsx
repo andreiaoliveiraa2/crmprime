@@ -65,6 +65,8 @@ export default function ConversaoModal({ lead, onClose, onCancelar, onReverteFec
       return
     }
 
+    await supabase.from('leads').delete().eq('id', lead.id)
+
     setLoading(false)
     onClose()
     router.push('/clientes')

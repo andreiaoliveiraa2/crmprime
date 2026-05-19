@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Lead, LeadInsert, TIPOS_PLANO_LEAD, ORIGENS_LEAD } from '@/lib/types'
@@ -26,15 +26,28 @@ export default function LeadForm({ lead }: Props) {
   const [tipo_plano, setTipoPlano] = useState(lead?.tipo_plano ?? '')
   const [operadora, setOperadora] = useState(lead?.operadora ?? '')
   const [responsavel, setResponsavel] = useState(lead?.responsavel ?? '')
+  const [vendedor, setVendedor] = useState(lead?.vendedor ?? '')
   const [observacoes, setObservacoes] = useState(lead?.observacoes ?? '')
   const [dataEntrada, setDataEntrada] = useState(
     lead?.criado_em ? lead.criado_em.slice(0, 10) : hoje()
   )
+  const [vendedoresLista, setVendedoresLista] = useState<string[]>([])
   const [erro, setErro] = useState('')
   const [loading, setLoading] = useState(false)
 
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    supabase
+      .from('vendedores')
+      .select('nome')
+      .eq('ativo', true)
+      .order('nome')
+      .then(({ data }) => {
+        if (data) setVendedoresLista(data.map((v: { nome: string }) => v.nome))
+      })
+  }, [])
   const editando = !!lead
 
   async function handleSubmit(e: React.FormEvent) {
@@ -56,6 +69,7 @@ export default function LeadForm({ lead }: Props) {
       tipo_plano: tipo_plano || null,
       operadora: operadora.trim() || null,
       responsavel: responsavel.trim() || null,
+      vendedor: vendedor.trim() || null,
       observacoes: observacoes.trim() || null,
       etapa: lead?.etapa ?? 'Novo Lead',
       criado_em: dataEntrada ? new Date(dataEntrada).toISOString() : undefined,
@@ -120,6 +134,16 @@ export default function LeadForm({ lead }: Props) {
           <input id="operadora" type="text" value={operadora} onChange={e => setOperadora(e.target.value)}
             placeholder="Ex: Unimed, Bradesco, Amil..."
             className={inputCls} style={inputStyle} />
+        </div>
+
+        {/* Vendedor */}
+        <div>
+          <label htmlFor="vendedor" className={labelCls} style={labelStyle}>Vendedor</label>
+          <select id="vendedor" value={vendedor} onChange={e => setVendedor(e.target.value)}
+            className={inputCls} style={{ ...inputStyle, color: vendedor ? '#1a1a1a' : '#9a918a' }}>
+            <option value="">Selecione o vendedor...</option>
+            {vendedoresLista.map(v => <option key={v} value={v}>{v}</option>)}
+          </select>
         </div>
 
         {/* Responsável */}

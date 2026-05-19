@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Lead, ETAPAS_LEAD } from '@/lib/types'
+import { createClient } from '@/lib/supabase/client'
 import KanbanBoard from './KanbanBoard'
 import LeadListView from './LeadListView'
 import LeadExportModal from './LeadExportModal'
@@ -15,23 +16,31 @@ interface Props {
 }
 
 export default function PipelineClient({ leads }: Props) {
-  const [visao, setVisao] = useState<Visao>('kanban')
-  const [filtroEtapa, setFiltroEtapa] = useState('')
-  const [filtroResponsavel, setFiltroResponsavel] = useState('')
+  const [visao, setVisao]               = useState<Visao>('kanban')
+  const [filtroEtapa, setFiltroEtapa]   = useState('')
+  const [filtroVendedor, setFiltroVendedor] = useState('')
   const [filtroInicio, setFiltroInicio] = useState('')
-  const [filtroFim, setFiltroFim] = useState('')
-  const [exportando, setExportando] = useState(false)
+  const [filtroFim, setFiltroFim]       = useState('')
+  const [exportando, setExportando]     = useState(false)
+  const [vendedores, setVendedores]     = useState<string[]>([])
 
-  const responsaveis = useMemo(() => {
-    const vals = leads.map(l => l.responsavel).filter(Boolean) as string[]
-    return [...new Set(vals)].sort()
-  }, [leads])
+  useEffect(() => {
+    const supabase = createClient()
+    supabase
+      .from('vendedores')
+      .select('nome')
+      .eq('ativo', true)
+      .order('nome')
+      .then(({ data }) => {
+        if (data) setVendedores(data.map((v: { nome: string }) => v.nome))
+      })
+  }, [])
 
   const leadsFiltrados = useMemo(() => {
     return leads.filter(l => {
-      if (filtroEtapa && l.etapa !== filtroEtapa) return false
-      if (filtroResponsavel && l.responsavel !== filtroResponsavel) return false
-      if (filtroInicio && l.criado_em < new Date(filtroInicio).toISOString()) return false
+      if (filtroEtapa    && l.etapa    !== filtroEtapa)    return false
+      if (filtroVendedor && l.vendedor !== filtroVendedor) return false
+      if (filtroInicio   && l.criado_em < new Date(filtroInicio).toISOString()) return false
       if (filtroFim) {
         const fim = new Date(filtroFim)
         fim.setDate(fim.getDate() + 1)
@@ -39,16 +48,19 @@ export default function PipelineClient({ leads }: Props) {
       }
       return true
     })
-  }, [leads, filtroEtapa, filtroResponsavel, filtroInicio, filtroFim])
+  }, [leads, filtroEtapa, filtroVendedor, filtroInicio, filtroFim])
 
-  const temFiltro = filtroEtapa || filtroResponsavel || filtroInicio || filtroFim
+  const temFiltro = filtroEtapa || filtroVendedor || filtroInicio || filtroFim
+
+  const selectCls = 'border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2'
+  const selectStyle = (val: string) => ({ borderColor: '#e8e4dd', color: val ? '#1a1a1a' : '#9a918a' })
 
   return (
     <div>
       {/* Cabeçalho */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: '#2d1f4e' }}>Pipeline</h1>
+          <h1 className="text-2xl font-bold" style={{ color: '#2d1f4e' }}>CRM</h1>
           <p className="text-sm mt-1" style={{ color: '#7a7065' }}>
             {visao === 'kanban'
               ? 'Funil de vendas — arraste para mover etapas'
@@ -86,7 +98,7 @@ export default function PipelineClient({ leads }: Props) {
           {/* Exportar */}
           <button
             onClick={() => setExportando(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:opacity-80"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium hover:opacity-80 transition-opacity"
             style={{ border: '1px solid #b89a6a', color: '#b89a6a', backgroundColor: '#ffffff' }}
           >
             <Download size={15} />
@@ -108,37 +120,38 @@ export default function PipelineClient({ leads }: Props) {
       {/* Filtros — só na visão lista */}
       {visao === 'lista' && (
         <div
-          className="flex flex-wrap gap-3 mb-5 p-4 rounded-xl"
+          className="flex flex-wrap items-center gap-3 mb-5 p-4 rounded-xl"
           style={{ backgroundColor: '#ffffff', border: '1px solid #e8e4dd' }}
         >
+          {/* Etapa */}
           <select
             value={filtroEtapa}
             onChange={e => setFiltroEtapa(e.target.value)}
-            className="border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2"
-            style={{ borderColor: '#e8e4dd', color: filtroEtapa ? '#1a1a1a' : '#9a918a' }}
+            className={selectCls}
+            style={selectStyle(filtroEtapa)}
           >
             <option value="">Todas as etapas</option>
             {ETAPAS_LEAD.map(e => <option key={e} value={e}>{e}</option>)}
           </select>
 
-          {responsaveis.length > 0 && (
-            <select
-              value={filtroResponsavel}
-              onChange={e => setFiltroResponsavel(e.target.value)}
-              className="border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2"
-              style={{ borderColor: '#e8e4dd', color: filtroResponsavel ? '#1a1a1a' : '#9a918a' }}
-            >
-              <option value="">Todos os responsáveis</option>
-              {responsaveis.map(r => <option key={r} value={r}>{r}</option>)}
-            </select>
-          )}
+          {/* Vendedor — busca dinâmica da tabela vendedores */}
+          <select
+            value={filtroVendedor}
+            onChange={e => setFiltroVendedor(e.target.value)}
+            className={selectCls}
+            style={selectStyle(filtroVendedor)}
+          >
+            <option value="">Todos os vendedores</option>
+            {vendedores.map(v => <option key={v} value={v}>{v}</option>)}
+          </select>
 
+          {/* Período */}
           <div className="flex items-center gap-2">
             <input
               type="date"
               value={filtroInicio}
               onChange={e => setFiltroInicio(e.target.value)}
-              className="border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2"
+              className={selectCls}
               style={{ borderColor: '#e8e4dd' }}
             />
             <span className="text-xs" style={{ color: '#9a918a' }}>até</span>
@@ -146,20 +159,21 @@ export default function PipelineClient({ leads }: Props) {
               type="date"
               value={filtroFim}
               onChange={e => setFiltroFim(e.target.value)}
-              className="border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2"
+              className={selectCls}
               style={{ borderColor: '#e8e4dd' }}
             />
           </div>
 
+          {/* Limpar */}
           {temFiltro && (
             <button
               onClick={() => {
                 setFiltroEtapa('')
-                setFiltroResponsavel('')
+                setFiltroVendedor('')
                 setFiltroInicio('')
                 setFiltroFim('')
               }}
-              className="px-3 py-2 text-sm font-medium rounded-xl transition-colors hover:opacity-80"
+              className="px-3 py-2 text-sm font-medium rounded-xl hover:opacity-80 transition-opacity"
               style={{ backgroundColor: '#f0ece6', color: '#5a4e3c' }}
             >
               Limpar filtros
@@ -174,7 +188,7 @@ export default function PipelineClient({ leads }: Props) {
         : <LeadListView leads={leadsFiltrados} />
       }
 
-      {/* Modal de exportação */}
+      {/* Modal exportação */}
       {exportando && (
         <LeadExportModal
           leads={leadsFiltrados}
