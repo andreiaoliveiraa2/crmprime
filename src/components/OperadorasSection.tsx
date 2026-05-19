@@ -19,11 +19,10 @@ export default function OperadorasSection() {
   const supabase = createClient()
 
   async function carregar() {
-    const { data } = await supabase
-      .from('operadoras')
-      .select('*')
-      .order('nome')
-    if (data) setOperadoras(data)
+    try {
+      const { data } = await supabase.from('operadoras').select('*').order('nome')
+      if (data) setOperadoras(data)
+    } catch { /* silently ignore */ }
   }
 
   useEffect(() => { carregar() }, [])
@@ -33,30 +32,42 @@ export default function OperadorasSection() {
     if (!novoNome.trim()) return
     setLoading(true)
     setErro('')
-    const { error } = await supabase.from('operadoras').insert({ nome: novoNome.trim(), ativo: true })
-    if (error) { setErro('Erro ao adicionar.'); setLoading(false); return }
-    setNovoNome('')
-    await carregar()
-    setLoading(false)
+    try {
+      const { error } = await supabase.from('operadoras').insert({ nome: novoNome.trim(), ativo: true })
+      if (error) { setErro('Erro ao adicionar.'); return }
+      setNovoNome('')
+      await carregar()
+    } catch {
+      setErro('Erro ao adicionar.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleSalvarEdicao(id: string) {
     if (!editandoNome.trim()) return
     setLoading(true)
-    const { error } = await supabase.from('operadoras').update({ nome: editandoNome.trim() }).eq('id', id)
-    if (!error) { setEditandoId(null); await carregar() }
-    setLoading(false)
+    try {
+      const { error } = await supabase.from('operadoras').update({ nome: editandoNome.trim() }).eq('id', id)
+      if (!error) { setEditandoId(null); await carregar() }
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleToggleAtivo(op: Operadora) {
-    await supabase.from('operadoras').update({ ativo: !op.ativo }).eq('id', op.id)
-    await carregar()
+    try {
+      await supabase.from('operadoras').update({ ativo: !op.ativo }).eq('id', op.id)
+      await carregar()
+    } catch { /* silently ignore */ }
   }
 
   async function handleExcluir(id: string, nome: string) {
     if (!confirm(`Excluir "${nome}"?`)) return
-    await supabase.from('operadoras').delete().eq('id', id)
-    await carregar()
+    try {
+      await supabase.from('operadoras').delete().eq('id', id)
+      await carregar()
+    } catch { /* silently ignore */ }
   }
 
   return (
