@@ -5,8 +5,11 @@ import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard,
   Users,
-  Kanban,
   UserCheck,
+  Calendar,
+  DollarSign,
+  BarChart2,
+  Megaphone,
   Settings,
   LogOut,
   Menu,
@@ -16,11 +19,14 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/crm', label: 'CRM', icon: Users },
-  { href: '/pipeline', label: 'Pipeline', icon: Kanban },
-  { href: '/clientes', label: 'Clientes', icon: UserCheck },
-  { href: '/configuracoes', label: 'Configurações', icon: Settings },
+  { href: '/dashboard',     label: 'Dashboard',     icon: LayoutDashboard },
+  { href: '/crm',           label: 'CRM',            icon: Users           },
+  { href: '/clientes',      label: 'Clientes',       icon: UserCheck       },
+  { href: '/agenda',        label: 'Agenda',         icon: Calendar        },
+  { href: '/financeiro',    label: 'Financeiro',     icon: DollarSign      },
+  { href: '/gestao',        label: 'Gestão',         icon: BarChart2       },
+  { href: '/marketing',     label: 'Marketing',      icon: Megaphone       },
+  { href: '/configuracoes', label: 'Configurações',  icon: Settings        },
 ]
 
 export default function Sidebar() {
@@ -34,67 +40,97 @@ export default function Sidebar() {
     router.push('/login')
   }
 
+  const isActive = (href: string) =>
+    pathname === href || pathname.startsWith(href + '/')
+
   return (
     <>
+      {/* Botão hambúrguer — mobile */}
       <button
-        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-stone-100 rounded-lg shadow-md"
+        className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-lg shadow-md"
+        style={{ backgroundColor: '#2d1f4e' }}
         onClick={() => setAberto(!aberto)}
         aria-label="Abrir menu"
       >
-        {aberto ? (
-          <X size={20} className="text-stone-700" />
-        ) : (
-          <Menu size={20} className="text-stone-700" />
-        )}
+        {aberto
+          ? <X    size={20} className="text-white" />
+          : <Menu size={20} className="text-white" />
+        }
       </button>
 
+      {/* Overlay escuro — mobile */}
       {aberto && (
         <div
-          className="md:hidden fixed inset-0 bg-black/40 z-40"
+          className="md:hidden fixed inset-0 bg-black/50 z-40"
           onClick={() => setAberto(false)}
         />
       )}
 
+      {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 h-full w-64 bg-stone-100 border-r border-stone-200 z-40 flex flex-col
+          fixed top-0 left-0 h-full w-64 z-40 flex flex-col
           transition-transform duration-200
           ${aberto ? 'translate-x-0' : '-translate-x-full'}
           md:translate-x-0
         `}
+        style={{ backgroundColor: '#2d1f4e' }}
       >
-        <div className="p-6 border-b border-stone-200">
-          <h2 className="text-base font-bold text-stone-800">A2 Prime</h2>
-          <p className="text-xs text-stone-500 mt-0.5">Corretora de Seguros</p>
+        {/* Logo */}
+        <div className="px-6 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+          <h2 className="text-base font-bold text-white tracking-wide">A2 Prime</h2>
+          <p className="text-xs mt-0.5 font-medium" style={{ color: '#b89a6a' }}>
+            Corretora de Seguros
+          </p>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1">
-          {navItems.map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              onClick={() => setAberto(false)}
-              className={`
-                flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
-                ${
-                  pathname === href || pathname.startsWith(href + '/')
-                    ? 'bg-violet-100 text-violet-700 shadow-sm'
-                    : 'text-stone-600 hover:bg-stone-200 hover:text-stone-800'
-                }
-              `}
-            >
-              <Icon size={18} />
-              {label}
-            </Link>
-          ))}
+        {/* Navegação */}
+        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+          {navItems.map(({ href, label, icon: Icon }) => {
+            const active = isActive(href)
+            return (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setAberto(false)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150"
+                style={{
+                  color: active ? '#ffffff' : 'rgba(255,255,255,0.55)',
+                  backgroundColor: active ? 'rgba(184,154,106,0.12)' : 'transparent',
+                  borderLeft: active ? '3px solid #b89a6a' : '3px solid transparent',
+                  paddingLeft: '12px',
+                }}
+              >
+                <Icon size={17} />
+                {label}
+              </Link>
+            )
+          })}
         </nav>
 
-        <div className="p-4 border-t border-stone-200">
+        {/* Rodapé — avatar + usuária + logout */}
+        <div className="px-3 py-4" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+          <div className="flex items-center gap-3 px-3 py-2 mb-1">
+            <div
+              className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 select-none"
+              style={{ backgroundColor: '#b89a6a', color: '#2d1f4e' }}
+            >
+              AO
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-white truncate">Andreia Oliveira</p>
+              <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                CEO · A2 Prime
+              </p>
+            </div>
+          </div>
+
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm font-medium text-stone-500 hover:text-red-600 hover:bg-red-50 transition-all duration-200"
+            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 hover:bg-red-500/10 hover:text-red-400"
+            style={{ color: 'rgba(255,255,255,0.45)' }}
           >
-            <LogOut size={18} />
+            <LogOut size={17} />
             Sair
           </button>
         </div>

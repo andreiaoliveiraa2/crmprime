@@ -90,28 +90,24 @@ export default async function DashboardPage() {
           title="Total de Clientes"
           value={clientes.length}
           icon={Users}
-          color="violet"
           subtitle="clientes ativos"
         />
         <DashboardCard
           title="Leads Ativos"
           value={leadsAtivos}
           icon={Activity}
-          color="blue"
           subtitle="no pipeline"
         />
         <DashboardCard
           title="Em Negociação"
           value={vendasAndamento}
           icon={TrendingUp}
-          color="amber"
           subtitle="proposta + negociação"
         />
         <DashboardCard
           title="Ganhos no Mês"
           value={`R$ ${ganhosMes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
           icon={DollarSign}
-          color="emerald"
           subtitle={`${clientesMes.length} ${clientesMes.length === 1 ? 'novo cliente' : 'novos clientes'}`}
         />
       </div>
