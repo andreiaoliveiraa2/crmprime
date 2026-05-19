@@ -71,6 +71,7 @@ export type Database = {
           id: string
           nome: string
           operadora: string | null
+          responsavel: string | null
           telefone: string | null
           tipo_plano: string | null
         }
@@ -80,6 +81,7 @@ export type Database = {
           id?: string
           nome: string
           operadora?: string | null
+          responsavel?: string | null
           telefone?: string | null
           tipo_plano?: string | null
         }
@@ -89,6 +91,7 @@ export type Database = {
           id?: string
           nome?: string
           operadora?: string | null
+          responsavel?: string | null
           telefone?: string | null
           tipo_plano?: string | null
         }

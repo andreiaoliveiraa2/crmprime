@@ -21,11 +21,11 @@ export default async function CrmPage() {
         </div>
         <Link
           href="/crm/novo"
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold shadow-sm hover:opacity-90 transition-opacity"
           style={{ backgroundColor: '#2d1f4e', color: '#ffffff' }}
         >
           <Plus size={15} />
-          Novo Lead
+          + Novo Lead
         </Link>
       </div>
       <KanbanBoard leads={leads ?? []} />

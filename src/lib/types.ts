@@ -31,6 +31,7 @@ export interface Lead {
   telefone: string | null
   tipo_plano: string | null
   operadora: string | null
+  responsavel: string | null
   etapa: EtapaLead
   criado_em: string
 }

@@ -37,6 +37,7 @@ describe('LeadForm', () => {
       telefone: '(83) 98888-9999',
       tipo_plano: 'Saúde',
       operadora: null,
+      responsavel: null,
       etapa: 'Cotação',
       criado_em: '',
     }

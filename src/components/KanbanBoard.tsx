@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Lead, EtapaLead, ETAPAS_LEAD } from '@/lib/types'
 import ConversaoModal from './ConversaoModal'
 import Link from 'next/link'
-import { Plus } from 'lucide-react'
+import { Plus, Calendar, User } from 'lucide-react'
 
 interface Props {
   leads: Lead[]
@@ -149,23 +149,43 @@ export default function KanbanBoard({ leads: inicial }: Props) {
                                 ...provided.draggableProps.style,
                               }}
                             >
-                              <p className="text-sm font-semibold leading-snug" style={{ color: '#2d1f4e' }}>
-                                {l.nome}
-                              </p>
-                              {l.operadora && (
-                                <p className="text-xs mt-1" style={{ color: '#9a918a' }}>{l.operadora}</p>
-                              )}
-                              {l.telefone && !l.operadora && (
-                                <p className="text-xs mt-1" style={{ color: '#9a918a' }}>{l.telefone}</p>
-                              )}
-                              {l.tipo_plano && (
+                              {/* Nome + badge de status */}
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <p className="text-sm font-semibold leading-snug" style={{ color: '#2d1f4e' }}>
+                                  {l.nome}
+                                </p>
                                 <span
-                                  className="mt-1.5 inline-block text-xs px-2 py-0.5 rounded-full font-medium"
-                                  style={{ backgroundColor: 'rgba(184,154,106,0.12)', color: '#92601a' }}
+                                  className="shrink-0 text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap"
+                                  style={{ backgroundColor: `${accent}18`, color: accent }}
                                 >
-                                  {l.tipo_plano}
+                                  {l.etapa}
                                 </span>
+                              </div>
+
+                              {/* Tipo de plano · Operadora */}
+                              {(l.tipo_plano || l.operadora) && (
+                                <p className="text-xs mb-1.5" style={{ color: '#7a7065' }}>
+                                  {[l.tipo_plano, l.operadora].filter(Boolean).join(' · ')}
+                                </p>
                               )}
+
+                              {/* Data de entrada */}
+                              <div className="flex items-center gap-1 mb-1">
+                                <Calendar size={10} style={{ color: '#b89a6a' }} />
+                                <span className="text-xs" style={{ color: '#9a918a' }}>
+                                  {l.criado_em
+                                    ? new Date(l.criado_em).toLocaleDateString('pt-BR')
+                                    : '—'}
+                                </span>
+                              </div>
+
+                              {/* Responsável */}
+                              <div className="flex items-center gap-1">
+                                <User size={10} style={{ color: '#b89a6a' }} />
+                                <span className="text-xs" style={{ color: '#9a918a' }}>
+                                  {l.responsavel ?? '—'}
+                                </span>
+                              </div>
                             </div>
                           )}
                         </Draggable>
