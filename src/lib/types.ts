@@ -103,13 +103,46 @@ export interface Cliente {
 
 export type ClienteInsert = Omit<Cliente, 'id' | 'criado_em'>
 
-export type StatusCompromisso = 'Agendado' | 'Pendente'
+export type TipoCompromisso =
+  | 'Reunião' | 'Ligação' | 'Follow-up' | 'Visita'
+  | 'Envio de Proposta' | 'Implantação' | 'Retorno' | 'Outro'
+
+export type StatusCompromisso = 'Agendado' | 'Concluído' | 'Cancelado'
+
+export const TIPOS_COMPROMISSO: TipoCompromisso[] = [
+  'Reunião', 'Ligação', 'Follow-up', 'Visita',
+  'Envio de Proposta', 'Implantação', 'Retorno', 'Outro',
+]
+
+export const STATUS_COMPROMISSO: StatusCompromisso[] = ['Agendado', 'Concluído', 'Cancelado']
+
+export const TIPO_COR: Record<TipoCompromisso, string> = {
+  'Reunião':           '#2d1f4e',
+  'Ligação':           '#1d4ed8',
+  'Follow-up':         '#b89a6a',
+  'Visita':            '#15803d',
+  'Envio de Proposta': '#c2410c',
+  'Implantação':       '#6b7280',
+  'Retorno':           '#be185d',
+  'Outro':             '#9a918a',
+}
+
+export const STATUS_COR: Record<StatusCompromisso, { bg: string; text: string }> = {
+  'Agendado':  { bg: '#dbeafe', text: '#1d4ed8' },
+  'Concluído': { bg: '#dcfce7', text: '#15803d' },
+  'Cancelado': { bg: '#fee2e2', text: '#b91c1c' },
+}
 
 export interface Compromisso {
   id: string
   titulo: string
   data_hora: string
-  observacao: string | null
+  tipo: TipoCompromisso
   status: StatusCompromisso
+  lead_id: string | null
+  cliente_id: string | null
+  observacoes: string | null
   criado_em: string
 }
+
+export type CompromissoInsert = Omit<Compromisso, 'id' | 'criado_em'>

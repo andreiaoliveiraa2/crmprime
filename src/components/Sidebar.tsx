@@ -15,14 +15,14 @@ import {
   Menu,
   X,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 const navItems = [
   { href: '/dashboard',     label: 'Dashboard',     icon: LayoutDashboard },
   { href: '/crm',           label: 'CRM',            icon: Users           },
   { href: '/clientes',      label: 'Clientes',       icon: UserCheck       },
-  { href: '/agenda',        label: 'Agenda',         icon: Calendar        },
+  { href: '/agenda',        label: 'Agenda',         icon: Calendar,  badge: true },
   { href: '/financeiro',    label: 'Financeiro',     icon: DollarSign      },
   { href: '/gestao',        label: 'Gestão',         icon: BarChart2       },
   { href: '/marketing',     label: 'Marketing',      icon: Megaphone       },
@@ -32,8 +32,18 @@ const navItems = [
 export default function Sidebar() {
   const pathname = usePathname()
   const [aberto, setAberto] = useState(false)
+  const [agendaHoje, setAgendaHoje] = useState(0)
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    const inicio = new Date(); inicio.setHours(0,0,0,0)
+    const fim = new Date(); fim.setHours(23,59,59,999)
+    supabase.from('agenda').select('id', { count: 'exact', head: true })
+      .gte('data_hora', inicio.toISOString())
+      .lte('data_hora', fim.toISOString())
+      .then(({ count }) => setAgendaHoje(count ?? 0))
+  }, [])
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -86,8 +96,9 @@ export default function Sidebar() {
 
         {/* Navegação */}
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-          {navItems.map(({ href, label, icon: Icon }) => {
+          {navItems.map(({ href, label, icon: Icon, badge }) => {
             const active = isActive(href)
+            const showBadge = badge && agendaHoje > 0
             return (
               <Link
                 key={href}
@@ -102,7 +113,13 @@ export default function Sidebar() {
                 }}
               >
                 <Icon size={17} />
-                {label}
+                <span className="flex-1">{label}</span>
+                {showBadge && (
+                  <span className="text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center"
+                    style={{ backgroundColor: '#b89a6a', color: '#2d1f4e' }}>
+                    {agendaHoje}
+                  </span>
+                )}
               </Link>
             )
           })}
