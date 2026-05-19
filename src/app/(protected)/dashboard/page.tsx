@@ -104,25 +104,22 @@ export default async function DashboardPage() {
     return { ...v, comprimento, offset }
   })
 
-  const leadsRecentes = leads.slice(0, 5)
-  const clientesRecentes = clientes.slice(0, 5)
+  const leadsRecentes = leads.slice(0, 4)
+  const clientesRecentes = clientes.slice(0, 4)
 
   const hoje = new Date()
   const dataFormatada = hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   const mesAtual = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
 
   return (
-    <div className="p-5 md:p-8 max-w-7xl mx-auto">
+    <div className="p-5 md:p-7 max-w-7xl mx-auto">
 
       {/* Cabeçalho */}
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-5 mb-8">
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-5">
 
-        {/* Esquerda — saudação */}
-        <div>
-          <h1
-            className="font-semibold"
-            style={{ fontSize: '22px', color: '#2d1f4e' }}
-          >
+        {/* Saudação */}
+        <div className="py-1">
+          <h1 className="font-semibold" style={{ fontSize: '22px', color: '#2d1f4e', lineHeight: '1.3' }}>
             Olá, Andreia 👋
           </h1>
           <p className="mt-1" style={{ fontSize: '13px', color: '#7a7065' }}>
@@ -130,51 +127,28 @@ export default async function DashboardPage() {
           </p>
         </div>
 
-        {/* Direita — badge data + versículo */}
-        <div className="flex flex-col items-start md:items-end gap-2" style={{ maxWidth: '340px' }}>
-
-          {/* Badge data */}
+        {/* Data + versículo */}
+        <div className="flex flex-col items-start md:items-end gap-2">
           <span
             className="text-xs font-medium capitalize px-3 py-1.5 rounded-full"
-            style={{
-              backgroundColor: 'rgba(45,31,78,0.07)',
-              color: '#2d1f4e',
-            }}
+            style={{ backgroundColor: 'rgba(45,31,78,0.07)', color: '#2d1f4e' }}
           >
             {dataFormatada}
           </span>
-
-          {/* Card versículo */}
           <div
-            className="bg-white px-4 py-3 rounded-xl w-full"
-            style={{
-              border: '1px solid #e8e4dd',
-              borderLeft: '3px solid #b89a6a',
-            }}
+            className="bg-white px-4 py-3 rounded-xl"
+            style={{ border: '1px solid #e8e4dd', borderLeft: '3px solid #b89a6a', maxWidth: '320px' }}
           >
-            <p
-              style={{
-                fontFamily: 'Georgia, "Times New Roman", serif',
-                fontStyle: 'italic',
-                fontSize: '12px',
-                color: '#5a4e3c',
-                lineHeight: '1.6',
-              }}
-            >
+            <p style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '12px', color: '#5a4e3c', lineHeight: '1.6' }}>
               "Consagre ao Senhor tudo o que você faz, e os seus planos serão bem-sucedidos."
             </p>
-            <p
-              className="mt-1.5 text-xs font-medium"
-              style={{ color: '#b89a6a' }}
-            >
-              Provérbios 16:3
-            </p>
+            <p className="mt-1 text-xs font-medium" style={{ color: '#b89a6a' }}>Provérbios 16:3</p>
           </div>
         </div>
       </div>
 
-      {/* Cards de métricas — 2 colunas no mobile, 4 no desktop */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      {/* Cards de métricas */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         <DashboardCard
           title="Total de Clientes"
           value={clientes.length}
@@ -209,111 +183,12 @@ export default async function DashboardPage() {
         />
       </div>
 
-      {/* Pipeline + Vendas por Tipo */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-
-        {/* Leads por Etapa */}
-        <div className="bg-white p-6" style={{ border: '1px solid #e8e4dd', borderRadius: '12px' }}>
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h3 className="text-sm font-semibold" style={{ color: '#2d1f4e' }}>Leads por Etapa</h3>
-              <p className="text-xs mt-0.5" style={{ color: '#9a918a' }}>{leadsAtivos} leads ativos no pipeline</p>
-            </div>
-            <Link
-              href="/crm"
-              className="flex items-center gap-0.5 text-xs font-medium"
-              style={{ color: '#b89a6a' }}
-            >
-              Ver CRM <ChevronRight size={12} />
-            </Link>
-          </div>
-
-          {leadsAtivos === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Activity size={28} className="mb-2" style={{ color: '#e0dbd4' }} />
-              <p className="text-sm" style={{ color: '#9a918a' }}>Nenhum lead ativo no momento.</p>
-              <Link href="/crm/novo" className="text-xs mt-2 font-medium" style={{ color: '#b89a6a' }}>
-                Adicionar primeiro lead
-              </Link>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {leadsPorEtapa.map(({ etapa, count }) => (
-                <div key={etapa}>
-                  <div className="flex justify-between items-center mb-1.5">
-                    <span className="text-xs font-medium" style={{ color: '#5a4e3c' }}>{etapa}</span>
-                    <span className="text-xs font-bold tabular-nums" style={{ color: '#2d1f4e' }}>
-                      {count} {count === 1 ? 'lead' : 'leads'}
-                    </span>
-                  </div>
-                  <div className="h-2.5 bg-stone-100 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-700 ${etapaBarColors[etapa] ?? 'bg-violet-400'}`}
-                      style={{ width: count === 0 ? '0%' : `${Math.max((count / maxLeadsEtapa) * 100, 4)}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Vendas do Mês por Tipo de Plano */}
-        <div className="bg-white p-6" style={{ border: '1px solid #e8e4dd', borderRadius: '12px' }}>
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h3 className="text-sm font-semibold" style={{ color: '#2d1f4e' }}>Vendas por Tipo de Plano</h3>
-              <p className="text-xs mt-0.5 capitalize" style={{ color: '#9a918a' }}>{mesAtual}</p>
-            </div>
-            <Link
-              href="/clientes"
-              className="flex items-center gap-0.5 text-xs font-medium"
-              style={{ color: '#b89a6a' }}
-            >
-              Ver clientes <ChevronRight size={12} />
-            </Link>
-          </div>
-
-          {vendasPorTipo.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <BarChart3 size={28} className="mb-2" style={{ color: '#e0dbd4' }} />
-              <p className="text-sm" style={{ color: '#9a918a' }}>Nenhuma venda registrada este mês.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {vendasPorTipo.map(({ tipo, total, count }) => (
-                <div key={tipo}>
-                  <div className="flex justify-between items-center mb-1.5">
-                    <span className="text-xs font-medium" style={{ color: '#5a4e3c' }}>{tipo}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs" style={{ color: '#9a918a' }}>({count})</span>
-                      <span className="text-xs font-bold tabular-nums" style={{ color: '#2e8b57' }}>
-                        R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#f0ece6' }}>
-                    <div
-                      className="h-full rounded-full transition-all duration-700"
-                      style={{
-                        width: `${Math.max((total / maxVendas) * 100, 4)}%`,
-                        backgroundColor: '#b89a6a',
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* Bloco Central — Leads Recentes + Clientes Recentes */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4">
 
         {/* Leads Recentes */}
-        <div className="bg-white p-6" style={{ border: '1px solid #e8e4dd', borderRadius: '12px' }}>
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white p-4" style={{ border: '1px solid #e8e4dd', borderRadius: '12px' }}>
+          <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold" style={{ color: '#2d1f4e' }}>Leads Recentes</h3>
             <Link
               href="/crm"
@@ -325,30 +200,21 @@ export default async function DashboardPage() {
           </div>
 
           {leadsRecentes.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <p className="text-sm text-stone-400">Nenhum lead cadastrado.</p>
-              <Link href="/crm/novo" className="text-xs mt-2" style={{ color: '#b89a6a' }}>
-                Cadastrar primeiro lead
-              </Link>
-            </div>
+            <p className="text-xs py-6 text-center" style={{ color: '#9a918a' }}>Nenhum lead cadastrado.</p>
           ) : (
             <ul className="divide-y" style={{ borderColor: '#f0ece6' }}>
               {leadsRecentes.map(l => {
                 const badge = etapaBadge[l.etapa] ?? { bg: '#f0f0f0', color: '#6b7280' }
                 return (
-                  <li key={l.id} className="py-3 flex items-center justify-between gap-3">
+                  <li key={l.id} className="py-2 flex items-center justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium truncate" style={{ color: '#1a1a1a' }}>
-                        {l.nome}
-                      </p>
+                      <p className="text-sm font-medium truncate" style={{ color: '#1a1a1a' }}>{l.nome}</p>
                       <p className="text-xs mt-0.5" style={{ color: '#9a918a' }}>
                         {[l.tipo_plano, l.operadora].filter(Boolean).join(' · ') || '—'}
                       </p>
                     </div>
-                    <span
-                      className="shrink-0 text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap"
-                      style={{ backgroundColor: badge.bg, color: badge.color }}
-                    >
+                    <span className="shrink-0 text-xs font-medium px-2.5 py-0.5 rounded-full whitespace-nowrap"
+                      style={{ backgroundColor: badge.bg, color: badge.color }}>
                       {l.etapa}
                     </span>
                   </li>
@@ -359,8 +225,8 @@ export default async function DashboardPage() {
         </div>
 
         {/* Clientes Recentes */}
-        <div className="bg-white p-6" style={{ border: '1px solid #e8e4dd', borderRadius: '12px' }}>
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white p-4" style={{ border: '1px solid #e8e4dd', borderRadius: '12px' }}>
+          <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold" style={{ color: '#2d1f4e' }}>Clientes Recentes</h3>
             <Link
               href="/clientes"
@@ -372,28 +238,19 @@ export default async function DashboardPage() {
           </div>
 
           {clientesRecentes.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <p className="text-sm text-stone-400">Nenhum cliente cadastrado ainda.</p>
-            </div>
+            <p className="text-xs py-6 text-center" style={{ color: '#9a918a' }}>Nenhum cliente cadastrado ainda.</p>
           ) : (
             <ul className="divide-y" style={{ borderColor: '#f0ece6' }}>
               {clientesRecentes.map(c => (
-                <li key={c.id} className="py-3 flex items-center justify-between gap-3">
+                <li key={c.id} className="py-2 flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-sm font-medium truncate" style={{ color: '#1a1a1a' }}>
-                      {c.nome}
-                    </p>
+                    <p className="text-sm font-medium truncate" style={{ color: '#1a1a1a' }}>{c.nome}</p>
                     <p className="text-xs mt-0.5" style={{ color: '#9a918a' }}>
-                      {[
-                        c.operadora,
-                        c.quantidade_vidas ? `${c.quantidade_vidas} ${c.quantidade_vidas === 1 ? 'vida' : 'vidas'}` : null,
-                      ].filter(Boolean).join(' · ') || '—'}
+                      {[c.operadora, c.quantidade_vidas ? `${c.quantidade_vidas} vidas` : null].filter(Boolean).join(' · ') || '—'}
                     </p>
                   </div>
-                  <span
-                    className="shrink-0 text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap"
-                    style={{ backgroundColor: '#dcfce7', color: '#15803d' }}
-                  >
+                  <span className="shrink-0 text-xs font-medium px-2.5 py-0.5 rounded-full whitespace-nowrap"
+                    style={{ backgroundColor: '#dcfce7', color: '#15803d' }}>
                     Ativo
                   </span>
                 </li>
@@ -404,11 +261,11 @@ export default async function DashboardPage() {
       </div>
 
       {/* Bloco Inferior — Agenda da Semana + Vendas por Operadora */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
 
         {/* Agenda da Semana */}
-        <div className="bg-white p-6" style={{ border: '1px solid #e8e4dd', borderRadius: '12px' }}>
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white p-4" style={{ border: '1px solid #e8e4dd', borderRadius: '12px' }}>
+          <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold" style={{ color: '#2d1f4e' }}>Agenda da Semana</h3>
             <Link
               href="/agenda"
@@ -420,52 +277,26 @@ export default async function DashboardPage() {
           </div>
 
           {compromissos.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 text-center gap-2">
-              <div className="p-3 rounded-full" style={{ backgroundColor: 'rgba(184,154,106,0.1)' }}>
-                <Calendar size={22} style={{ color: '#b89a6a' }} />
-              </div>
-              <p className="text-sm" style={{ color: '#9a918a' }}>Nenhum compromisso esta semana.</p>
-              <Link href="/agenda" className="text-xs font-medium" style={{ color: '#b89a6a' }}>
-                Agendar compromisso
-              </Link>
-            </div>
+            <p className="text-xs py-6 text-center" style={{ color: '#9a918a' }}>Nenhum compromisso esta semana.</p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {compromissos.map(c => {
                 const dt = new Date(c.data_hora)
-                const diaSemana = dt.toLocaleDateString('pt-BR', { weekday: 'short' })
-                const dia = dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+                const dia = dt.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })
                 const hora = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
                 const isAgendado = c.status === 'Agendado'
                 return (
-                  <div
-                    key={c.id}
-                    className="flex items-start gap-3 p-3 rounded-xl"
-                    style={{ backgroundColor: '#faf8f5' }}
-                  >
-                    <div className="text-center shrink-0 w-10">
-                      <p className="text-xs font-medium capitalize" style={{ color: '#9a918a' }}>{diaSemana}</p>
-                      <p className="text-xs font-bold" style={{ color: '#b89a6a' }}>{dia}</p>
-                      <p className="text-xs font-semibold mt-0.5" style={{ color: '#b89a6a' }}>{hora}</p>
+                  <div key={c.id} className="flex items-center gap-3 p-2.5 rounded-lg" style={{ backgroundColor: '#faf8f5' }}>
+                    <div className="shrink-0 w-20">
+                      <p className="text-xs capitalize font-medium" style={{ color: '#b89a6a' }}>{dia}</p>
+                      <p className="text-xs" style={{ color: '#b89a6a' }}>{hora}</p>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold truncate" style={{ color: '#1a1a1a' }}>
-                        {c.titulo}
-                      </p>
-                      {c.observacao && (
-                        <p className="text-xs mt-0.5 truncate" style={{ color: '#9a918a' }}>
-                          {c.observacao}
-                        </p>
-                      )}
+                      <p className="text-sm font-semibold truncate" style={{ color: '#1a1a1a' }}>{c.titulo}</p>
+                      {c.observacao && <p className="text-xs mt-0.5 truncate" style={{ color: '#9a918a' }}>{c.observacao}</p>}
                     </div>
-                    <span
-                      className="shrink-0 text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap"
-                      style={
-                        isAgendado
-                          ? { backgroundColor: '#dbeafe', color: '#1d4ed8' }
-                          : { backgroundColor: '#fef9c3', color: '#a16207' }
-                      }
-                    >
+                    <span className="shrink-0 text-xs font-medium px-2.5 py-0.5 rounded-full"
+                      style={isAgendado ? { backgroundColor: '#dbeafe', color: '#1d4ed8' } : { backgroundColor: '#fef9c3', color: '#a16207' }}>
                       {c.status}
                     </span>
                   </div>
@@ -476,24 +307,19 @@ export default async function DashboardPage() {
         </div>
 
         {/* Vendas do Mês por Operadora — donut SVG */}
-        <div className="bg-white p-6" style={{ border: '1px solid #e8e4dd', borderRadius: '12px' }}>
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white p-4" style={{ border: '1px solid #e8e4dd', borderRadius: '12px' }}>
+          <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold" style={{ color: '#2d1f4e' }}>Vendas por Operadora</h3>
             <span className="text-xs capitalize" style={{ color: '#9a918a' }}>{mesAtual}</span>
           </div>
 
           {totalOperadoras === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 text-center gap-2">
-              <div className="p-3 rounded-full" style={{ backgroundColor: 'rgba(184,154,106,0.1)' }}>
-                <BarChart3 size={22} style={{ color: '#b89a6a' }} />
-              </div>
-              <p className="text-sm" style={{ color: '#9a918a' }}>Nenhuma venda com operadora registrada este mês.</p>
-            </div>
+            <p className="text-xs py-6 text-center" style={{ color: '#9a918a' }}>Nenhuma venda com operadora este mês.</p>
           ) : (
-            <div className="flex flex-col items-center gap-5">
-              {/* Donut SVG */}
-              <div className="relative">
-                <svg width="140" height="140" viewBox="0 0 140 140">
+            <div className="flex items-center gap-4">
+              {/* Donut SVG menor */}
+              <div className="shrink-0">
+                <svg width="110" height="110" viewBox="0 0 140 140">
                   {/* Trilha de fundo */}
                   <circle
                     cx="70" cy="70" r={R}
@@ -525,28 +351,19 @@ export default async function DashboardPage() {
                 </svg>
               </div>
 
-              {/* Legenda */}
-              <div className="w-full space-y-2">
+              {/* Legenda ao lado */}
+              <div className="flex-1 space-y-1.5">
                 {segmentos.map((seg, i) => {
                   const pct = totalOperadoras > 0 ? Math.round((seg.count / totalOperadoras) * 100) : 0
                   return (
                     <div key={i} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span
-                          className="w-2.5 h-2.5 rounded-full shrink-0"
-                          style={{ backgroundColor: seg.color }}
-                        />
-                        <span className="text-xs truncate" style={{ color: '#5a4e3c' }}>
-                          {seg.operadora}
-                        </span>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: seg.color }} />
+                        <span className="text-xs truncate" style={{ color: '#5a4e3c' }}>{seg.operadora}</span>
                       </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className="text-xs font-semibold" style={{ color: '#2d1f4e' }}>
-                          {seg.count}
-                        </span>
-                        <span className="text-xs w-8 text-right" style={{ color: '#9a918a' }}>
-                          {pct}%
-                        </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs font-semibold" style={{ color: '#2d1f4e' }}>{seg.count}</span>
+                        <span className="text-xs w-7 text-right" style={{ color: '#9a918a' }}>{pct}%</span>
                       </div>
                     </div>
                   )
