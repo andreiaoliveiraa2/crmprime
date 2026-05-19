@@ -67,8 +67,6 @@ export default async function DashboardPage() {
   const clientesRecentes = clientes.slice(0, 6)
 
   const hoje = new Date()
-  const hora = hoje.getHours()
-  const saudacao = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite'
   const dataFormatada = hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   const mesAtual = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
 
@@ -76,12 +74,62 @@ export default async function DashboardPage() {
     <div className="p-5 md:p-8 max-w-7xl mx-auto">
 
       {/* Cabeçalho */}
-      <div className="mb-8">
-        <p className="text-xs font-medium text-stone-400 uppercase tracking-widest mb-1 capitalize">
-          {dataFormatada}
-        </p>
-        <h1 className="text-2xl font-bold text-stone-900">{saudacao}, Andreia</h1>
-        <p className="text-sm text-stone-500 mt-0.5">Aqui está o resumo do seu negócio hoje.</p>
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-5 mb-8">
+
+        {/* Esquerda — saudação */}
+        <div>
+          <h1
+            className="font-semibold"
+            style={{ fontSize: '22px', color: '#2d1f4e' }}
+          >
+            Olá, Andreia 👋
+          </h1>
+          <p className="mt-1" style={{ fontSize: '13px', color: '#7a7065' }}>
+            Aqui está o resumo do seu dia
+          </p>
+        </div>
+
+        {/* Direita — badge data + versículo */}
+        <div className="flex flex-col items-start md:items-end gap-2" style={{ maxWidth: '340px' }}>
+
+          {/* Badge data */}
+          <span
+            className="text-xs font-medium capitalize px-3 py-1.5 rounded-full"
+            style={{
+              backgroundColor: 'rgba(45,31,78,0.07)',
+              color: '#2d1f4e',
+            }}
+          >
+            {dataFormatada}
+          </span>
+
+          {/* Card versículo */}
+          <div
+            className="bg-white px-4 py-3 rounded-xl w-full"
+            style={{
+              border: '1px solid #e8e4dd',
+              borderLeft: '3px solid #b89a6a',
+            }}
+          >
+            <p
+              style={{
+                fontFamily: 'Georgia, "Times New Roman", serif',
+                fontStyle: 'italic',
+                fontSize: '12px',
+                color: '#5a4e3c',
+                lineHeight: '1.6',
+              }}
+            >
+              "Consagre ao Senhor tudo o que você faz, e os seus planos serão bem-sucedidos."
+            </p>
+            <p
+              className="mt-1.5 text-xs font-medium"
+              style={{ color: '#b89a6a' }}
+            >
+              Provérbios 16:3
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Cards de métricas — 2 colunas no mobile, 4 no desktop */}
