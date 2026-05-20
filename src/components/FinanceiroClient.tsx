@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Venda, Comissao, Conta, RegraComissao, ParcelaRegra } from '@/lib/types'
 import ProducaoTab from './ProducaoTab'
+import ComissoesTab from './ComissoesTab'
 
 type Aba = 'producao' | 'comissoes' | 'contas' | 'relatorios'
 
@@ -78,9 +79,13 @@ export default function FinanceiroClient({ vendas, comissoes, contas, regras, pa
         />
       )}
       {aba === 'comissoes' && (
-        <div className="bg-white rounded-xl shadow p-6 text-gray-400 text-sm">
-          Aba Comissões — em breve
-        </div>
+        <ComissoesTab
+          comissoes={comissoes}
+          vendas={vendas}
+          regras={regras}
+          parcelas={parcelas}
+          onAtualizar={reload}
+        />
       )}
       {aba === 'contas' && (
         <div className="bg-white rounded-xl shadow p-6 text-gray-400 text-sm">
