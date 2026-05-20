@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Cliente, ClienteInsert, TIPOS_PLANO, STATUS_CLIENTE } from '@/lib/types'
 import { useOperadoras } from '@/lib/useOperadoras'
+import { calcularComissoes } from '@/lib/calcularComissoes'
 
 interface Props {
   cliente?: Cliente
@@ -75,6 +76,81 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
       })
   }, [])
 
+  async function gerarComissoes(vendaId: string, dataVendaFinal: string, payloadLocal: ClienteInsert) {
+    const resultado = calcularComissoes({
+      vendaId,
+      valorPlano: payloadLocal.valor_plano!,
+      dataVenda: dataVendaFinal,
+      operadora: payloadLocal.operadora!,
+      percentualCorretora: payloadLocal.percentual_comissao_corretora ?? null,
+      percentualVendedor: payloadLocal.percentual_comissao_vendedor ?? null,
+      temVitalicio: payloadLocal.tem_vitalicio ?? null,
+      percentualVitalicio: payloadLocal.percentual_vitalicio ?? null,
+    })
+
+    if (resultado) {
+      await supabase.from('comissoes').delete().eq('venda_id', vendaId).eq('tipo', 'parcela')
+      await supabase.from('comissoes').delete().eq('venda_id', vendaId).eq('tipo', 'vitalicio')
+      const todas = [...resultado.parcelas, ...resultado.vitalicios]
+      if (todas.length > 0) await supabase.from('comissoes').insert(todas)
+    } else if (payloadLocal.operadora) {
+      const { data: regra } = await supabase
+        .from('regras_comissao')
+        .select('id, percentual_total, num_parcelas, percentual_vitalicio')
+        .eq('operadora', payloadLocal.operadora)
+        .eq('ativo', true)
+        .maybeSingle()
+
+      if (regra) {
+        const { data: parcelas } = await supabase
+          .from('parcelas_regra')
+          .select('numero_parcela, percentual_empresa, percentual_vendedor')
+          .eq('regra_id', regra.id)
+          .order('numero_parcela')
+
+        const parcelasArr = (parcelas ?? []) as { numero_parcela: number; percentual_empresa: number; percentual_vendedor: number }[]
+        const comissoes: object[] = []
+
+        for (let i = 1; i <= regra.num_parcelas; i++) {
+          const pr = parcelasArr.find(p => p.numero_parcela === i)
+          const pctEmp = pr?.percentual_empresa ?? 50
+          const pctVend = pr?.percentual_vendedor ?? 50
+          const valorBruto = payloadLocal.valor_plano! * (regra.percentual_total / 100) / regra.num_parcelas
+          const d = new Date(dataVendaFinal)
+          d.setMonth(d.getMonth() + (i - 1))
+          comissoes.push({
+            venda_id: vendaId, tipo: 'parcela', numero_parcela: i,
+            valor_bruto: valorBruto,
+            valor_empresa: valorBruto * (pctEmp / 100),
+            valor_vendedor: valorBruto * (pctVend / 100),
+            status_empresa: 'Pendente', status_vendedor: 'Pendente',
+            data_prevista: d.toISOString().split('T')[0],
+            data_recebida_empresa: null, data_recebida_vendedor: null,
+          })
+        }
+
+        if (regra.percentual_vitalicio > 0) {
+          const valorBruto = payloadLocal.valor_plano! * (regra.percentual_vitalicio / 100)
+          const ultima = parcelasArr[parcelasArr.length - 1]
+          const d = new Date(dataVendaFinal)
+          d.setMonth(d.getMonth() + regra.num_parcelas)
+          comissoes.push({
+            venda_id: vendaId, tipo: 'vitalicio', numero_parcela: null,
+            valor_bruto: valorBruto,
+            valor_empresa: valorBruto * ((ultima?.percentual_empresa ?? 50) / 100),
+            valor_vendedor: valorBruto * ((ultima?.percentual_vendedor ?? 50) / 100),
+            status_empresa: 'Pendente', status_vendedor: 'Pendente',
+            data_prevista: d.toISOString().split('T')[0],
+            data_recebida_empresa: null, data_recebida_vendedor: null,
+          })
+        }
+
+        await supabase.from('comissoes').delete().eq('venda_id', vendaId)
+        if (comissoes.length > 0) await supabase.from('comissoes').insert(comissoes)
+      }
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setErro('')
@@ -130,6 +206,7 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
           .eq('cliente_id', cliente.id)
           .eq('origem', 'cliente')
           .maybeSingle()
+        let vendaId: string | null = null
         if (vendaExistente) {
           await supabase.from('vendas').update({
             cliente_nome: payload.nome,
@@ -138,8 +215,9 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
             vendedor: payload.vendedor ?? '',
             data_venda: payload.data_venda ?? new Date().toISOString().split('T')[0],
           }).eq('id', vendaExistente.id)
+          vendaId = vendaExistente.id
         } else {
-          await supabase.from('vendas').insert({
+          const { data: novaVendaUpdate } = await supabase.from('vendas').insert({
             cliente_id: cliente.id,
             cliente_nome: payload.nome,
             operadora: payload.operadora,
@@ -148,7 +226,12 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
             data_venda: payload.data_venda ?? new Date().toISOString().split('T')[0],
             status: 'Ativo',
             origem: 'cliente',
-          })
+          }).select('id').single()
+          vendaId = novaVendaUpdate?.id ?? null
+        }
+        if (vendaId) {
+          const dvFinal = payload.data_venda ?? new Date().toISOString().split('T')[0]
+          await gerarComissoes(vendaId, dvFinal, payload)
         }
       }
     } else {
@@ -156,7 +239,7 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
       if (error) { setErro(`Erro: ${error.message}`); setLoading(false); return }
 
       if (novoCliente && payload.valor_plano && payload.operadora) {
-        await supabase.from('vendas').insert({
+        const { data: novaVenda } = await supabase.from('vendas').insert({
           cliente_id: novoCliente.id,
           cliente_nome: payload.nome,
           operadora: payload.operadora,
@@ -165,7 +248,11 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
           data_venda: payload.data_venda ?? new Date().toISOString().split('T')[0],
           status: 'Ativo',
           origem: 'cliente',
-        })
+        }).select('id').single()
+        if (novaVenda) {
+          const dvFinal = payload.data_venda ?? new Date().toISOString().split('T')[0]
+          await gerarComissoes(novaVenda.id, dvFinal, payload)
+        }
       }
     }
 
@@ -288,6 +375,79 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
               className={inputCls} style={inputStyle} />
           </div>
 
+          {/* Data de Início + Data de Vencimento do Plano */}
+          <div>
+            <label className={labelCls} style={labelStyle}>Data de Início do Plano</label>
+            <input type="date" value={dataInicioPlano} onChange={e => setDataInicioPlano(e.target.value)}
+              className={inputCls} style={inputStyle} />
+          </div>
+
+          <div>
+            <label className={labelCls} style={labelStyle}>Data de Vencimento do Plano</label>
+            <input type="date" value={dataVencimentoPlano} onChange={e => setDataVencimentoPlano(e.target.value)}
+              className={inputCls} style={inputStyle} />
+          </div>
+
+          {/* Tipo de Acomodação + Abrangência */}
+          <div>
+            <label className={labelCls} style={labelStyle}>Tipo de Acomodação</label>
+            <select value={tipoAcomodacao} onChange={e => setTipoAcomodacao(e.target.value)}
+              className={inputCls} style={{ ...inputStyle, color: tipoAcomodacao ? '#1a1a1a' : '#9a918a' }}>
+              <option value="">Selecione...</option>
+              <option value="Enfermaria">Enfermaria</option>
+              <option value="Apartamento">Apartamento</option>
+              <option value="UTI">UTI</option>
+            </select>
+          </div>
+
+          <div>
+            <label className={labelCls} style={labelStyle}>Abrangência</label>
+            <select value={abrangencia} onChange={e => setAbrangencia(e.target.value)}
+              className={inputCls} style={{ ...inputStyle, color: abrangencia ? '#1a1a1a' : '#9a918a' }}>
+              <option value="">Selecione...</option>
+              <option value="Municipal">Municipal</option>
+              <option value="Estadual">Estadual</option>
+              <option value="Nacional">Nacional</option>
+            </select>
+          </div>
+
+          {/* Coparticipação + Carência (toggles Sim/Não) */}
+          <div>
+            <label className={labelCls} style={labelStyle}>Coparticipação</label>
+            <div className="flex gap-3 mt-1">
+              {([true, false] as const).map(v => (
+                <button key={String(v)} type="button"
+                  onClick={() => setCoparticipacao(v)}
+                  className="flex-1 py-2 rounded-xl text-sm font-medium border transition-all"
+                  style={{
+                    borderColor: coparticipacao === v ? '#2d1f4e' : '#e8e4dd',
+                    backgroundColor: coparticipacao === v ? '#2d1f4e' : '#ffffff',
+                    color: coparticipacao === v ? '#ffffff' : '#5a4e3c',
+                  }}>
+                  {v ? 'Sim' : 'Não'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className={labelCls} style={labelStyle}>Carência</label>
+            <div className="flex gap-3 mt-1">
+              {([true, false] as const).map(v => (
+                <button key={String(v)} type="button"
+                  onClick={() => setCarencia(v)}
+                  className="flex-1 py-2 rounded-xl text-sm font-medium border transition-all"
+                  style={{
+                    borderColor: carencia === v ? '#2d1f4e' : '#e8e4dd',
+                    backgroundColor: carencia === v ? '#2d1f4e' : '#ffffff',
+                    color: carencia === v ? '#ffffff' : '#5a4e3c',
+                  }}>
+                  {v ? 'Sim' : 'Não'}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div>
             <label className={labelCls} style={labelStyle}>Status</label>
             <select value={status} onChange={e => setStatus(e.target.value as 'Ativo' | 'Inativo' | 'Cancelado')}
@@ -311,6 +471,89 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
               {vendedoresLista.map(v => <option key={v} value={v}>{v}</option>)}
             </select>
           </div>
+
+          {/* Corretora Responsável */}
+          <div>
+            <label className={labelCls} style={labelStyle}>Corretora Responsável</label>
+            <select value={corretoraResponsavel} onChange={e => setCorretoraResponsavel(e.target.value)}
+              className={inputCls} style={{ ...inputStyle, color: corretoraResponsavel ? '#1a1a1a' : '#9a918a' }}>
+              <option value="">Selecione...</option>
+              <option value="A2 Prime">A2 Prime</option>
+              <option value="A2 Corretora">A2 Corretora</option>
+              <option value="MEI Alessandro">MEI Alessandro</option>
+            </select>
+          </div>
+
+          {/* Forma de Pagamento */}
+          <div>
+            <label className={labelCls} style={labelStyle}>Forma de Pagamento</label>
+            <select value={formaPagamento} onChange={e => setFormaPagamento(e.target.value)}
+              className={inputCls} style={{ ...inputStyle, color: formaPagamento ? '#1a1a1a' : '#9a918a' }}>
+              <option value="">Selecione...</option>
+              <option value="Boleto">Boleto</option>
+              <option value="Débito">Débito</option>
+              <option value="Cartão">Cartão</option>
+              <option value="Desconto em Folha">Desconto em Folha</option>
+            </select>
+          </div>
+
+          {/* Dia de Vencimento — apenas se Boleto */}
+          {formaPagamento === 'Boleto' && (
+            <div>
+              <label className={labelCls} style={labelStyle}>Dia de Vencimento do Boleto</label>
+              <input type="number" min="1" max="31" value={diaVencimentoBoleto}
+                onChange={e => setDiaVencimentoBoleto(e.target.value)}
+                placeholder="Ex: 10"
+                className={inputCls} style={inputStyle} />
+            </div>
+          )}
+
+          {/* % Comissão Corretora + % Comissão Vendedor */}
+          <div>
+            <label className={labelCls} style={labelStyle}>% Comissão Corretora</label>
+            <input type="number" step="0.01" min="0" max="100" value={percentualComissaoCorretora}
+              onChange={e => setPercentualComissaoCorretora(e.target.value)}
+              placeholder="Ex: 30"
+              className={inputCls} style={inputStyle} />
+          </div>
+
+          <div>
+            <label className={labelCls} style={labelStyle}>% Comissão Vendedor</label>
+            <input type="number" step="0.01" min="0" max="100" value={percentualComissaoVendedor}
+              onChange={e => setPercentualComissaoVendedor(e.target.value)}
+              placeholder="Ex: 10"
+              className={inputCls} style={inputStyle} />
+          </div>
+
+          {/* Tem Vitalício (toggle) */}
+          <div className="md:col-span-2">
+            <label className={labelCls} style={labelStyle}>Tem Vitalício</label>
+            <div className="flex gap-3 mt-1 max-w-xs">
+              {([true, false] as const).map(v => (
+                <button key={String(v)} type="button"
+                  onClick={() => setTemVitalicio(v)}
+                  className="flex-1 py-2 rounded-xl text-sm font-medium border transition-all"
+                  style={{
+                    borderColor: temVitalicio === v ? '#b89a6a' : '#e8e4dd',
+                    backgroundColor: temVitalicio === v ? '#b89a6a' : '#ffffff',
+                    color: temVitalicio === v ? '#ffffff' : '#5a4e3c',
+                  }}>
+                  {v ? 'Sim' : 'Não'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* % Vitalício — apenas se Sim */}
+          {temVitalicio && (
+            <div>
+              <label className={labelCls} style={labelStyle}>% Vitalício (mensal)</label>
+              <input type="number" step="0.01" min="0" max="100" value={percentualVitalicio}
+                onChange={e => setPercentualVitalicio(e.target.value)}
+                placeholder="Ex: 2"
+                className={inputCls} style={inputStyle} />
+            </div>
+          )}
 
           <div>
             <label className={labelCls} style={labelStyle}>Comissão (R$)</label>
