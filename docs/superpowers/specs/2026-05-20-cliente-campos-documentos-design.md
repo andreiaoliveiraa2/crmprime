@@ -72,8 +72,9 @@ Path de cada arquivo: `{cliente_id}/{uuid}-{nome_original}`
 
 ### Dados do Plano (expandido)
 
-Adicionar ao grid existente:
-- Data de início do plano (`data_inicio_plano`) + Data de vencimento (`data_vencimento_plano`) — lado a lado
+Adicionar ao grid existente (na seção já existente de Dados do Plano):
+- Data de início do plano (`data_inicio_plano`) — após Data de Implantação
+- Data de vencimento do plano (`data_vencimento_plano`) — logo abaixo de Data de Implantação, ao lado de Data de início
 - Coparticipação (`coparticipacao`) + Carência (`carencia`) — toggles Sim/Não lado a lado
 - Tipo de acomodação (`tipo_acomodacao`) — select: Enfermaria / Apartamento / UTI
 - Abrangência (`abrangencia`) — select: Municipal / Estadual / Nacional
