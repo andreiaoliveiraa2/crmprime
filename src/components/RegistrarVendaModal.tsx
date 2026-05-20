@@ -14,6 +14,9 @@ interface Props {
 interface ClienteSugestao {
   id: string
   nome: string
+  operadora: string | null
+  valor_plano: number | null
+  vendedor: string | null
 }
 
 export default function RegistrarVendaModal({ onClose, onSalvo, operadoras, vendedores }: Props) {
@@ -56,7 +59,7 @@ export default function RegistrarVendaModal({ onClose, onSalvo, operadoras, vend
       setBuscandoCliente(true)
       const { data } = await supabase
         .from('clientes')
-        .select('id, nome')
+        .select('id, nome, operadora, valor_plano, vendedor')
         .ilike('nome', `%${value}%`)
         .limit(8)
       setSugestoes(data ?? [])
@@ -71,6 +74,9 @@ export default function RegistrarVendaModal({ onClose, onSalvo, operadoras, vend
   function selecionarCliente(c: ClienteSugestao) {
     setClienteNome(c.nome)
     setClienteId(c.id)
+    if (c.operadora) setOperadora(c.operadora)
+    if (c.valor_plano) setValorPlano(String(c.valor_plano))
+    if (c.vendedor) setVendedor(c.vendedor)
     setSugestoes([])
     setDropdownAberto(false)
   }

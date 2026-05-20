@@ -92,9 +92,51 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
     if (editando) {
       const { error } = await supabase.from('clientes').update(payload).eq('id', cliente.id)
       if (error) { setErro(`Erro: ${error.message}`); setLoading(false); return }
+
+      if (payload.valor_plano && payload.operadora) {
+        const { data: vendaExistente } = await supabase
+          .from('vendas')
+          .select('id')
+          .eq('cliente_id', cliente.id)
+          .eq('origem', 'cliente')
+          .maybeSingle()
+        if (vendaExistente) {
+          await supabase.from('vendas').update({
+            cliente_nome: payload.nome,
+            operadora: payload.operadora,
+            valor_plano: payload.valor_plano,
+            vendedor: payload.vendedor ?? '',
+            data_venda: payload.data_venda ?? new Date().toISOString().split('T')[0],
+          }).eq('id', vendaExistente.id)
+        } else {
+          await supabase.from('vendas').insert({
+            cliente_id: cliente.id,
+            cliente_nome: payload.nome,
+            operadora: payload.operadora,
+            valor_plano: payload.valor_plano,
+            vendedor: payload.vendedor ?? '',
+            data_venda: payload.data_venda ?? new Date().toISOString().split('T')[0],
+            status: 'Ativo',
+            origem: 'cliente',
+          })
+        }
+      }
     } else {
-      const { error } = await supabase.from('clientes').insert(payload)
+      const { data: novoCliente, error } = await supabase.from('clientes').insert(payload).select().single()
       if (error) { setErro(`Erro: ${error.message}`); setLoading(false); return }
+
+      if (novoCliente && payload.valor_plano && payload.operadora) {
+        await supabase.from('vendas').insert({
+          cliente_id: novoCliente.id,
+          cliente_nome: payload.nome,
+          operadora: payload.operadora,
+          valor_plano: payload.valor_plano,
+          vendedor: payload.vendedor ?? '',
+          data_venda: payload.data_venda ?? new Date().toISOString().split('T')[0],
+          status: 'Ativo',
+          origem: 'cliente',
+        })
+      }
     }
 
     setLoading(false)

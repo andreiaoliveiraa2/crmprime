@@ -69,12 +69,25 @@ export default function ConversaoModal({ lead, onClose, onCancelar, onReverteFec
       comissao:         null,
     }
 
-    const { error } = await supabase.from('clientes').insert(payload)
+    const { data: novoCliente, error } = await supabase.from('clientes').insert(payload).select().single()
     if (error) {
       setErro('Erro ao converter. Tente novamente.')
       setLoading(false)
       onReverteFechado?.()
       return
+    }
+
+    if (novoCliente && payload.valor_plano && payload.operadora) {
+      await supabase.from('vendas').insert({
+        cliente_id: novoCliente.id,
+        cliente_nome: novoCliente.nome,
+        operadora: payload.operadora,
+        valor_plano: payload.valor_plano,
+        vendedor: payload.vendedor ?? '',
+        data_venda: new Date().toISOString().split('T')[0],
+        status: 'Ativo',
+        origem: 'cliente',
+      })
     }
 
     const { error: deleteError } = await supabase.from('leads').delete().eq('id', lead.id)
