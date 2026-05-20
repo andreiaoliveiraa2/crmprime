@@ -1,16 +1,14 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { DollarSign, TrendingUp, Repeat, CreditCard, Plus, FileText, FileSpreadsheet } from 'lucide-react'
+import { DollarSign, TrendingUp, Repeat, CreditCard, FileText, FileSpreadsheet } from 'lucide-react'
 import { Venda, Comissao, Conta } from '@/lib/types'
-import RegistrarVendaModal from './RegistrarVendaModal'
 import { useOperadoras } from '@/lib/useOperadoras'
 
 interface Props {
   vendas: Venda[]
   comissoes: Comissao[]
   contas: Conta[]
-  onVendaRegistrada: () => void
 }
 
 function formatBRL(value: number): string {
@@ -25,12 +23,11 @@ function formatDate(dateStr: string): string {
 
 const selectCls = 'border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2'
 
-export default function ProducaoTab({ vendas, comissoes, contas, onVendaRegistrada }: Props) {
+export default function ProducaoTab({ vendas, comissoes, contas }: Props) {
   const [filtroOperadora, setFiltroOperadora] = useState('')
   const [filtroVendedor, setFiltroVendedor] = useState('')
   const [dataInicio, setDataInicio] = useState('')
   const [dataFim, setDataFim] = useState('')
-  const [modalAberto, setModalAberto] = useState(false)
 
   const operadoras = useOperadoras()
   const vendedores = useMemo(() => [...new Set(vendas.map(v => v.vendedor))].sort(), [vendas])
@@ -198,67 +195,56 @@ export default function ProducaoTab({ vendas, comissoes, contas, onVendaRegistra
         </div>
       </div>
 
-      {/* Filter Bar + Registrar Venda Button */}
-      <div className="bg-white rounded-xl p-4 space-y-3" style={{ border: '1px solid #e8e4dd' }}>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <select
-              value={filtroOperadora}
-              onChange={e => setFiltroOperadora(e.target.value)}
+      {/* Filter Bar */}
+      <div className="bg-white rounded-xl p-4" style={{ border: '1px solid #e8e4dd' }}>
+        <div className="flex flex-wrap items-center gap-3">
+          <select
+            value={filtroOperadora}
+            onChange={e => setFiltroOperadora(e.target.value)}
+            className={selectCls}
+            style={{ borderColor: '#e8e4dd', color: filtroOperadora ? '#1a1a1a' : '#9a918a' }}
+          >
+            <option value="">Todas as operadoras</option>
+            {operadoras.map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
+
+          <select
+            value={filtroVendedor}
+            onChange={e => setFiltroVendedor(e.target.value)}
+            className={selectCls}
+            style={{ borderColor: '#e8e4dd', color: filtroVendedor ? '#1a1a1a' : '#9a918a' }}
+          >
+            <option value="">Todos os vendedores</option>
+            {vendedores.map(v => <option key={v} value={v}>{v}</option>)}
+          </select>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={dataInicio}
+              onChange={e => setDataInicio(e.target.value)}
               className={selectCls}
-              style={{ borderColor: '#e8e4dd', color: filtroOperadora ? '#1a1a1a' : '#9a918a' }}
-            >
-              <option value="">Todas as operadoras</option>
-              {operadoras.map(o => <option key={o} value={o}>{o}</option>)}
-            </select>
-
-            <select
-              value={filtroVendedor}
-              onChange={e => setFiltroVendedor(e.target.value)}
+              style={{ borderColor: '#e8e4dd' }}
+            />
+            <span className="text-xs" style={{ color: '#9a918a' }}>até</span>
+            <input
+              type="date"
+              value={dataFim}
+              onChange={e => setDataFim(e.target.value)}
               className={selectCls}
-              style={{ borderColor: '#e8e4dd', color: filtroVendedor ? '#1a1a1a' : '#9a918a' }}
-            >
-              <option value="">Todos os vendedores</option>
-              {vendedores.map(v => <option key={v} value={v}>{v}</option>)}
-            </select>
-
-            <div className="flex items-center gap-2">
-              <input
-                type="date"
-                value={dataInicio}
-                onChange={e => setDataInicio(e.target.value)}
-                className={selectCls}
-                style={{ borderColor: '#e8e4dd' }}
-              />
-              <span className="text-xs" style={{ color: '#9a918a' }}>até</span>
-              <input
-                type="date"
-                value={dataFim}
-                onChange={e => setDataFim(e.target.value)}
-                className={selectCls}
-                style={{ borderColor: '#e8e4dd' }}
-              />
-            </div>
-
-            {temFiltro && (
-              <button
-                onClick={limparFiltros}
-                className="px-3 py-2 text-sm font-medium rounded-xl hover:opacity-80 transition-opacity"
-                style={{ backgroundColor: '#f0ece6', color: '#5a4e3c' }}
-              >
-                Limpar filtros
-              </button>
-            )}
+              style={{ borderColor: '#e8e4dd' }}
+            />
           </div>
 
-          <button
-            onClick={() => setModalAberto(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
-            style={{ backgroundColor: '#2d1f4e', color: '#ffffff' }}
-          >
-            <Plus size={15} />
-            Registrar Venda
-          </button>
+          {temFiltro && (
+            <button
+              onClick={limparFiltros}
+              className="px-3 py-2 text-sm font-medium rounded-xl hover:opacity-80 transition-opacity"
+              style={{ backgroundColor: '#f0ece6', color: '#5a4e3c' }}
+            >
+              Limpar filtros
+            </button>
+          )}
         </div>
       </div>
 
@@ -362,17 +348,6 @@ export default function ProducaoTab({ vendas, comissoes, contas, onVendaRegistra
         </button>
       </div>
 
-      {/* Registrar Venda Modal */}
-      {modalAberto && (
-        <RegistrarVendaModal
-          vendedores={vendedores}
-          onClose={() => setModalAberto(false)}
-          onSalvo={() => {
-            setModalAberto(false)
-            onVendaRegistrada()
-          }}
-        />
-      )}
     </div>
   )
 }

@@ -77,7 +77,6 @@ export default function FinanceiroClient({ vendas, comissoes, contas, regras, pa
           vendas={vendas}
           comissoes={comissoes}
           contas={contas}
-          onVendaRegistrada={reload}
         />
       )}
       {aba === 'comissoes' && (
