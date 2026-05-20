@@ -6,6 +6,7 @@ import { Venda, Comissao, Conta, RegraComissao, ParcelaRegra } from '@/lib/types
 import ProducaoTab from './ProducaoTab'
 import ComissoesTab from './ComissoesTab'
 import ContasTab from './ContasTab'
+import RelatoriosTab from './RelatoriosTab'
 
 type Aba = 'producao' | 'comissoes' | 'contas' | 'relatorios'
 
@@ -92,9 +93,7 @@ export default function FinanceiroClient({ vendas, comissoes, contas, regras, pa
         <ContasTab contas={contas} onAtualizar={reload} />
       )}
       {aba === 'relatorios' && (
-        <div className="bg-white rounded-xl shadow p-6 text-gray-400 text-sm">
-          Aba Relatórios — em breve
-        </div>
+        <RelatoriosTab vendas={vendas} comissoes={comissoes} contas={contas} />
       )}
     </div>
   )
