@@ -35,10 +35,25 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
   const [dataVenda, setDataVenda]         = useState(cliente?.data_venda ?? '')
   const [dataImplantacao, setDataImpl]    = useState(cliente?.data_implantacao ?? '')
   const [status, setStatus]              = useState<'Ativo' | 'Inativo' | 'Cancelado'>(cliente?.status ?? 'Ativo')
+  // Dados do Plano — campos novos
+  const [dataInicioPlano, setDataInicioPlano]         = useState(cliente?.data_inicio_plano ?? '')
+  const [dataVencimentoPlano, setDataVencimentoPlano] = useState(cliente?.data_vencimento_plano ?? '')
+  const [coparticipacao, setCoparticipacao]           = useState(cliente?.coparticipacao ?? false)
+  const [tipoAcomodacao, setTipoAcomodacao]           = useState(cliente?.tipo_acomodacao ?? '')
+  const [abrangencia, setAbrangencia]                 = useState(cliente?.abrangencia ?? '')
+  const [carencia, setCarencia]                       = useState(cliente?.carencia ?? false)
   // Dados Comerciais
   const [vendedor, setVendedor]           = useState(cliente?.vendedor ?? '')
   const [comissao, setComissao]           = useState(cliente?.comissao?.toString() ?? '')
   const [observacoes, setObservacoes]     = useState(cliente?.observacoes ?? '')
+  // Dados Comerciais — campos novos
+  const [formaPagamento, setFormaPagamento]                         = useState(cliente?.forma_pagamento ?? '')
+  const [diaVencimentoBoleto, setDiaVencimentoBoleto]               = useState(cliente?.dia_vencimento_boleto?.toString() ?? '')
+  const [corretoraResponsavel, setCorretoraResponsavel]             = useState(cliente?.corretora_responsavel ?? '')
+  const [percentualComissaoCorretora, setPercentualComissaoCorretora] = useState(cliente?.percentual_comissao_corretora?.toString() ?? '')
+  const [percentualComissaoVendedor, setPercentualComissaoVendedor]   = useState(cliente?.percentual_comissao_vendedor?.toString() ?? '')
+  const [temVitalicio, setTemVitalicio]                             = useState(cliente?.tem_vitalicio ?? false)
+  const [percentualVitalicio, setPercentualVitalicio]               = useState(cliente?.percentual_vitalicio?.toString() ?? '')
 
   const operadorasLista = useOperadoras()
   const [vendedoresLista, setVendedoresLista] = useState<string[]>([])
@@ -87,6 +102,21 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
       comissao:          comissao ? Number(comissao.replace(',', '.')) : null,
       observacoes:       observacoes.trim() || null,
       lead_id:           cliente?.lead_id ?? null,
+      // Dados do Plano — novos
+      data_inicio_plano:       dataInicioPlano || null,
+      data_vencimento_plano:   dataVencimentoPlano || null,
+      coparticipacao:          coparticipacao || null,
+      tipo_acomodacao:         tipoAcomodacao.trim() || null,
+      abrangencia:             abrangencia.trim() || null,
+      carencia:                carencia || null,
+      // Dados Comerciais — novos
+      forma_pagamento:                 formaPagamento.trim() || null,
+      dia_vencimento_boleto:           diaVencimentoBoleto ? Number(diaVencimentoBoleto) : null,
+      corretora_responsavel:           corretoraResponsavel.trim() || null,
+      percentual_comissao_corretora:   percentualComissaoCorretora ? Number(percentualComissaoCorretora.replace(',', '.')) : null,
+      percentual_comissao_vendedor:    percentualComissaoVendedor ? Number(percentualComissaoVendedor.replace(',', '.')) : null,
+      tem_vitalicio:                   temVitalicio || null,
+      percentual_vitalicio:            percentualVitalicio ? Number(percentualVitalicio.replace(',', '.')) : null,
     }
 
     if (editando) {

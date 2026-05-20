@@ -99,6 +99,21 @@ export interface Cliente {
   observacoes: string | null
   lead_id: string | null
   criado_em: string
+  // Dados do Plano — novos
+  data_inicio_plano: string | null
+  data_vencimento_plano: string | null
+  coparticipacao: boolean | null
+  tipo_acomodacao: string | null
+  abrangencia: string | null
+  carencia: boolean | null
+  // Dados Comerciais — novos
+  forma_pagamento: string | null
+  dia_vencimento_boleto: number | null
+  corretora_responsavel: string | null
+  percentual_comissao_corretora: number | null
+  percentual_comissao_vendedor: number | null
+  tem_vitalicio: boolean | null
+  percentual_vitalicio: number | null
 }
 
 export type ClienteInsert = Omit<Cliente, 'id' | 'criado_em'>
@@ -219,5 +234,15 @@ export interface ImportacaoComissao {
   total_valor: number
   erros_count: number
   erros_detalhe: unknown[]
+  criado_em: string
+}
+
+export interface DocumentoCliente {
+  id: string
+  cliente_id: string
+  tipo: 'Contrato' | 'Proposta' | 'RG' | 'CNH' | 'Outro'
+  nome_arquivo: string
+  storage_path: string
+  tamanho_bytes: number | null
   criado_em: string
 }
