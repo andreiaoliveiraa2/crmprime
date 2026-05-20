@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Venda, Comissao, Conta, RegraComissao, ParcelaRegra } from '@/lib/types'
 import ProducaoTab from './ProducaoTab'
 import ComissoesTab from './ComissoesTab'
+import ContasTab from './ContasTab'
 
 type Aba = 'producao' | 'comissoes' | 'contas' | 'relatorios'
 
@@ -88,9 +89,7 @@ export default function FinanceiroClient({ vendas, comissoes, contas, regras, pa
         />
       )}
       {aba === 'contas' && (
-        <div className="bg-white rounded-xl shadow p-6 text-gray-400 text-sm">
-          Aba Contas — em breve
-        </div>
+        <ContasTab contas={contas} onAtualizar={reload} />
       )}
       {aba === 'relatorios' && (
         <div className="bg-white rounded-xl shadow p-6 text-gray-400 text-sm">
