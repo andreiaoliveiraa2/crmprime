@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { RegraComissao, ParcelaRegra } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
+import { useOperadoras } from '@/lib/useOperadoras'
 
 interface Props {
   onClose: () => void
   onSalvo: () => void
-  operadoras: string[]
   regraEditando?: RegraComissao & { parcelas: ParcelaRegra[] }
 }
 
@@ -30,8 +30,9 @@ function buildParcelaForms(n: number, existing: ParcelaRegra[]): ParcelaForm[] {
   })
 }
 
-export default function RegraComissaoModal({ onClose, onSalvo, operadoras, regraEditando }: Props) {
+export default function RegraComissaoModal({ onClose, onSalvo, regraEditando }: Props) {
   const supabase = createClient()
+  const operadoras = useOperadoras()
   const editando = !!regraEditando
 
   const [operadora, setOperadora] = useState(regraEditando?.operadora ?? '')

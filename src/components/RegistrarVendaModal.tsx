@@ -3,11 +3,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { X, Search } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useOperadoras } from '@/lib/useOperadoras'
 
 interface Props {
   onClose: () => void
   onSalvo: () => void
-  operadoras: string[]
   vendedores: string[]
 }
 
@@ -19,8 +19,9 @@ interface ClienteSugestao {
   vendedor: string | null
 }
 
-export default function RegistrarVendaModal({ onClose, onSalvo, operadoras, vendedores }: Props) {
+export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Props) {
   const supabase = createClient()
+  const operadoras = useOperadoras()
 
   // Form state
   const [clienteNome, setClienteNome] = useState('')

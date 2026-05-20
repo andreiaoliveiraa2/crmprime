@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import { DollarSign, TrendingUp, Repeat, CreditCard, Plus, FileText, FileSpreadsheet } from 'lucide-react'
 import { Venda, Comissao, Conta } from '@/lib/types'
 import RegistrarVendaModal from './RegistrarVendaModal'
+import { useOperadoras } from '@/lib/useOperadoras'
 
 interface Props {
   vendas: Venda[]
@@ -31,8 +32,7 @@ export default function ProducaoTab({ vendas, comissoes, contas, onVendaRegistra
   const [dataFim, setDataFim] = useState('')
   const [modalAberto, setModalAberto] = useState(false)
 
-  // Unique values for filter dropdowns
-  const operadoras = useMemo(() => [...new Set(vendas.map(v => v.operadora))].sort(), [vendas])
+  const operadoras = useOperadoras()
   const vendedores = useMemo(() => [...new Set(vendas.map(v => v.vendedor))].sort(), [vendas])
 
   // Summary card calculations
@@ -365,7 +365,6 @@ export default function ProducaoTab({ vendas, comissoes, contas, onVendaRegistra
       {/* Registrar Venda Modal */}
       {modalAberto && (
         <RegistrarVendaModal
-          operadoras={operadoras}
           vendedores={vendedores}
           onClose={() => setModalAberto(false)}
           onSalvo={() => {

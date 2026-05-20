@@ -5,6 +5,7 @@ import { CheckCircle, Clock, Repeat, Pencil, Trash2, Plus } from 'lucide-react'
 import { Comissao, Venda, RegraComissao, ParcelaRegra } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import RegraComissaoModal from './RegraComissaoModal'
+import { useOperadoras } from '@/lib/useOperadoras'
 
 interface Props {
   comissoes: Comissao[]
@@ -33,6 +34,7 @@ type ComissaoComVenda = Comissao & {
 
 export default function ComissoesTab({ comissoes, vendas, regras, parcelas, onAtualizar }: Props) {
   const supabase = createClient()
+  const operadoras = useOperadoras()
 
   // Filter state
   const [filtroOperadora, setFiltroOperadora] = useState('')
@@ -67,7 +69,6 @@ export default function ComissoesTab({ comissoes, vendas, regras, parcelas, onAt
   }, [comissoes, vendaMap])
 
   // Dynamic filter options
-  const operadoras = useMemo(() => [...new Set(comissoesComVenda.map(c => c.operadora).filter(o => o !== '—'))].sort(), [comissoesComVenda])
   const vendedores = useMemo(() => {
     const ids = [...new Set(comissoes.map(c => c.venda_id))]
     const vendedorSet = new Set<string>()
@@ -457,7 +458,6 @@ export default function ComissoesTab({ comissoes, vendas, regras, parcelas, onAt
       {/* Modal */}
       {modalAberto && (
         <RegraComissaoModal
-          operadoras={operadoras}
           regraEditando={regraEditando ?? undefined}
           onClose={fecharModal}
           onSalvo={() => {
