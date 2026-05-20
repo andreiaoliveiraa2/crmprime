@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Cliente, ClienteInsert, TIPOS_PLANO, STATUS_CLIENTE } from '@/lib/types'
 import { useOperadoras } from '@/lib/useOperadoras'
 import { calcularComissoes } from '@/lib/calcularComissoes'
+import DocumentosCliente from './DocumentosCliente'
 
 interface Props {
   cliente?: Cliente
@@ -570,6 +571,11 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
           </div>
         </div>
       </div>
+
+      {/* ── Documentos (somente ao editar) ── */}
+      {editando && cliente?.id && (
+        <DocumentosCliente clienteId={cliente.id} />
+      )}
 
       {erro && <p className="text-sm font-medium" style={{ color: '#b5455a' }}>{erro}</p>}
 
