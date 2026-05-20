@@ -140,3 +140,84 @@ export interface Compromisso {
 }
 
 export type CompromissoInsert = Omit<Compromisso, 'id' | 'criado_em'>
+
+// Financeiro Module Types
+export interface Venda {
+  id: string
+  cliente_id: string | null
+  cliente_nome: string
+  operadora: string
+  valor_plano: number
+  vendedor: string
+  data_venda: string
+  status: 'Ativo' | 'Cancelado'
+  origem: 'cliente' | 'manual'
+  criado_em: string
+}
+export type VendaInsert = Omit<Venda, 'id' | 'criado_em'>
+
+export interface RegraComissao {
+  id: string
+  operadora: string
+  percentual_total: number
+  num_parcelas: number
+  percentual_vitalicio: number
+  ativo: boolean
+  criado_em: string
+}
+export type RegraComissaoInsert = Omit<RegraComissao, 'id' | 'criado_em'>
+
+export interface ParcelaRegra {
+  id: string
+  regra_id: string
+  numero_parcela: number
+  percentual_empresa: number
+  percentual_vendedor: number
+}
+export type ParcelaRegraInsert = Omit<ParcelaRegra, 'id'>
+
+export interface Comissao {
+  id: string
+  venda_id: string
+  tipo: 'parcela' | 'vitalicio'
+  numero_parcela: number | null
+  valor_bruto: number
+  valor_empresa: number
+  valor_vendedor: number
+  status_empresa: 'Pendente' | 'Recebido'
+  status_vendedor: 'Pendente' | 'Recebido'
+  data_prevista: string
+  data_recebida_empresa: string | null
+  data_recebida_vendedor: string | null
+  criado_em: string
+}
+
+export interface Conta {
+  id: string
+  tipo: 'receber' | 'pagar'
+  descricao: string
+  valor: number
+  vencimento: string
+  status: 'Pendente' | 'Recebido' | 'Pago'
+  observacoes: string | null
+  criado_em: string
+}
+export type ContaInsert = Omit<Conta, 'id' | 'criado_em'>
+
+export interface MapeamentoImportacao {
+  id: string
+  operadora: string
+  mapeamento: Record<string, string>
+  atualizado_em: string
+}
+
+export interface ImportacaoComissao {
+  id: string
+  operadora: string
+  nome_arquivo: string
+  total_registros: number
+  total_valor: number
+  erros_count: number
+  erros_detalhe: unknown[]
+  criado_em: string
+}
