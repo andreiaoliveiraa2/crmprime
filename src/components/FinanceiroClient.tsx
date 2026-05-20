@@ -1,7 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Venda, Comissao, Conta, RegraComissao, ParcelaRegra } from '@/lib/types'
+import ProducaoTab from './ProducaoTab'
 
 type Aba = 'producao' | 'comissoes' | 'contas' | 'relatorios'
 
@@ -22,6 +24,11 @@ const ABAS: { id: Aba; label: string }[] = [
 
 export default function FinanceiroClient({ vendas, comissoes, contas, regras, parcelas }: Props) {
   const [aba, setAba] = useState<Aba>('producao')
+  const router = useRouter()
+
+  function reload() {
+    router.refresh()
+  }
 
   return (
     <div>
@@ -63,9 +70,12 @@ export default function FinanceiroClient({ vendas, comissoes, contas, regras, pa
 
       {/* Tab Content */}
       {aba === 'producao' && (
-        <div className="bg-white rounded-xl shadow p-6 text-gray-400 text-sm">
-          Aba Produção — em breve
-        </div>
+        <ProducaoTab
+          vendas={vendas}
+          comissoes={comissoes}
+          contas={contas}
+          onVendaRegistrada={reload}
+        />
       )}
       {aba === 'comissoes' && (
         <div className="bg-white rounded-xl shadow p-6 text-gray-400 text-sm">
