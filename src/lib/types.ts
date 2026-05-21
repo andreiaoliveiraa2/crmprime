@@ -55,11 +55,56 @@ export interface Lead {
   criado_em: string
 }
 
+export const TIPOS_VENDEDOR = ['Interno', 'Afiliado', 'Corretor Parceiro'] as const
+export const CORRETORAS_VENDEDOR = ['A2 Prime', 'A2 Corretora', 'MEI Alessandro'] as const
+export const FORMAS_REPASSE = ['No recebimento', 'Antecipado'] as const
+export const REPASSE_SOBRE = [
+  'Comissão Recebida',
+  'Comissão Prevista',
+  'Prêmio Líquido',
+  'Valor Fixo',
+  'Repasse por Vida',
+] as const
+
 export interface Vendedor {
   id: string
   nome: string
   ativo: boolean
   criado_em: string
+  // Dados pessoais
+  cpf_cnpj: string | null
+  rg: string | null
+  data_nascimento: string | null
+  sexo: string | null
+  telefone: string | null
+  email: string | null
+  endereco_cep: string | null
+  endereco_logradouro: string | null
+  endereco_numero: string | null
+  endereco_complemento: string | null
+  endereco_bairro: string | null
+  endereco_cidade: string | null
+  endereco_estado: string | null
+  // Dados profissionais
+  tipo: string | null
+  corretora: string | null
+  data_admissao: string | null
+  data_demissao: string | null
+  susep: string | null
+  // Configuração de repasse
+  percentual_repasse: number | null
+  forma_repasse: string | null
+  repasse_sobre: string | null
+  tem_vitalicio: boolean
+  percentual_vitalicio: number | null
+  // Informações bancárias
+  banco: string | null
+  agencia: string | null
+  conta: string | null
+  tipo_conta: string | null
+  pix: string | null
+  // Observações
+  observacoes: string | null
 }
 
 export interface Operadora {
