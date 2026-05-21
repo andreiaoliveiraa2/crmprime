@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { Vendedor, TIPOS_VENDEDOR, CORRETORAS_VENDEDOR } from '@/lib/types'
+import { Vendedor, TIPOS_VENDEDOR, NIVEIS_VENDEDOR } from '@/lib/types'
 import { Plus, Search, Eye, Pencil, UserX } from 'lucide-react'
 
 interface Props {
@@ -16,9 +16,9 @@ const selectStyle = { borderColor: '#e8e4dd' }
 export default function GestaoClient({ vendedores: inicial }: Props) {
   const [lista, setLista]                     = useState(inicial)
   const [busca, setBusca]                     = useState('')
-  const [filtroTipo, setFiltroTipo]           = useState('')
-  const [filtroCorretora, setFiltroCorretora] = useState('')
-  const [filtroStatus, setFiltroStatus]       = useState('')
+  const [filtroTipo, setFiltroTipo]     = useState('')
+  const [filtroNivel, setFiltroNivel]   = useState('')
+  const [filtroStatus, setFiltroStatus] = useState('')
   const [confirmandoId, setConfirmandoId]     = useState<string | null>(null)
 
   const supabase = createClient()
@@ -33,12 +33,12 @@ export default function GestaoClient({ vendedores: inicial }: Props) {
         if (!match) return false
       }
       if (filtroTipo && v.tipo !== filtroTipo) return false
-      if (filtroCorretora && v.corretora !== filtroCorretora) return false
+      if (filtroNivel && v.nivel !== filtroNivel) return false
       if (filtroStatus === 'ativo' && !v.ativo) return false
       if (filtroStatus === 'inativo' && v.ativo) return false
       return true
     })
-  }, [lista, busca, filtroTipo, filtroCorretora, filtroStatus])
+  }, [lista, busca, filtroTipo, filtroNivel, filtroStatus])
 
   async function desativar(id: string) {
     await supabase.from('vendedores').update({ ativo: false }).eq('id', id)
@@ -97,11 +97,11 @@ export default function GestaoClient({ vendedores: inicial }: Props) {
         <select
           className={selectCls}
           style={selectStyle}
-          value={filtroCorretora}
-          onChange={e => setFiltroCorretora(e.target.value)}
+          value={filtroNivel}
+          onChange={e => setFiltroNivel(e.target.value)}
         >
-          <option value="">Todas as corretoras</option>
-          {CORRETORAS_VENDEDOR.map(c => <option key={c}>{c}</option>)}
+          <option value="">Todos os níveis</option>
+          {NIVEIS_VENDEDOR.map(n => <option key={n}>{n}</option>)}
         </select>
         <select
           className={selectCls}
@@ -121,7 +121,7 @@ export default function GestaoClient({ vendedores: inicial }: Props) {
           <table className="w-full text-sm">
             <thead>
               <tr style={{ backgroundColor: '#f4f1ec', borderBottom: '1px solid #e8e4dd' }}>
-                {['Nome', 'Tipo', 'Corretora', 'Status', 'Telefone', ''].map(h => (
+                {['Nome', 'Tipo', 'Nível', 'Status', 'Telefone', ''].map(h => (
                   <th
                     key={h}
                     className={`px-4 py-3 font-semibold ${h === '' ? 'text-right' : 'text-left'}`}
@@ -148,7 +148,7 @@ export default function GestaoClient({ vendedores: inicial }: Props) {
                 <tr key={v.id} style={{ borderBottom: '1px solid #f4f1ec' }}>
                   <td className="px-4 py-3 font-medium" style={{ color: '#1a1a1a' }}>{v.nome}</td>
                   <td className="px-4 py-3" style={{ color: '#4a4a4a' }}>{v.tipo ?? '—'}</td>
-                  <td className="px-4 py-3" style={{ color: '#4a4a4a' }}>{v.corretora ?? '—'}</td>
+                  <td className="px-4 py-3" style={{ color: '#4a4a4a' }}>{v.nivel ?? '—'}</td>
                   <td className="px-4 py-3">
                     <span
                       className="px-2.5 py-1 rounded-full text-xs font-semibold"
