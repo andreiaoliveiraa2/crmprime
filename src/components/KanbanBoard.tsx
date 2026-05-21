@@ -40,17 +40,21 @@ export default function KanbanBoard({ leads, onLeadMoved }: Props) {
       if (!confirm('Marcar este lead como Perdido?')) return
     }
 
-    // Atualiza o estado no pai imediatamente (sem router.refresh)
+    // Atualiza o estado no pai imediatamente
     onLeadMoved(draggableId, novaEtapa)
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('leads')
       .update({ etapa: novaEtapa })
       .eq('id', draggableId)
+      .select('id')
 
     if (error) {
-      // Reverte no pai se falhou
+      console.error('[Kanban] Erro ao salvar etapa:', error.message, error.details)
       onLeadMoved(draggableId, etapaAnterior)
+    } else if (!data || data.length === 0) {
+      console.warn('[Kanban] Update sem efeito — nenhuma linha atualizada. Lead ID:', draggableId)
+      // Não reverte: o lead pode ter sido excluído ou RLS bloqueou
     }
   }
 
