@@ -97,7 +97,7 @@ export default async function DashboardPage() {
     return { ...v, comprimento, offset }
   })
 
-  const leadsRecentes    = leads.slice(0,4)
+  const leadsRecentes    = leads.filter(l => l.etapa !== 'Vendido' && l.etapa !== 'Perdido').slice(0,4)
   const clientesRecentes = clientes.slice(0,4)
   const dataFormatada    = agora.toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long', year:'numeric' })
   const mesAtual         = agora.toLocaleDateString('pt-BR', { month:'long', year:'numeric' })
