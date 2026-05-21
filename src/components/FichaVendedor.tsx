@@ -134,29 +134,10 @@ export default function FichaVendedor({ vendedor, vendas, comissoes }: Props) {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <Campo label="Tipo"             value={vendedor.tipo} />
           <Campo label="Corretora"        value={vendedor.corretora} />
+          <Campo label="Nível"            value={vendedor.nivel} />
           <Campo label="Data de admissão" value={vendedor.data_admissao} />
           <Campo label="Data de demissão" value={vendedor.data_demissao} />
           <Campo label="SUSEP"            value={vendedor.susep} />
-        </div>
-      </div>
-
-      {/* Repasse */}
-      <div className={cardCls} style={cardStyle}>
-        <p className={sectionTitleCls} style={sectionTitleStyle}>Configuração de Repasse</p>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <Campo
-            label="Percentual de repasse"
-            value={vendedor.percentual_repasse != null ? `${vendedor.percentual_repasse}%` : null}
-          />
-          <Campo label="Forma de repasse" value={vendedor.forma_repasse} />
-          <Campo label="Repasse sobre"    value={vendedor.repasse_sobre} />
-          <Campo label="Tem vitalício"    value={vendedor.tem_vitalicio ? 'Sim' : 'Não'} />
-          {vendedor.tem_vitalicio && (
-            <Campo
-              label="Percentual do vitalício"
-              value={vendedor.percentual_vitalicio != null ? `${vendedor.percentual_vitalicio}%` : null}
-            />
-          )}
         </div>
       </div>
 

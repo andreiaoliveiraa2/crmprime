@@ -46,3 +46,6 @@ alter table vendedores add column if not exists pix        text;
 
 -- Observações
 alter table vendedores add column if not exists observacoes text;
+
+-- Nível do vendedor (adicionado após ajuste de 2026-05-21)
+alter table vendedores add column if not exists nivel text;

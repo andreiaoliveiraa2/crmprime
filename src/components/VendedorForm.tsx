@@ -8,8 +8,7 @@ import {
   VendedorInsert,
   TIPOS_VENDEDOR,
   CORRETORAS_VENDEDOR,
-  FORMAS_REPASSE,
-  REPASSE_SOBRE,
+  NIVEIS_VENDEDOR,
 } from '@/lib/types'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 
@@ -80,19 +79,13 @@ export default function VendedorForm({ vendedor }: Props) {
   // Dados profissionais
   const [tipo, setTipo]                 = useState(vendedor?.tipo ?? '')
   const [corretora, setCorretora]       = useState(vendedor?.corretora ?? '')
+  const [nivel, setNivel]               = useState(vendedor?.nivel ?? '')
   const [dataAdmissao, setDataAdmissao] = useState(vendedor?.data_admissao ?? '')
   const [dataDemissao, setDataDemissao] = useState(vendedor?.data_demissao ?? '')
   const [susep, setSusep]               = useState(vendedor?.susep ?? '')
   const [ativo, setAtivo]               = useState(vendedor?.ativo ?? true)
 
-  // Repasse
-  const [percentualRepasse, setPercentualRepasse]     = useState(vendedor?.percentual_repasse?.toString() ?? '')
-  const [formaRepasse, setFormaRepasse]               = useState(vendedor?.forma_repasse ?? '')
-  const [repasseSobre, setRepasseSobre]               = useState(vendedor?.repasse_sobre ?? '')
-  const [temVitalicio, setTemVitalicio]               = useState(vendedor?.tem_vitalicio ?? false)
-  const [percentualVitalicio, setPercentualVitalicio] = useState(vendedor?.percentual_vitalicio?.toString() ?? '')
-
-  // Bancário
+  // Informações bancárias
   const [banco, setBanco]         = useState(vendedor?.banco ?? '')
   const [agencia, setAgencia]     = useState(vendedor?.agencia ?? '')
   const [conta, setConta]         = useState(vendedor?.conta ?? '')
@@ -138,14 +131,10 @@ export default function VendedorForm({ vendedor }: Props) {
       endereco_estado:       enderecoEstado || null,
       tipo:                  tipo || null,
       corretora:             corretora || null,
+      nivel:                 nivel || null,
       data_admissao:         dataAdmissao || null,
       data_demissao:         dataDemissao || null,
       susep:                 susep || null,
-      percentual_repasse:    percentualRepasse ? parseFloat(percentualRepasse) : null,
-      forma_repasse:         formaRepasse || null,
-      repasse_sobre:         repasseSobre || null,
-      tem_vitalicio:         temVitalicio,
-      percentual_vitalicio:  percentualVitalicio ? parseFloat(percentualVitalicio) : null,
       banco:                 banco || null,
       agencia:               agencia || null,
       conta:                 conta || null,
@@ -258,16 +247,11 @@ export default function VendedorForm({ vendedor }: Props) {
           </select>
         </div>
         <div>
-          <label className={labelCls} style={labelStyle}>Data de admissão</label>
-          <input type="date" className={inputCls} style={inputStyle} value={dataAdmissao} onChange={e => setDataAdmissao(e.target.value)} />
-        </div>
-        <div>
-          <label className={labelCls} style={labelStyle}>Data de demissão</label>
-          <input type="date" className={inputCls} style={inputStyle} value={dataDemissao} onChange={e => setDataDemissao(e.target.value)} />
-        </div>
-        <div>
-          <label className={labelCls} style={labelStyle}>SUSEP</label>
-          <input className={inputCls} style={inputStyle} value={susep} onChange={e => setSusep(e.target.value)} />
+          <label className={labelCls} style={labelStyle}>Nível</label>
+          <select className={inputCls} style={inputStyle} value={nivel} onChange={e => setNivel(e.target.value)}>
+            <option value="">Selecione</option>
+            {NIVEIS_VENDEDOR.map(n => <option key={n}>{n}</option>)}
+          </select>
         </div>
         <div>
           <label className={labelCls} style={labelStyle}>Status</label>
@@ -281,66 +265,21 @@ export default function VendedorForm({ vendedor }: Props) {
             <option value="inativo">Inativo</option>
           </select>
         </div>
-      </Secao>
-
-      <Secao titulo="Configuração de Repasse" {...secaoProps(2)}>
         <div>
-          <label className={labelCls} style={labelStyle}>Percentual de repasse (%)</label>
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            max="100"
-            className={inputCls}
-            style={inputStyle}
-            value={percentualRepasse}
-            onChange={e => setPercentualRepasse(e.target.value)}
-          />
+          <label className={labelCls} style={labelStyle}>Data de admissão</label>
+          <input type="date" className={inputCls} style={inputStyle} value={dataAdmissao} onChange={e => setDataAdmissao(e.target.value)} />
         </div>
         <div>
-          <label className={labelCls} style={labelStyle}>Forma de repasse</label>
-          <select className={inputCls} style={inputStyle} value={formaRepasse} onChange={e => setFormaRepasse(e.target.value)}>
-            <option value="">Selecione</option>
-            {FORMAS_REPASSE.map(f => <option key={f}>{f}</option>)}
-          </select>
+          <label className={labelCls} style={labelStyle}>Data de demissão</label>
+          <input type="date" className={inputCls} style={inputStyle} value={dataDemissao} onChange={e => setDataDemissao(e.target.value)} />
         </div>
         <div className="md:col-span-2">
-          <label className={labelCls} style={labelStyle}>Repasse sobre</label>
-          <select className={inputCls} style={inputStyle} value={repasseSobre} onChange={e => setRepasseSobre(e.target.value)}>
-            <option value="">Selecione</option>
-            {REPASSE_SOBRE.map(r => <option key={r}>{r}</option>)}
-          </select>
+          <label className={labelCls} style={labelStyle}>SUSEP</label>
+          <input className={inputCls} style={inputStyle} value={susep} onChange={e => setSusep(e.target.value)} />
         </div>
-        <div>
-          <label className={labelCls} style={labelStyle}>Tem vitalício</label>
-          <select
-            className={inputCls}
-            style={inputStyle}
-            value={temVitalicio ? 'sim' : 'nao'}
-            onChange={e => setTemVitalicio(e.target.value === 'sim')}
-          >
-            <option value="nao">Não</option>
-            <option value="sim">Sim</option>
-          </select>
-        </div>
-        {temVitalicio && (
-          <div>
-            <label className={labelCls} style={labelStyle}>Percentual do vitalício (%)</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              max="100"
-              className={inputCls}
-              style={inputStyle}
-              value={percentualVitalicio}
-              onChange={e => setPercentualVitalicio(e.target.value)}
-            />
-          </div>
-        )}
       </Secao>
 
-      <Secao titulo="Informações Bancárias" {...secaoProps(3)}>
+      <Secao titulo="Informações Bancárias" {...secaoProps(2)}>
         <div>
           <label className={labelCls} style={labelStyle}>Banco</label>
           <input className={inputCls} style={inputStyle} value={banco} onChange={e => setBanco(e.target.value)} />
@@ -367,7 +306,7 @@ export default function VendedorForm({ vendedor }: Props) {
         </div>
       </Secao>
 
-      <Secao titulo="Observações" {...secaoProps(4)}>
+      <Secao titulo="Observações" {...secaoProps(3)}>
         <div className="md:col-span-2">
           <textarea
             className={inputCls}

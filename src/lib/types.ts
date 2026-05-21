@@ -57,14 +57,7 @@ export interface Lead {
 
 export const TIPOS_VENDEDOR = ['Interno', 'Afiliado', 'Corretor Parceiro'] as const
 export const CORRETORAS_VENDEDOR = ['A2 Prime', 'A2 Corretora', 'MEI Alessandro'] as const
-export const FORMAS_REPASSE = ['No recebimento', 'Antecipado'] as const
-export const REPASSE_SOBRE = [
-  'Comissão Recebida',
-  'Comissão Prevista',
-  'Prêmio Líquido',
-  'Valor Fixo',
-  'Repasse por Vida',
-] as const
+export const NIVEIS_VENDEDOR = ['Iniciante', 'Experiente', 'VIP'] as const
 
 export interface Vendedor {
   id: string
@@ -88,15 +81,10 @@ export interface Vendedor {
   // Dados profissionais
   tipo: string | null
   corretora: string | null
+  nivel: string | null
   data_admissao: string | null
   data_demissao: string | null
   susep: string | null
-  // Configuração de repasse
-  percentual_repasse: number | null
-  forma_repasse: string | null
-  repasse_sobre: string | null
-  tem_vitalicio: boolean
-  percentual_vitalicio: number | null
   // Informações bancárias
   banco: string | null
   agencia: string | null
