@@ -59,6 +59,9 @@ export const TIPOS_VENDEDOR = ['Interno', 'Afiliado', 'Corretor Parceiro'] as co
 export const CORRETORAS_VENDEDOR = ['A2 Prime', 'A2 Corretora', 'MEI Alessandro'] as const
 export const NIVEIS_VENDEDOR = ['Iniciante', 'Experiente', 'VIP'] as const
 
+export const EMPRESAS = ['A2 Prime', 'A2 Corretora', 'MEI Alessandro'] as const
+export type Empresa = typeof EMPRESAS[number]
+
 export interface Vendedor {
   id: string
   nome: string
@@ -200,6 +203,7 @@ export interface Venda {
   data_venda: string
   status: 'Ativo' | 'Cancelado'
   origem: 'cliente' | 'manual'
+  empresa: string | null
   criado_em: string
 }
 export type VendaInsert = Omit<Venda, 'id' | 'criado_em'>
@@ -237,6 +241,7 @@ export interface Comissao {
   data_prevista: string
   data_recebida_empresa: string | null
   data_recebida_vendedor: string | null
+  empresa: string | null
   criado_em: string
 }
 
@@ -248,6 +253,7 @@ export interface Conta {
   vencimento: string
   status: 'Pendente' | 'Recebido' | 'Pago'
   observacoes: string | null
+  empresa: string | null
   criado_em: string
 }
 export type ContaInsert = Omit<Conta, 'id' | 'criado_em'>
