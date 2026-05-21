@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Cliente, ClienteInsert, TIPOS_PLANO, STATUS_CLIENTE } from '@/lib/types'
@@ -50,7 +50,6 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
   const [observacoes, setObservacoes]     = useState(cliente?.observacoes ?? '')
   // Dados Comerciais — campos novos
   const [formaPagamento, setFormaPagamento]                         = useState(cliente?.forma_pagamento ?? '')
-  const [diaVencimentoBoleto, setDiaVencimentoBoleto]               = useState(cliente?.dia_vencimento_boleto?.toString() ?? '')
   const [corretoraResponsavel, setCorretoraResponsavel]             = useState(cliente?.corretora_responsavel ?? '')
   const [percentualComissaoCorretora, setPercentualComissaoCorretora] = useState(cliente?.percentual_comissao_corretora?.toString() ?? '')
   const [percentualComissaoVendedor, setPercentualComissaoVendedor]   = useState(cliente?.percentual_comissao_vendedor?.toString() ?? '')
@@ -66,6 +65,9 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
   const supabase = createClient()
   const editando = !!cliente
 
+  // Skips the first render so we only auto-fill when the user actively changes the operadora
+  const operadoraInitialized = useRef(false)
+
   useEffect(() => {
     supabase
       .from('vendedores')
@@ -76,6 +78,46 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
         if (data) setVendedoresLista(data.map((v: { nome: string }) => v.nome))
       })
   }, [])
+
+  // Auto-fill commission fields when operadora changes
+  useEffect(() => {
+    if (!operadoraInitialized.current) {
+      operadoraInitialized.current = true
+      return
+    }
+    if (!operadora) {
+      setPercentualComissaoCorretora('')
+      setPercentualComissaoVendedor('')
+      setTemVitalicio(false)
+      setPercentualVitalicio('')
+      return
+    }
+    supabase
+      .from('regras_comissao')
+      .select('percentual_total, percentual_vitalicio, parcelas_regra(percentual_vendedor)')
+      .eq('operadora', operadora)
+      .eq('ativo', true)
+      .maybeSingle()
+      .then(({ data: regra }) => {
+        if (!regra) return
+        setPercentualComissaoCorretora(String(regra.percentual_total))
+        setTemVitalicio(regra.percentual_vitalicio > 0)
+        setPercentualVitalicio(regra.percentual_vitalicio > 0 ? String(regra.percentual_vitalicio) : '')
+        const parcelas = regra.parcelas_regra as { percentual_vendedor: number }[] | null
+        if (parcelas && parcelas.length > 0) {
+          setPercentualComissaoVendedor(String(parcelas[0].percentual_vendedor))
+        }
+      })
+  }, [operadora])
+
+  // Auto-calculate Comissão R$ = valor_plano × % comissão corretora / 100
+  useEffect(() => {
+    const vp = parseFloat(valor_plano.replace(',', '.'))
+    const pct = parseFloat(percentualComissaoCorretora.replace(',', '.'))
+    if (!isNaN(vp) && !isNaN(pct) && vp > 0 && pct > 0) {
+      setComissao((vp * pct / 100).toFixed(2).replace('.', ','))
+    }
+  }, [valor_plano, percentualComissaoCorretora])
 
   async function gerarComissoes(vendaId: string, dataVendaFinal: string, payloadLocal: ClienteInsert, empresa: string | null) {
     const resultado = calcularComissoes({
@@ -193,7 +235,7 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
       carencia:                carencia || null,
       // Dados Comerciais — novos
       forma_pagamento:                 formaPagamento.trim() || null,
-      dia_vencimento_boleto:           diaVencimentoBoleto ? Number(diaVencimentoBoleto) : null,
+      dia_vencimento_boleto:           null,
       corretora_responsavel:           corretoraResponsavel.trim() || null,
       percentual_comissao_corretora:   percentualComissaoCorretora ? Number(percentualComissaoCorretora.replace(',', '.')) : null,
       percentual_comissao_vendedor:    percentualComissaoVendedor ? Number(percentualComissaoVendedor.replace(',', '.')) : null,
@@ -518,31 +560,26 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
             </select>
           </div>
 
-          {/* Dia de Vencimento — apenas se Boleto */}
-          {formaPagamento === 'Boleto' && (
-            <div>
-              <label className={labelCls} style={labelStyle}>Dia de Vencimento do Boleto</label>
-              <input type="number" min="1" max="31" value={diaVencimentoBoleto}
-                onChange={e => setDiaVencimentoBoleto(e.target.value)}
-                placeholder="Ex: 10"
-                className={inputCls} style={inputStyle} />
-            </div>
-          )}
-
           {/* % Comissão Corretora + % Comissão Vendedor */}
           <div>
-            <label className={labelCls} style={labelStyle}>% Comissão Corretora</label>
+            <label className={labelCls} style={labelStyle}>
+              % Comissão Corretora
+              {percentualComissaoCorretora && <span className="ml-1.5 text-xs font-normal" style={{ color: '#b89a6a' }}>auto</span>}
+            </label>
             <input type="number" step="0.01" min="0" max="100" value={percentualComissaoCorretora}
               onChange={e => setPercentualComissaoCorretora(e.target.value)}
-              placeholder="Ex: 30"
+              placeholder="Preenchido ao selecionar operadora"
               className={inputCls} style={inputStyle} />
           </div>
 
           <div>
-            <label className={labelCls} style={labelStyle}>% Comissão Vendedor</label>
+            <label className={labelCls} style={labelStyle}>
+              % Comissão Vendedor
+              {percentualComissaoVendedor && <span className="ml-1.5 text-xs font-normal" style={{ color: '#b89a6a' }}>auto</span>}
+            </label>
             <input type="number" step="0.01" min="0" max="100" value={percentualComissaoVendedor}
               onChange={e => setPercentualComissaoVendedor(e.target.value)}
-              placeholder="Ex: 10"
+              placeholder="Preenchido ao selecionar operadora"
               className={inputCls} style={inputStyle} />
           </div>
 
@@ -577,9 +614,12 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
           )}
 
           <div>
-            <label className={labelCls} style={labelStyle}>Comissão (R$)</label>
+            <label className={labelCls} style={labelStyle}>
+              Comissão (R$)
+              <span className="ml-1.5 text-xs font-normal" style={{ color: '#b89a6a' }}>calculado automaticamente</span>
+            </label>
             <input type="text" value={comissao} onChange={e => setComissao(e.target.value)}
-              placeholder="0,00"
+              placeholder="Preenchido com valor do plano × % corretora"
               className={inputCls} style={inputStyle} />
           </div>
 
