@@ -160,7 +160,7 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
       data_inicio_plano:       dataInicioPlano || null,
       data_vencimento_plano:   dataVencimentoPlano || null,
       coparticipacao:          coparticipacao || null,
-      tipo_acomodacao:         tipoAcomodacao.trim() || null,
+      tipo_acomodacao:         tipo_plano === 'Odonto' ? 'Odontológico' : (tipoAcomodacao.trim() || null),
       abrangencia:             abrangencia.trim() || null,
       carencia:                carencia || null,
       // Dados Comerciais
@@ -390,13 +390,19 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
           {/* Tipo de Acomodação + Abrangência */}
           <div>
             <label className={labelCls} style={labelStyle}>Tipo de Acomodação</label>
-            <select value={tipoAcomodacao} onChange={e => setTipoAcomodacao(e.target.value)}
-              className={inputCls} style={{ ...inputStyle, color: tipoAcomodacao ? '#1a1a1a' : '#9a918a' }}>
-              <option value="">Selecione...</option>
-              <option value="Enfermaria">Enfermaria</option>
-              <option value="Apartamento">Apartamento</option>
-              <option value="UTI">UTI</option>
-            </select>
+            {tipo_plano === 'Odonto' ? (
+              <input type="text" value="Odontológico" readOnly
+                className={inputCls} style={{ ...inputStyle, backgroundColor: '#f5f3f0', color: '#5a4e3c' }} />
+            ) : (
+              <select value={tipoAcomodacao} onChange={e => setTipoAcomodacao(e.target.value)}
+                className={inputCls} style={{ ...inputStyle, color: tipoAcomodacao ? '#1a1a1a' : '#9a918a' }}>
+                <option value="">Selecione...</option>
+                <option value="Ambulatorial">Ambulatorial</option>
+                <option value="Enfermaria">Enfermaria</option>
+                <option value="Apartamento">Apartamento</option>
+                <option value="UTI">UTI</option>
+              </select>
+            )}
           </div>
 
           <div>
