@@ -11,6 +11,7 @@ import { Plus, Calendar, User, ArrowRight } from 'lucide-react'
 
 interface Props {
   leads: Lead[]
+  onLeadMoved: (id: string, novaEtapa: EtapaLead) => void
 }
 
 const etapaAccent: Record<EtapaLead, string> = {
@@ -22,8 +23,7 @@ const etapaAccent: Record<EtapaLead, string> = {
   'Perdido':       '#be185d',
 }
 
-export default function KanbanBoard({ leads: inicial }: Props) {
-  const [leads, setLeads] = useState(inicial)
+export default function KanbanBoard({ leads, onLeadMoved }: Props) {
   const [leadConvertendo, setLeadConvertendo] = useState<Lead | null>(null)
   const router = useRouter()
   const supabase = createClient()
@@ -40,9 +40,8 @@ export default function KanbanBoard({ leads: inicial }: Props) {
       if (!confirm('Marcar este lead como Perdido?')) return
     }
 
-    setLeads(prev =>
-      prev.map(l => l.id === draggableId ? { ...l, etapa: novaEtapa } : l)
-    )
+    // Atualiza o estado no pai imediatamente (sem router.refresh)
+    onLeadMoved(draggableId, novaEtapa)
 
     const { error } = await supabase
       .from('leads')
@@ -50,20 +49,14 @@ export default function KanbanBoard({ leads: inicial }: Props) {
       .eq('id', draggableId)
 
     if (error) {
-      setLeads(prev =>
-        prev.map(l => l.id === draggableId ? { ...l, etapa: etapaAnterior } : l)
-      )
-      return
+      // Reverte no pai se falhou
+      onLeadMoved(draggableId, etapaAnterior)
     }
-
-    router.refresh()
   }
 
   async function handleCancelarConversao() {
     if (!leadConvertendo) return
-    setLeads(prev =>
-      prev.map(l => l.id === leadConvertendo.id ? { ...l, etapa: 'Negociação' } : l)
-    )
+    onLeadMoved(leadConvertendo.id, 'Negociação')
     await supabase
       .from('leads')
       .update({ etapa: 'Negociação' })

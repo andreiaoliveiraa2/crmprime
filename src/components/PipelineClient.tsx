@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
-import { Lead, ETAPAS_LEAD } from '@/lib/types'
+import { useState, useMemo, useEffect, useCallback } from 'react'
+import { Lead, EtapaLead, ETAPAS_LEAD } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import KanbanBoard from './KanbanBoard'
 import LeadListView from './LeadListView'
@@ -15,7 +15,8 @@ interface Props {
   leads: Lead[]
 }
 
-export default function PipelineClient({ leads }: Props) {
+export default function PipelineClient({ leads: leadsIniciais }: Props) {
+  const [leads, setLeads]               = useState(leadsIniciais)
   const [visao, setVisao]               = useState<Visao>('kanban')
   const [filtroEtapa, setFiltroEtapa]   = useState('')
   const [filtroVendedor, setFiltroVendedor] = useState('')
@@ -34,6 +35,10 @@ export default function PipelineClient({ leads }: Props) {
       .then(({ data }) => {
         if (data) setVendedores(data.map((v: { nome: string }) => v.nome))
       })
+  }, [])
+
+  const handleLeadMoved = useCallback((id: string, novaEtapa: EtapaLead) => {
+    setLeads(prev => prev.map(l => l.id === id ? { ...l, etapa: novaEtapa } : l))
   }, [])
 
   const leadsFiltrados = useMemo(() => {
@@ -184,7 +189,7 @@ export default function PipelineClient({ leads }: Props) {
 
       {/* Conteúdo principal */}
       {visao === 'kanban'
-        ? <KanbanBoard leads={leads} />
+        ? <KanbanBoard leads={leads} onLeadMoved={handleLeadMoved} />
         : <LeadListView leads={leadsFiltrados} />
       }
 
