@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { FileSpreadsheet, FileText } from 'lucide-react'
-import { Venda, Comissao, Conta } from '@/lib/types'
+import { Venda, Comissao, Conta, EMPRESAS } from '@/lib/types'
 
 interface Props {
   vendas: Venda[]
@@ -193,6 +193,7 @@ export default function RelatoriosTab({ vendas, comissoes, contas }: Props) {
   const [anoMes, setAnoMes] = useState(currentYearMonth())
   const [dataInicio, setDataInicio] = useState('')
   const [dataFim, setDataFim] = useState('')
+  const [filtroEmpresa, setFiltroEmpresa] = useState('')
 
   // Compute effective date range
   const [rangeStart, rangeEnd] = useMemo<[string, string]>(() => {
@@ -206,8 +207,11 @@ export default function RelatoriosTab({ vendas, comissoes, contas }: Props) {
   // ── Report 1: Vendas do Período ────────────────────────────────────────────
   const vendasPeriodo = useMemo(() => {
     if (!hasRange) return []
-    return vendas.filter((v) => inRange(v.data_venda, rangeStart, rangeEnd))
-  }, [vendas, rangeStart, rangeEnd, hasRange])
+    return vendas.filter((v) =>
+      inRange(v.data_venda, rangeStart, rangeEnd) &&
+      (!filtroEmpresa || v.empresa === filtroEmpresa)
+    )
+  }, [vendas, rangeStart, rangeEnd, hasRange, filtroEmpresa])
 
   const vendasPorOperadora = useMemo(() => {
     const map = new Map<string, { quantidade: number; total: number }>()
@@ -235,9 +239,10 @@ export default function RelatoriosTab({ vendas, comissoes, contas }: Props) {
     return comissoes.filter((c) => {
       const venda = vendasMap.get(c.venda_id)
       if (!venda) return false
+      if (filtroEmpresa && c.empresa !== filtroEmpresa) return false
       return inRange(venda.data_venda, rangeStart, rangeEnd)
     })
-  }, [comissoes, vendasMap, rangeStart, rangeEnd, hasRange])
+  }, [comissoes, vendasMap, rangeStart, rangeEnd, hasRange, filtroEmpresa])
 
   const comissaoPorVendedor = useMemo(() => {
     const map = new Map<string, { recebido: number; pendente: number; producao: number }>()
@@ -265,9 +270,10 @@ export default function RelatoriosTab({ vendas, comissoes, contas }: Props) {
     return comissoes.filter(
       (c) =>
         c.status_empresa === 'Recebido' &&
+        (!filtroEmpresa || c.empresa === filtroEmpresa) &&
         inRange(c.data_recebida_empresa, rangeStart, rangeEnd)
     )
-  }, [comissoes, rangeStart, rangeEnd, hasRange])
+  }, [comissoes, rangeStart, rangeEnd, hasRange, filtroEmpresa])
 
   const totalComissoesEmpresa = useMemo(
     () => comissoesEmpresaPeriodo.reduce((acc, c) => acc + c.valor_empresa, 0),
@@ -290,8 +296,12 @@ export default function RelatoriosTab({ vendas, comissoes, contas }: Props) {
 
   // ── Report 4: Vitalícios Ativos ────────────────────────────────────────────
   const vitaliciosAtivos = useMemo(() => {
-    return comissoes.filter((c) => c.tipo === 'vitalicio' && c.status_empresa === 'Pendente')
-  }, [comissoes])
+    return comissoes.filter((c) =>
+      c.tipo === 'vitalicio' &&
+      c.status_empresa === 'Pendente' &&
+      (!filtroEmpresa || c.empresa === filtroEmpresa)
+    )
+  }, [comissoes, filtroEmpresa])
 
   const totalVitalicioEmpresa = useMemo(
     () => vitaliciosAtivos.reduce((acc, c) => acc + c.valor_empresa, 0),
@@ -308,14 +318,19 @@ export default function RelatoriosTab({ vendas, comissoes, contas }: Props) {
     return comissoes.filter(
       (c) =>
         (c.status_empresa === 'Pendente' || c.status_vendedor === 'Pendente') &&
+        (!filtroEmpresa || c.empresa === filtroEmpresa) &&
         inRange(c.data_prevista, rangeStart, rangeEnd)
     )
-  }, [comissoes, rangeStart, rangeEnd, hasRange])
+  }, [comissoes, rangeStart, rangeEnd, hasRange, filtroEmpresa])
 
   const contasVencidas = useMemo(() => {
     const today = todayStr()
-    return contas.filter((c) => c.status === 'Pendente' && c.vencimento < today)
-  }, [contas])
+    return contas.filter((c) =>
+      c.status === 'Pendente' &&
+      c.vencimento < today &&
+      (!filtroEmpresa || c.empresa === filtroEmpresa)
+    )
+  }, [contas, filtroEmpresa])
 
   // ── Table row builders ─────────────────────────────────────────────────────
   const vendasTableRows = useMemo(
@@ -544,6 +559,16 @@ export default function RelatoriosTab({ vendas, comissoes, contas }: Props) {
               Período
             </button>
           </div>
+
+          <select
+            value={filtroEmpresa}
+            onChange={e => setFiltroEmpresa(e.target.value)}
+            className="border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2"
+            style={{ borderColor: '#e8e4dd', color: filtroEmpresa ? '#1a1a1a' : '#9a918a' }}
+          >
+            <option value="">Todas as empresas (consolidado)</option>
+            {EMPRESAS.map(e => <option key={e} value={e}>{e}</option>)}
+          </select>
 
           {modo === 'mes' ? (
             <div className="flex items-center gap-2">
