@@ -1,11 +1,10 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Cliente, ClienteInsert, TIPOS_PLANO, STATUS_CLIENTE } from '@/lib/types'
 import { useOperadoras } from '@/lib/useOperadoras'
-import { calcularComissoes } from '@/lib/calcularComissoes'
 import DocumentosCliente from './DocumentosCliente'
 
 interface Props {
@@ -45,16 +44,9 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
   const [abrangencia, setAbrangencia]                 = useState(cliente?.abrangencia ?? '')
   const [carencia, setCarencia]                       = useState(cliente?.carencia ?? false)
   // Dados Comerciais
-  const [vendedor, setVendedor]           = useState(cliente?.vendedor ?? '')
-  const [comissao, setComissao]           = useState(cliente?.comissao?.toString() ?? '')
-  const [observacoes, setObservacoes]     = useState(cliente?.observacoes ?? '')
-  // Dados Comerciais — campos novos
-  const [formaPagamento, setFormaPagamento]                         = useState(cliente?.forma_pagamento ?? '')
-  const [corretoraResponsavel, setCorretoraResponsavel]             = useState(cliente?.corretora_responsavel ?? '')
-  const [percentualComissaoCorretora, setPercentualComissaoCorretora] = useState(cliente?.percentual_comissao_corretora?.toString() ?? '')
-  const [percentualComissaoVendedor, setPercentualComissaoVendedor]   = useState(cliente?.percentual_comissao_vendedor?.toString() ?? '')
-  const [temVitalicio, setTemVitalicio]                             = useState(cliente?.tem_vitalicio ?? false)
-  const [percentualVitalicio, setPercentualVitalicio]               = useState(cliente?.percentual_vitalicio?.toString() ?? '')
+  const [vendedor, setVendedor]                     = useState(cliente?.vendedor ?? '')
+  const [corretoraResponsavel, setCorretoraResponsavel] = useState(cliente?.corretora_responsavel ?? '')
+  const [observacoes, setObservacoes]               = useState(cliente?.observacoes ?? '')
 
   const operadorasLista = useOperadoras()
   const [vendedoresLista, setVendedoresLista] = useState<string[]>([])
@@ -64,9 +56,6 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
   const router = useRouter()
   const supabase = createClient()
   const editando = !!cliente
-
-  // Skips the first render so we only auto-fill when the user actively changes the operadora
-  const operadoraInitialized = useRef(false)
 
   useEffect(() => {
     supabase
@@ -79,67 +68,8 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
       })
   }, [])
 
-  // Auto-fill commission fields when operadora changes
-  useEffect(() => {
-    if (!operadoraInitialized.current) {
-      operadoraInitialized.current = true
-      return
-    }
-    if (!operadora) {
-      setPercentualComissaoCorretora('')
-      setPercentualComissaoVendedor('')
-      setTemVitalicio(false)
-      setPercentualVitalicio('')
-      return
-    }
-    supabase
-      .from('regras_comissao')
-      .select('percentual_total, percentual_vitalicio, parcelas_regra(percentual_vendedor)')
-      .eq('operadora', operadora)
-      .eq('ativo', true)
-      .maybeSingle()
-      .then(({ data: regra }) => {
-        if (!regra) return
-        setPercentualComissaoCorretora(String(regra.percentual_total))
-        setTemVitalicio(regra.percentual_vitalicio > 0)
-        setPercentualVitalicio(regra.percentual_vitalicio > 0 ? String(regra.percentual_vitalicio) : '')
-        const parcelas = regra.parcelas_regra as { percentual_vendedor: number }[] | null
-        if (parcelas && parcelas.length > 0) {
-          setPercentualComissaoVendedor(String(parcelas[0].percentual_vendedor))
-        }
-      })
-  }, [operadora])
-
-  // Auto-calculate Comissão R$ = valor_plano × % comissão corretora / 100
-  useEffect(() => {
-    const vp = parseFloat(valor_plano.replace(',', '.'))
-    const pct = parseFloat(percentualComissaoCorretora.replace(',', '.'))
-    if (!isNaN(vp) && !isNaN(pct) && vp > 0 && pct > 0) {
-      setComissao((vp * pct / 100).toFixed(2).replace('.', ','))
-    }
-  }, [valor_plano, percentualComissaoCorretora])
-
   async function gerarComissoes(vendaId: string, dataVendaFinal: string, payloadLocal: ClienteInsert, empresa: string | null) {
-    const resultado = calcularComissoes({
-      vendaId,
-      valorPlano: payloadLocal.valor_plano!,
-      dataVenda: dataVendaFinal,
-      operadora: payloadLocal.operadora!,
-      percentualCorretora: payloadLocal.percentual_comissao_corretora ?? null,
-      percentualVendedor: payloadLocal.percentual_comissao_vendedor ?? null,
-      temVitalicio: payloadLocal.tem_vitalicio ?? null,
-      percentualVitalicio: payloadLocal.percentual_vitalicio ?? null,
-    })
-
-    if (resultado) {
-      await supabase.from('comissoes').delete().eq('venda_id', vendaId).eq('tipo', 'parcela')
-      await supabase.from('comissoes').delete().eq('venda_id', vendaId).eq('tipo', 'vitalicio')
-      const todas = [
-        ...resultado.parcelas.map((c: object) => ({ ...c, empresa })),
-        ...resultado.vitalicios.map((c: object) => ({ ...c, empresa })),
-      ]
-      if (todas.length > 0) await supabase.from('comissoes').insert(todas)
-    } else if (payloadLocal.operadora) {
+    if (payloadLocal.operadora) {
       const { data: regra } = await supabase
         .from('regras_comissao')
         .select('id, percentual_total, num_parcelas, percentual_vitalicio')
@@ -223,7 +153,7 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
       data_implantacao:  dataImplantacao || null,
       status:            status as Cliente['status'],
       vendedor:          vendedor || null,
-      comissao:          comissao ? Number(comissao.replace(',', '.')) : null,
+      comissao:          null,
       observacoes:       observacoes.trim() || null,
       lead_id:           cliente?.lead_id ?? null,
       // Dados do Plano — novos
@@ -233,14 +163,14 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
       tipo_acomodacao:         tipoAcomodacao.trim() || null,
       abrangencia:             abrangencia.trim() || null,
       carencia:                carencia || null,
-      // Dados Comerciais — novos
-      forma_pagamento:                 formaPagamento.trim() || null,
-      dia_vencimento_boleto:           null,
-      corretora_responsavel:           corretoraResponsavel.trim() || null,
-      percentual_comissao_corretora:   percentualComissaoCorretora ? Number(percentualComissaoCorretora.replace(',', '.')) : null,
-      percentual_comissao_vendedor:    percentualComissaoVendedor ? Number(percentualComissaoVendedor.replace(',', '.')) : null,
-      tem_vitalicio:                   temVitalicio || null,
-      percentual_vitalicio:            percentualVitalicio ? Number(percentualVitalicio.replace(',', '.')) : null,
+      // Dados Comerciais
+      forma_pagamento:               null,
+      dia_vencimento_boleto:         null,
+      corretora_responsavel:         corretoraResponsavel.trim() || null,
+      percentual_comissao_corretora: null,
+      percentual_comissao_vendedor:  null,
+      tem_vitalicio:                 null,
+      percentual_vitalicio:          null,
     }
 
     if (editando) {
@@ -551,82 +481,6 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
               <option value="A2 Corretora">A2 Corretora</option>
               <option value="MEI Alessandro">MEI Alessandro</option>
             </select>
-          </div>
-
-          {/* Forma de Pagamento */}
-          <div>
-            <label className={labelCls} style={labelStyle}>Forma de Pagamento</label>
-            <select value={formaPagamento} onChange={e => setFormaPagamento(e.target.value)}
-              className={inputCls} style={{ ...inputStyle, color: formaPagamento ? '#1a1a1a' : '#9a918a' }}>
-              <option value="">Selecione...</option>
-              <option value="Boleto">Boleto</option>
-              <option value="Débito">Débito</option>
-              <option value="Cartão">Cartão</option>
-              <option value="Desconto em Folha">Desconto em Folha</option>
-            </select>
-          </div>
-
-          {/* % Comissão Corretora + % Comissão Vendedor */}
-          <div>
-            <label className={labelCls} style={labelStyle}>
-              % Comissão Corretora
-              {percentualComissaoCorretora && <span className="ml-1.5 text-xs font-normal" style={{ color: '#b89a6a' }}>auto</span>}
-            </label>
-            <input type="number" step="0.01" min="0" max="100" value={percentualComissaoCorretora}
-              onChange={e => setPercentualComissaoCorretora(e.target.value)}
-              placeholder="Preenchido ao selecionar operadora"
-              className={inputCls} style={inputStyle} />
-          </div>
-
-          <div>
-            <label className={labelCls} style={labelStyle}>
-              % Comissão Vendedor
-              {percentualComissaoVendedor && <span className="ml-1.5 text-xs font-normal" style={{ color: '#b89a6a' }}>auto</span>}
-            </label>
-            <input type="number" step="0.01" min="0" max="100" value={percentualComissaoVendedor}
-              onChange={e => setPercentualComissaoVendedor(e.target.value)}
-              placeholder="Preenchido ao selecionar operadora"
-              className={inputCls} style={inputStyle} />
-          </div>
-
-          {/* Tem Vitalício (toggle) */}
-          <div className="md:col-span-2">
-            <label className={labelCls} style={labelStyle}>Tem Vitalício</label>
-            <div className="flex gap-3 mt-1 max-w-xs">
-              {([true, false] as const).map(v => (
-                <button key={String(v)} type="button"
-                  onClick={() => setTemVitalicio(v)}
-                  className="flex-1 py-2 rounded-xl text-sm font-medium border transition-all"
-                  style={{
-                    borderColor: temVitalicio === v ? '#b89a6a' : '#e8e4dd',
-                    backgroundColor: temVitalicio === v ? '#b89a6a' : '#ffffff',
-                    color: temVitalicio === v ? '#ffffff' : '#5a4e3c',
-                  }}>
-                  {v ? 'Sim' : 'Não'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* % Vitalício — apenas se Sim */}
-          {temVitalicio && (
-            <div>
-              <label className={labelCls} style={labelStyle}>% Vitalício (mensal)</label>
-              <input type="number" step="0.01" min="0" max="100" value={percentualVitalicio}
-                onChange={e => setPercentualVitalicio(e.target.value)}
-                placeholder="Ex: 2"
-                className={inputCls} style={inputStyle} />
-            </div>
-          )}
-
-          <div>
-            <label className={labelCls} style={labelStyle}>
-              Comissão (R$)
-              <span className="ml-1.5 text-xs font-normal" style={{ color: '#b89a6a' }}>calculado automaticamente</span>
-            </label>
-            <input type="text" value={comissao} onChange={e => setComissao(e.target.value)}
-              placeholder="Preenchido com valor do plano × % corretora"
-              className={inputCls} style={inputStyle} />
           </div>
 
           <div className="md:col-span-2">
