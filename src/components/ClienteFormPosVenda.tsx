@@ -77,7 +77,7 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
       })
   }, [])
 
-  async function gerarComissoes(vendaId: string, dataVendaFinal: string, payloadLocal: ClienteInsert) {
+  async function gerarComissoes(vendaId: string, dataVendaFinal: string, payloadLocal: ClienteInsert, empresa: string | null) {
     const resultado = calcularComissoes({
       vendaId,
       valorPlano: payloadLocal.valor_plano!,
@@ -92,7 +92,10 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
     if (resultado) {
       await supabase.from('comissoes').delete().eq('venda_id', vendaId).eq('tipo', 'parcela')
       await supabase.from('comissoes').delete().eq('venda_id', vendaId).eq('tipo', 'vitalicio')
-      const todas = [...resultado.parcelas, ...resultado.vitalicios]
+      const todas = [
+        ...resultado.parcelas.map((c: object) => ({ ...c, empresa })),
+        ...resultado.vitalicios.map((c: object) => ({ ...c, empresa })),
+      ]
       if (todas.length > 0) await supabase.from('comissoes').insert(todas)
     } else if (payloadLocal.operadora) {
       const { data: regra } = await supabase
@@ -127,6 +130,7 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
             status_empresa: 'Pendente', status_vendedor: 'Pendente',
             data_prevista: d.toISOString().split('T')[0],
             data_recebida_empresa: null, data_recebida_vendedor: null,
+            empresa,
           })
         }
 
@@ -139,10 +143,11 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
             venda_id: vendaId, tipo: 'vitalicio', numero_parcela: null,
             valor_bruto: valorBruto,
             valor_empresa: valorBruto * ((ultima?.percentual_empresa ?? 50) / 100),
-            valor_vendedor: valorBruto * ((ultima?.percentual_vendedor ?? 50) / 100),
+            valor_vendedor: 0,
             status_empresa: 'Pendente', status_vendedor: 'Pendente',
             data_prevista: d.toISOString().split('T')[0],
             data_recebida_empresa: null, data_recebida_vendedor: null,
+            empresa,
           })
         }
 
@@ -200,13 +205,22 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
       const { error } = await supabase.from('clientes').update(payload).eq('id', cliente.id)
       if (error) { setErro(`Erro: ${error.message}`); setLoading(false); return }
 
-      if (payload.valor_plano && payload.operadora) {
+      const empresa = corretoraResponsavel.trim() || null
+
+      if (status === 'Cancelado') {
+        await supabase
+          .from('vendas')
+          .update({ status: 'Cancelado' })
+          .eq('cliente_id', cliente.id)
+          .eq('origem', 'cliente')
+      } else if (status === 'Ativo' && payload.valor_plano && payload.operadora) {
         const { data: vendaExistente } = await supabase
           .from('vendas')
           .select('id')
           .eq('cliente_id', cliente.id)
           .eq('origem', 'cliente')
           .maybeSingle()
+
         let vendaId: string | null = null
         if (vendaExistente) {
           await supabase.from('vendas').update({
@@ -215,6 +229,8 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
             valor_plano: payload.valor_plano,
             vendedor: payload.vendedor ?? '',
             data_venda: payload.data_venda ?? new Date().toISOString().split('T')[0],
+            status: 'Ativo',
+            empresa,
           }).eq('id', vendaExistente.id)
           vendaId = vendaExistente.id
         } else {
@@ -227,19 +243,22 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
             data_venda: payload.data_venda ?? new Date().toISOString().split('T')[0],
             status: 'Ativo',
             origem: 'cliente',
+            empresa,
           }).select('id').single()
           vendaId = novaVendaUpdate?.id ?? null
         }
         if (vendaId) {
           const dvFinal = payload.data_venda ?? new Date().toISOString().split('T')[0]
-          await gerarComissoes(vendaId, dvFinal, payload)
+          await gerarComissoes(vendaId, dvFinal, payload, empresa)
         }
       }
     } else {
       const { data: novoCliente, error } = await supabase.from('clientes').insert(payload).select().single()
       if (error) { setErro(`Erro: ${error.message}`); setLoading(false); return }
 
-      if (novoCliente && payload.valor_plano && payload.operadora) {
+      const empresa = corretoraResponsavel.trim() || null
+
+      if (novoCliente && status === 'Ativo' && payload.valor_plano && payload.operadora) {
         const { data: novaVenda } = await supabase.from('vendas').insert({
           cliente_id: novoCliente.id,
           cliente_nome: payload.nome,
@@ -249,10 +268,11 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
           data_venda: payload.data_venda ?? new Date().toISOString().split('T')[0],
           status: 'Ativo',
           origem: 'cliente',
+          empresa,
         }).select('id').single()
         if (novaVenda) {
           const dvFinal = payload.data_venda ?? new Date().toISOString().split('T')[0]
-          await gerarComissoes(novaVenda.id, dvFinal, payload)
+          await gerarComissoes(novaVenda.id, dvFinal, payload, empresa)
         }
       }
     }
