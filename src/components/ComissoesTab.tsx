@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { CheckCircle, Clock, Repeat, Pencil, Trash2, Plus } from 'lucide-react'
-import { Comissao, Venda, RegraComissao, ParcelaRegra } from '@/lib/types'
+import { CheckCircle, Clock, Pencil, Trash2, Plus } from 'lucide-react'
+import { Comissao, Venda, RegraComissao, ParcelaRegra, EMPRESAS } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import RegraComissaoModal from './RegraComissaoModal'
 import { useOperadoras } from '@/lib/useOperadoras'
@@ -42,6 +42,7 @@ export default function ComissoesTab({ comissoes, vendas, regras, parcelas, onAt
   const [filtroTipo, setFiltroTipo] = useState<'todos' | 'parcela' | 'vitalicio'>('todos')
   const [filtroStatusEmpresa, setFiltroStatusEmpresa] = useState<'todos' | 'Pendente' | 'Recebido'>('todos')
   const [filtroStatusVendedor, setFiltroStatusVendedor] = useState<'todos' | 'Pendente' | 'Recebido'>('todos')
+  const [filtroEmpresa, setFiltroEmpresa] = useState('')
   const [dataInicio, setDataInicio] = useState('')
   const [dataFim, setDataFim] = useState('')
 
@@ -80,29 +81,19 @@ export default function ComissoesTab({ comissoes, vendas, regras, parcelas, onAt
   }, [comissoes, vendaMap])
 
   // Summary cards
-  const totalRecebido = useMemo(() => {
-    let sum = 0
-    for (const c of comissoes) {
-      if (c.status_empresa === 'Recebido') sum += c.valor_empresa
-      if (c.status_vendedor === 'Recebido') sum += c.valor_vendedor
-    }
-    return sum
-  }, [comissoes])
+  const aReceberCorretora = useMemo(() =>
+    comissoes
+      .filter(c => c.status_empresa === 'Pendente')
+      .reduce((sum, c) => sum + (c.valor_empresa ?? 0), 0),
+    [comissoes]
+  )
 
-  const aReceber = useMemo(() => {
-    let sum = 0
-    for (const c of comissoes) {
-      if (c.status_empresa === 'Pendente') sum += c.valor_empresa
-      if (c.status_vendedor === 'Pendente') sum += c.valor_vendedor
-    }
-    return sum
-  }, [comissoes])
-
-  const vitaliciosMes = useMemo(() => {
-    return comissoes
-      .filter(c => c.tipo === 'vitalicio' && c.status_empresa === 'Pendente')
-      .reduce((sum, c) => sum + c.valor_empresa, 0)
-  }, [comissoes])
+  const aPagarVendedores = useMemo(() =>
+    comissoes
+      .filter(c => c.status_vendedor === 'Pendente')
+      .reduce((sum, c) => sum + (c.valor_vendedor ?? 0), 0),
+    [comissoes]
+  )
 
   // Filtered commissions
   const comissoesFiltradas = useMemo(() => {
@@ -113,15 +104,17 @@ export default function ComissoesTab({ comissoes, vendas, regras, parcelas, onAt
       if (filtroTipo !== 'todos' && c.tipo !== filtroTipo) return false
       if (filtroStatusEmpresa !== 'todos' && c.status_empresa !== filtroStatusEmpresa) return false
       if (filtroStatusVendedor !== 'todos' && c.status_vendedor !== filtroStatusVendedor) return false
+      if (filtroEmpresa && c.empresa !== filtroEmpresa) return false
       if (dataInicio && c.data_prevista < dataInicio) return false
       if (dataFim && c.data_prevista > dataFim) return false
       return true
     })
-  }, [comissoesComVenda, vendaMap, filtroOperadora, filtroVendedor, filtroTipo, filtroStatusEmpresa, filtroStatusVendedor, dataInicio, dataFim])
+  }, [comissoesComVenda, vendaMap, filtroOperadora, filtroVendedor, filtroTipo, filtroStatusEmpresa, filtroStatusVendedor, filtroEmpresa, dataInicio, dataFim])
 
-  const temFiltro = filtroOperadora || filtroVendedor || filtroTipo !== 'todos' || filtroStatusEmpresa !== 'todos' || filtroStatusVendedor !== 'todos' || dataInicio || dataFim
+  const temFiltro = filtroEmpresa || filtroOperadora || filtroVendedor || filtroTipo !== 'todos' || filtroStatusEmpresa !== 'todos' || filtroStatusVendedor !== 'todos' || dataInicio || dataFim
 
   function limparFiltros() {
+    setFiltroEmpresa('')
     setFiltroOperadora('')
     setFiltroVendedor('')
     setFiltroTipo('todos')
@@ -185,37 +178,26 @@ export default function ComissoesTab({ comissoes, vendas, regras, parcelas, onAt
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* Card 1 — Total Recebido */}
-        <div className="bg-white rounded-xl shadow-sm p-6 flex items-start gap-4" style={{ border: '1px solid #e8e4dd' }}>
-          <div className="p-2 rounded-xl" style={{ backgroundColor: '#dcfce7' }}>
-            <CheckCircle size={20} style={{ color: '#15803d' }} />
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Total Recebido</p>
-            <p className="text-2xl font-bold mt-1" style={{ color: '#2d1f4e' }}>{formatBRL(totalRecebido)}</p>
-          </div>
-        </div>
-
-        {/* Card 2 — A Receber */}
-        <div className="bg-white rounded-xl shadow-sm p-6 flex items-start gap-4" style={{ border: '1px solid #e8e4dd' }}>
-          <div className="p-2 rounded-xl" style={{ backgroundColor: '#fef3c7' }}>
-            <Clock size={20} style={{ color: '#92400e' }} />
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">A Receber</p>
-            <p className="text-2xl font-bold mt-1" style={{ color: '#2d1f4e' }}>{formatBRL(aReceber)}</p>
-          </div>
-        </div>
-
-        {/* Card 3 — Vitalícios Ativos */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Card 1 — A receber (Corretora) */}
         <div className="bg-white rounded-xl shadow-sm p-6 flex items-start gap-4" style={{ border: '1px solid #e8e4dd' }}>
           <div className="p-2 rounded-xl" style={{ backgroundColor: '#ede9f8' }}>
-            <Repeat size={20} style={{ color: '#2d1f4e' }} />
+            <CheckCircle size={20} style={{ color: '#2d1f4e' }} />
           </div>
           <div>
-            <p className="text-sm text-gray-500">Vitalícios Ativos</p>
-            <p className="text-2xl font-bold mt-1" style={{ color: '#2d1f4e' }}>{formatBRL(vitaliciosMes)}/mês</p>
+            <p className="text-sm text-gray-500">A receber (Corretora)</p>
+            <p className="text-2xl font-bold mt-1" style={{ color: '#2d1f4e' }}>{formatBRL(aReceberCorretora)}</p>
+          </div>
+        </div>
+
+        {/* Card 2 — A pagar (Vendedores) */}
+        <div className="bg-white rounded-xl shadow-sm p-6 flex items-start gap-4" style={{ border: '1px solid #e8e4dd' }}>
+          <div className="p-2 rounded-xl" style={{ backgroundColor: '#fef9e7' }}>
+            <Clock size={20} style={{ color: '#b89a6a' }} />
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">A pagar (Vendedores)</p>
+            <p className="text-2xl font-bold mt-1" style={{ color: '#2d1f4e' }}>{formatBRL(aPagarVendedores)}</p>
           </div>
         </div>
       </div>
@@ -223,6 +205,16 @@ export default function ComissoesTab({ comissoes, vendas, regras, parcelas, onAt
       {/* Filter Bar */}
       <div className="bg-white rounded-xl p-4" style={{ border: '1px solid #e8e4dd' }}>
         <div className="flex flex-wrap items-center gap-3">
+          <select
+            value={filtroEmpresa}
+            onChange={e => setFiltroEmpresa(e.target.value)}
+            className={selectCls}
+            style={{ borderColor: '#e8e4dd', color: filtroEmpresa ? '#1a1a1a' : '#9a918a' }}
+          >
+            <option value="">Todas as empresas</option>
+            {EMPRESAS.map(e => <option key={e} value={e}>{e}</option>)}
+          </select>
+
           <select
             value={filtroOperadora}
             onChange={e => setFiltroOperadora(e.target.value)}
@@ -312,7 +304,7 @@ export default function ComissoesTab({ comissoes, vendas, regras, parcelas, onAt
           <table className="w-full text-sm">
             <thead>
               <tr style={{ backgroundColor: '#2d1f4e' }}>
-                {['Cliente', 'Operadora', 'Tipo', 'Valor Bruto', 'Valor Empresa', 'Status Empresa', 'Valor Vendedor', 'Status Vendedor', 'Data Prevista'].map(col => (
+                {['Cliente', 'Operadora', 'Tipo', 'Valor Bruto', 'Corretora', 'Status Empresa', 'Vendedor', 'Status Vendedor', 'Data Prevista'].map(col => (
                   <th key={col} className="text-left px-4 py-3 text-xs font-semibold text-white whitespace-nowrap">
                     {col}
                   </th>
@@ -337,7 +329,7 @@ export default function ComissoesTab({ comissoes, vendas, regras, parcelas, onAt
                   <td className="px-4 py-3" style={{ color: '#5a4e3c' }}>{c.operadora}</td>
                   <td className="px-4 py-3 whitespace-nowrap" style={{ color: '#5a4e3c' }}>{tipoLabel(c)}</td>
                   <td className="px-4 py-3 whitespace-nowrap" style={{ color: '#5a4e3c' }}>{formatBRL(c.valor_bruto)}</td>
-                  <td className="px-4 py-3 whitespace-nowrap font-medium" style={{ color: '#15803d' }}>{formatBRL(c.valor_empresa)}</td>
+                  <td className="px-4 py-3 whitespace-nowrap font-medium" style={{ color: '#15803d' }}>{formatBRL(c.valor_empresa ?? 0)}</td>
                   <td className="px-4 py-3">
                     <button
                       onClick={() => toggleStatusEmpresa(c)}
@@ -348,7 +340,15 @@ export default function ComissoesTab({ comissoes, vendas, regras, parcelas, onAt
                       {c.status_empresa}
                     </button>
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap font-medium" style={{ color: '#2d1f4e' }}>{formatBRL(c.valor_vendedor)}</td>
+                  <td className="px-4 py-3">
+                    {c.tipo === 'vitalicio' ? (
+                      <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: '#ede9f8', color: '#2d1f4e' }}>
+                        Vitalício · Só Corretora
+                      </span>
+                    ) : (
+                      <span className="whitespace-nowrap font-medium" style={{ color: '#b89a6a' }}>{formatBRL(c.valor_vendedor ?? 0)}</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <button
                       onClick={() => toggleStatusVendedor(c)}
