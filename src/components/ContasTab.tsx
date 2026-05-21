@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { Pencil, Trash2, Plus, X } from 'lucide-react'
-import { Conta, ContaInsert } from '@/lib/types'
+import { Conta, ContaInsert, EMPRESAS } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 
 interface Props {
@@ -52,6 +52,7 @@ function ContaModal({ tipo, contaEditando, onClose, onSalvo }: ModalProps) {
     contaEditando?.status ?? 'Pendente'
   )
   const [observacoes, setObservacoes] = useState(contaEditando?.observacoes ?? '')
+  const [empresa, setEmpresa] = useState<string>(contaEditando?.empresa ?? '')
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
@@ -59,6 +60,7 @@ function ContaModal({ tipo, contaEditando, onClose, onSalvo }: ModalProps) {
     if (!descricao.trim()) { setErro('Descrição é obrigatória.'); return }
     if (!valor || isNaN(Number(valor)) || Number(valor) <= 0) { setErro('Valor inválido.'); return }
     if (!vencimento) { setErro('Vencimento é obrigatório.'); return }
+    if (!empresa) { setErro('Empresa é obrigatória.'); return }
 
     setSalvando(true)
     setErro(null)
@@ -70,6 +72,7 @@ function ContaModal({ tipo, contaEditando, onClose, onSalvo }: ModalProps) {
       vencimento,
       status,
       observacoes: observacoes.trim() || null,
+      empresa: empresa || null,
     }
 
     let dbErr
@@ -166,6 +169,20 @@ function ContaModal({ tipo, contaEditando, onClose, onSalvo }: ModalProps) {
               className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 resize-none"
               placeholder="Opcional"
             />
+          </div>
+
+          {/* Empresa */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Empresa *</label>
+            <select
+              value={empresa}
+              onChange={e => setEmpresa(e.target.value)}
+              className="w-full border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2"
+              style={{ borderColor: '#e8e4dd' }}
+            >
+              <option value="">Selecionar empresa...</option>
+              {EMPRESAS.map(emp => <option key={emp} value={emp}>{emp}</option>)}
+            </select>
           </div>
         </div>
 
@@ -375,27 +392,30 @@ function ContasSection({ tipo, contas, allContas, onAtualizar, today }: SectionP
 
 export default function ContasTab({ contas, onAtualizar }: Props) {
   const [filtroStatus, setFiltroStatus] = useState<'Todos' | Conta['status']>('Todos')
+  const [filtroEmpresa, setFiltroEmpresa] = useState('')
   const [dataInicio, setDataInicio] = useState('')
   const [dataFim, setDataFim] = useState('')
 
   const today = new Date().toISOString().split('T')[0]
 
-  const filtersActive = filtroStatus !== 'Todos' || !!dataInicio || !!dataFim
+  const filtersActive = filtroStatus !== 'Todos' || !!filtroEmpresa || !!dataInicio || !!dataFim
 
   const filteredContas = useMemo(() => {
     return contas.filter(c => {
       if (filtroStatus !== 'Todos' && c.status !== filtroStatus) return false
+      if (filtroEmpresa && c.empresa !== filtroEmpresa) return false
       if (dataInicio && c.vencimento < dataInicio) return false
       if (dataFim && c.vencimento > dataFim) return false
       return true
     })
-  }, [contas, filtroStatus, dataInicio, dataFim])
+  }, [contas, filtroStatus, filtroEmpresa, dataInicio, dataFim])
 
   const receber = filteredContas.filter(c => c.tipo === 'receber')
   const pagar = filteredContas.filter(c => c.tipo === 'pagar')
 
   function limparFiltros() {
     setFiltroStatus('Todos')
+    setFiltroEmpresa('')
     setDataInicio('')
     setDataFim('')
   }
@@ -405,6 +425,20 @@ export default function ContasTab({ contas, onAtualizar }: Props) {
       {/* Filter bar */}
       <div className="bg-white rounded-xl shadow-sm px-5 py-4">
         <div className="flex flex-wrap items-end gap-3">
+          {/* Empresa */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-gray-500">Empresa</label>
+            <select
+              value={filtroEmpresa}
+              onChange={e => setFiltroEmpresa(e.target.value)}
+              className="border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2"
+              style={{ color: filtroEmpresa ? '#1a1a1a' : '#9a918a' }}
+            >
+              <option value="">Todas as empresas</option>
+              {EMPRESAS.map(e => <option key={e} value={e}>{e}</option>)}
+            </select>
+          </div>
+
           {/* Status */}
           <div className="flex flex-col gap-1">
             <label className="text-xs text-gray-500">Status</label>
