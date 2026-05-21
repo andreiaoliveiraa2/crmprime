@@ -301,7 +301,7 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
       const empresa = corretoraResponsavel.trim() || null
 
       if (novoCliente && status === 'Ativo' && payload.valor_plano && payload.operadora) {
-        const { data: novaVenda } = await supabase.from('vendas').insert({
+        const { data: novaVenda, error: vendaErr } = await supabase.from('vendas').insert({
           cliente_id: novoCliente.id,
           cliente_nome: payload.nome,
           operadora: payload.operadora,
@@ -312,6 +312,12 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
           origem: 'cliente',
           empresa,
         }).select('id').single()
+        if (vendaErr) {
+          console.error('Erro ao criar venda:', vendaErr)
+          setErro(`Aviso: cliente salvo, mas erro ao registrar no Financeiro: ${vendaErr.message}`)
+          setLoading(false)
+          return
+        }
         if (novaVenda) {
           const dvFinal = payload.data_venda ?? new Date().toISOString().split('T')[0]
           await gerarComissoes(novaVenda.id, dvFinal, payload, empresa)
