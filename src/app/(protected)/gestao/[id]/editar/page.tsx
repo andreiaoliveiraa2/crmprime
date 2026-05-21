@@ -5,13 +5,14 @@ import VendedorForm from '@/components/VendedorForm'
 export default async function EditarVendedorPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
+  const { id } = await params
   const supabase = await createClient()
   const { data: vendedor } = await supabase
     .from('vendedores')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id)
     .single()
 
   if (!vendedor) notFound()
