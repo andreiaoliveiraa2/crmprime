@@ -1,17 +1,15 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { CheckCircle, Clock, Pencil, Trash2, Plus } from 'lucide-react'
-import { Comissao, Venda, RegraComissao, ParcelaRegra, EMPRESAS } from '@/lib/types'
+import { CheckCircle, Clock } from 'lucide-react'
+import { Comissao, Venda, RegraComissao, EMPRESAS } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
-import RegraComissaoModal from './RegraComissaoModal'
 import { useOperadoras } from '@/lib/useOperadoras'
 
 interface Props {
   comissoes: Comissao[]
   vendas: Venda[]
   regras: RegraComissao[]
-  parcelas: ParcelaRegra[]
   onAtualizar: () => void
 }
 
@@ -32,7 +30,7 @@ type ComissaoComVenda = Comissao & {
   operadora: string
 }
 
-export default function ComissoesTab({ comissoes, vendas, regras, parcelas, onAtualizar }: Props) {
+export default function ComissoesTab({ comissoes, vendas, regras, onAtualizar }: Props) {
   const supabase = createClient()
   const operadoras = useOperadoras()
 
@@ -45,10 +43,6 @@ export default function ComissoesTab({ comissoes, vendas, regras, parcelas, onAt
   const [filtroEmpresa, setFiltroEmpresa] = useState('')
   const [dataInicio, setDataInicio] = useState('')
   const [dataFim, setDataFim] = useState('')
-
-  // Modal state
-  const [modalAberto, setModalAberto] = useState(false)
-  const [regraEditando, setRegraEditando] = useState<(RegraComissao & { parcelas: ParcelaRegra[] }) | null>(null)
 
   // Build lookup maps
   const vendaMap = useMemo(() => {
@@ -142,29 +136,6 @@ export default function ComissoesTab({ comissoes, vendas, regras, parcelas, onAt
     }
     await supabase.from('comissoes').update(update).eq('id', comissao.id)
     onAtualizar()
-  }
-
-  // Check if a regra has associated commissions (can't delete)
-  function regraTemComissoes(operadora: string): boolean {
-    return comissoesComVenda.some(c => c.operadora === operadora)
-  }
-
-  async function deletarRegra(regra: RegraComissao) {
-    if (!confirm(`Deseja excluir a regra da operadora "${regra.operadora}"?`)) return
-    await supabase.from('parcelas_regra').delete().eq('regra_id', regra.id)
-    await supabase.from('regras_comissao').delete().eq('id', regra.id)
-    onAtualizar()
-  }
-
-  function abrirEditarRegra(regra: RegraComissao) {
-    const parcelasRegra = parcelas.filter(p => p.regra_id === regra.id)
-    setRegraEditando({ ...regra, parcelas: parcelasRegra })
-    setModalAberto(true)
-  }
-
-  function fecharModal() {
-    setModalAberto(false)
-    setRegraEditando(null)
   }
 
   function tipoLabel(c: ComissaoComVenda): string {
@@ -371,14 +342,11 @@ export default function ComissoesTab({ comissoes, vendas, regras, parcelas, onAt
       <div className="bg-white rounded-xl p-6" style={{ border: '1px solid #e8e4dd' }}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-semibold" style={{ color: '#2d1f4e' }}>Regras de Comissão</h2>
-          <button
-            onClick={() => { setRegraEditando(null); setModalAberto(true) }}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
-            style={{ backgroundColor: '#2d1f4e', color: '#ffffff' }}
-          >
-            <Plus size={15} />
-            Nova Regra
-          </button>
+          <a href="/gestao/operadoras"
+            className="px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-80 transition-opacity"
+            style={{ backgroundColor: '#f0ece6', color: '#2d1f4e' }}>
+            Gerenciar em Gestão →
+          </a>
         </div>
 
         {regras.length === 0 ? (
@@ -388,7 +356,7 @@ export default function ComissoesTab({ comissoes, vendas, regras, parcelas, onAt
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ backgroundColor: '#f4f1ec' }}>
-                  {['Operadora', '% Total', 'Nº Parcelas', '% Vitalício', 'Status', 'Ações'].map(col => (
+                  {['Operadora', '% Total', 'Nº Parcelas', '% Vitalício', 'Status'].map(col => (
                     <th key={col} className="text-left px-4 py-2.5 text-xs font-semibold whitespace-nowrap" style={{ color: '#5a4e3c' }}>
                       {col}
                     </th>
@@ -396,76 +364,26 @@ export default function ComissoesTab({ comissoes, vendas, regras, parcelas, onAt
                 </tr>
               </thead>
               <tbody>
-                {regras.map((r, i) => {
-                  const temComissoes = regraTemComissoes(r.operadora)
-                  return (
-                    <tr
-                      key={r.id}
-                      className="border-t"
-                      style={{ backgroundColor: i % 2 === 0 ? '#ffffff' : '#faf8f5', borderColor: '#f0ece6' }}
-                    >
-                      <td className="px-4 py-3 font-medium" style={{ color: '#2d1f4e' }}>{r.operadora}</td>
-                      <td className="px-4 py-3" style={{ color: '#5a4e3c' }}>{r.percentual_total}%</td>
-                      <td className="px-4 py-3" style={{ color: '#5a4e3c' }}>{r.num_parcelas}</td>
-                      <td className="px-4 py-3" style={{ color: '#5a4e3c' }}>{r.percentual_vitalicio}%</td>
-                      <td className="px-4 py-3">
-                        <span
-                          className="px-2 py-0.5 rounded-full text-xs font-medium"
-                          style={r.ativo ? { backgroundColor: '#dcfce7', color: '#15803d' } : { backgroundColor: '#f3f4f6', color: '#6b7280' }}
-                        >
-                          {r.ativo ? 'Ativo' : 'Inativo'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => abrirEditarRegra(r)}
-                            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-                            title="Editar regra"
-                            style={{ color: '#2d1f4e' }}
-                          >
-                            <Pencil size={14} />
-                          </button>
-                          {temComissoes ? (
-                            <span
-                              className="p-1.5 rounded-lg opacity-30 cursor-not-allowed"
-                              title="Não é possível excluir: existem comissões associadas a esta operadora"
-                              style={{ color: '#b91c1c' }}
-                            >
-                              <Trash2 size={14} />
-                            </span>
-                          ) : (
-                            <button
-                              onClick={() => deletarRegra(r)}
-                              className="p-1.5 rounded-lg hover:bg-red-50 transition-colors"
-                              title="Excluir regra"
-                              style={{ color: '#b91c1c' }}
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
+                {regras.map((r, i) => (
+                  <tr key={r.id} className="border-t"
+                    style={{ backgroundColor: i % 2 === 0 ? '#ffffff' : '#faf8f5', borderColor: '#f0ece6' }}>
+                    <td className="px-4 py-3 font-medium" style={{ color: '#2d1f4e' }}>{r.operadora}</td>
+                    <td className="px-4 py-3" style={{ color: '#5a4e3c' }}>{r.percentual_total}%</td>
+                    <td className="px-4 py-3" style={{ color: '#5a4e3c' }}>{r.num_parcelas}</td>
+                    <td className="px-4 py-3" style={{ color: '#5a4e3c' }}>{r.percentual_vitalicio}%</td>
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium"
+                        style={r.ativo ? { backgroundColor: '#dcfce7', color: '#15803d' } : { backgroundColor: '#f3f4f6', color: '#6b7280' }}>
+                        {r.ativo ? 'Ativo' : 'Inativo'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         )}
       </div>
-
-      {/* Modal */}
-      {modalAberto && (
-        <RegraComissaoModal
-          regraEditando={regraEditando ?? undefined}
-          onClose={fecharModal}
-          onSalvo={() => {
-            fecharModal()
-            onAtualizar()
-          }}
-        />
-      )}
     </div>
   )
 }

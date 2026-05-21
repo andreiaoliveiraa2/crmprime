@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Venda, Comissao, Conta, RegraComissao, ParcelaRegra } from '@/lib/types'
+import { Venda, Comissao, Conta, RegraComissao } from '@/lib/types'
 import ProducaoTab from './ProducaoTab'
 import ComissoesTab from './ComissoesTab'
 import ContasTab from './ContasTab'
@@ -15,7 +15,6 @@ interface Props {
   comissoes: Comissao[]
   contas: Conta[]
   regras: RegraComissao[]
-  parcelas: ParcelaRegra[]
 }
 
 const ABAS: { id: Aba; label: string }[] = [
@@ -25,7 +24,7 @@ const ABAS: { id: Aba; label: string }[] = [
   { id: 'relatorios', label: 'Relatórios' },
 ]
 
-export default function FinanceiroClient({ vendas, comissoes, contas, regras, parcelas }: Props) {
+export default function FinanceiroClient({ vendas, comissoes, contas, regras }: Props) {
   const [aba, setAba] = useState<Aba>('producao')
   const router = useRouter()
 
@@ -84,7 +83,6 @@ export default function FinanceiroClient({ vendas, comissoes, contas, regras, pa
           comissoes={comissoes}
           vendas={vendas}
           regras={regras}
-          parcelas={parcelas}
           onAtualizar={reload}
         />
       )}
