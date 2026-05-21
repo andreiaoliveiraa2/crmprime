@@ -232,20 +232,6 @@ export default function OperadoraForm({ operadora, regra, repasseNiveis = [] }: 
           </div>
 
           <div>
-            <label className={labelCls} style={labelStyle}>Desconta Imposto?</label>
-            {toggleBtn(descontaImposto, setDescontaImposto)}
-          </div>
-
-          {descontaImposto && (
-            <div>
-              <label className={labelCls} style={labelStyle}>% do Imposto</label>
-              <input type="number" step="0.01" min="0" max="100" value={percentualImposto}
-                onChange={e => setPercentualImposto(e.target.value)}
-                placeholder="Ex: 13.5" className={inputCls} style={inputStyle} />
-            </div>
-          )}
-
-          <div>
             <label className={labelCls} style={labelStyle}>Tem Vitalício?</label>
             {toggleBtn(temVitalicio, setTemVitalicio)}
           </div>
@@ -265,8 +251,7 @@ export default function OperadoraForm({ operadora, regra, repasseNiveis = [] }: 
       <div className="bg-white rounded-2xl p-6" style={{ border: '1px solid #e8e4dd' }}>
         <h3 className={sectionTitleCls} style={sectionTitleStyle}>Repasse por Nível do Vendedor</h3>
         <p className="text-xs mb-4" style={{ color: '#9a918a' }}>
-          % de cada parcela que vai para o vendedor, de acordo com o nível dele.
-          A empresa fica com o restante.
+          % de cada parcela que vai para o vendedor. A corretora fica com o restante.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {(NIVEIS_VENDEDOR as readonly string[]).map(nivel => {
@@ -285,6 +270,24 @@ export default function OperadoraForm({ operadora, regra, repasseNiveis = [] }: 
               </div>
             )
           })}
+        </div>
+
+        {/* Imposto sobre o repasse da corretora */}
+        <div className="mt-5 pt-4 border-t grid grid-cols-1 md:grid-cols-2 gap-4" style={{ borderColor: '#e8e4dd' }}>
+          <div>
+            <label className={labelCls} style={labelStyle}>Desconta Imposto da Corretora?</label>
+            <p className="text-xs mb-2" style={{ color: '#9a918a' }}>Incide só sobre o repasse da corretora, não do vendedor.</p>
+            {toggleBtn(descontaImposto, setDescontaImposto)}
+          </div>
+
+          {descontaImposto && (
+            <div>
+              <label className={labelCls} style={labelStyle}>% do Imposto</label>
+              <input type="number" step="0.01" min="0" max="100" value={percentualImposto}
+                onChange={e => setPercentualImposto(e.target.value)}
+                placeholder="Ex: 13.5" className={inputCls} style={inputStyle} />
+            </div>
+          )}
         </div>
       </div>
 
