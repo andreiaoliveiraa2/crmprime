@@ -103,6 +103,12 @@ export interface Operadora {
   nome: string
   ativo: boolean
   criado_em: string
+  cnpj: string | null
+  telefone: string | null
+  email_gestor: string | null
+  site: string | null
+  empresa: string | null
+  observacoes: string | null
 }
 
 export type OperadoraInsert = Omit<Operadora, 'id' | 'criado_em'>
@@ -214,6 +220,8 @@ export interface RegraComissao {
   percentual_total: number
   num_parcelas: number
   percentual_vitalicio: number
+  desconta_imposto: boolean
+  percentual_imposto: number
   ativo: boolean
   criado_em: string
 }
@@ -227,6 +235,14 @@ export interface ParcelaRegra {
   percentual_vendedor: number
 }
 export type ParcelaRegraInsert = Omit<ParcelaRegra, 'id'>
+
+export interface RepasseNivel {
+  id: string
+  regra_id: string
+  nivel: string
+  percentual: number
+}
+export type RepasseNivelInsert = Omit<RepasseNivel, 'id'>
 
 export interface Comissao {
   id: string
