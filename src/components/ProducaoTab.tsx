@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { DollarSign, TrendingUp, Repeat, CreditCard, FileText, FileSpreadsheet } from 'lucide-react'
-import { Venda, Comissao, Conta } from '@/lib/types'
+import { Venda, Comissao, Conta, EMPRESAS } from '@/lib/types'
 import { useOperadoras } from '@/lib/useOperadoras'
 
 interface Props {
@@ -28,6 +28,7 @@ export default function ProducaoTab({ vendas, comissoes, contas }: Props) {
   const [filtroVendedor, setFiltroVendedor] = useState('')
   const [dataInicio, setDataInicio] = useState('')
   const [dataFim, setDataFim] = useState('')
+  const [filtroEmpresa, setFiltroEmpresa] = useState('')
 
   const operadoras = useOperadoras()
   const vendedores = useMemo(() => [...new Set(vendas.map(v => v.vendedor))].sort(), [vendas])
@@ -78,9 +79,10 @@ export default function ProducaoTab({ vendas, comissoes, contas }: Props) {
       if (filtroVendedor && v.vendedor !== filtroVendedor) return false
       if (dataInicio && v.data_venda < dataInicio) return false
       if (dataFim && v.data_venda > dataFim) return false
+      if (filtroEmpresa && v.empresa !== filtroEmpresa) return false
       return true
     })
-  }, [vendas, filtroOperadora, filtroVendedor, dataInicio, dataFim])
+  }, [vendas, filtroOperadora, filtroVendedor, dataInicio, dataFim, filtroEmpresa])
 
   // Bar chart data: group by operadora
   const chartData = useMemo(() => {
@@ -93,9 +95,10 @@ export default function ProducaoTab({ vendas, comissoes, contas }: Props) {
     return { entries, max }
   }, [vendasFiltradas])
 
-  const temFiltro = filtroOperadora || filtroVendedor || dataInicio || dataFim
+  const temFiltro = filtroEmpresa || filtroOperadora || filtroVendedor || dataInicio || dataFim
 
   function limparFiltros() {
+    setFiltroEmpresa('')
     setFiltroOperadora('')
     setFiltroVendedor('')
     setDataInicio('')
@@ -198,6 +201,16 @@ export default function ProducaoTab({ vendas, comissoes, contas }: Props) {
       {/* Filter Bar */}
       <div className="bg-white rounded-xl p-4" style={{ border: '1px solid #e8e4dd' }}>
         <div className="flex flex-wrap items-center gap-3">
+          <select
+            value={filtroEmpresa}
+            onChange={e => setFiltroEmpresa(e.target.value)}
+            className={selectCls}
+            style={{ borderColor: '#e8e4dd', color: filtroEmpresa ? '#1a1a1a' : '#9a918a' }}
+          >
+            <option value="">Todas as empresas</option>
+            {EMPRESAS.map(e => <option key={e} value={e}>{e}</option>)}
+          </select>
+
           <select
             value={filtroOperadora}
             onChange={e => setFiltroOperadora(e.target.value)}
