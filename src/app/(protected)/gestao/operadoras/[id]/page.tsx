@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import OperadoraForm from '@/components/OperadoraForm'
 import Link from 'next/link'
+import { CnpjRecebimento, RegraComCnpj } from '@/lib/types'
 
 export default async function EditarOperadoraPage({
   params,
@@ -19,15 +20,39 @@ export default async function EditarOperadoraPage({
 
   if (!operadora) notFound()
 
-  const { data: regra } = await supabase
+  // Carregar todas as regras desta operadora que têm CNPJ vinculado
+  const { data: regrasRaw } = await supabase
     .from('regras_comissao')
     .select('*')
     .eq('operadora', operadora.nome)
-    .maybeSingle()
+    .not('cnpj_recebimento_id', 'is', null)
 
-  const { data: repasseNiveis } = regra
-    ? await supabase.from('repasse_grupo_vendedor').select('*').eq('regra_id', regra.id)
-    : { data: [] }
+  const regraIds = (regrasRaw ?? []).map((r: { id: string }) => r.id)
+
+  // Carregar repassos de todas essas regras em paralelo com cnpjs disponíveis
+  const [{ data: repasseTodos }, { data: cnpjsRaw }] = await Promise.all([
+    regraIds.length > 0
+      ? supabase.from('repasse_grupo_vendedor').select('*').in('regra_id', regraIds)
+      : Promise.resolve({ data: [] }),
+    supabase.from('cnpjs_recebimento').select('*').eq('status', 'Ativo').order('nome'),
+  ])
+
+  const cnpjsDisponiveis = (cnpjsRaw ?? []) as CnpjRecebimento[]
+
+  const regrasExistentes: RegraComCnpj[] = (regrasRaw ?? []).map((r: Record<string, unknown>) => ({
+    id: r.id as string,
+    cnpjId: r.cnpj_recebimento_id as string,
+    cnpjNome: cnpjsDisponiveis.find(c => c.id === r.cnpj_recebimento_id)?.nome ?? '',
+    percentual_total: (r.percentual_total as number) ?? 0,
+    num_parcelas: (r.num_parcelas as number) ?? 1,
+    percentual_vitalicio: (r.percentual_vitalicio as number) ?? 0,
+    desconta_imposto: (r.desconta_imposto as boolean) ?? false,
+    percentual_imposto: (r.percentual_imposto as number) ?? 0,
+    ativo: (r.ativo as boolean) ?? true,
+    repasse: ((repasseTodos ?? []) as Array<{ regra_id: string; nivel: string; percentual: number }>)
+      .filter(rp => rp.regra_id === r.id)
+      .map(rp => ({ nivel: rp.nivel, percentual: rp.percentual })),
+  }))
 
   return (
     <div className="p-6 md:p-8">
@@ -43,8 +68,8 @@ export default async function EditarOperadoraPage({
       </div>
       <OperadoraForm
         operadora={operadora}
-        regra={regra ?? undefined}
-        repasseNiveis={repasseNiveis ?? []}
+        cnpjsDisponiveis={cnpjsDisponiveis}
+        regrasExistentes={regrasExistentes}
       />
     </div>
   )

@@ -1,7 +1,16 @@
+import { createClient } from '@/lib/supabase/server'
 import OperadoraForm from '@/components/OperadoraForm'
 import Link from 'next/link'
+import { CnpjRecebimento } from '@/lib/types'
 
-export default function NovaOperadoraPage() {
+export default async function NovaOperadoraPage() {
+  const supabase = await createClient()
+  const { data: cnpjsRaw } = await supabase
+    .from('cnpjs_recebimento')
+    .select('*')
+    .eq('status', 'Ativo')
+    .order('nome')
+
   return (
     <div className="p-6 md:p-8">
       <div className="mb-8">
@@ -12,7 +21,7 @@ export default function NovaOperadoraPage() {
         </Link>
         <h1 className="text-2xl font-bold mt-2" style={{ color: '#2d1f4e' }}>Nova Operadora</h1>
       </div>
-      <OperadoraForm />
+      <OperadoraForm cnpjsDisponiveis={(cnpjsRaw ?? []) as CnpjRecebimento[]} />
     </div>
   )
 }
