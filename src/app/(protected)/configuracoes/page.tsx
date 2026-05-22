@@ -1,19 +1,23 @@
 import { createClient } from '@/lib/supabase/server'
 import AlterarSenhaForm from '@/components/AlterarSenhaForm'
 import CnpjRecebimentoSection from '@/components/CnpjRecebimentoSection'
-import { CnpjRecebimento } from '@/lib/types'
+import CategoriasDespesaSection from '@/components/CategoriasDespesaSection'
+import { CnpjRecebimento, CategoriaDespesa } from '@/lib/types'
 
 export default async function ConfiguracoesPage() {
   const supabase = await createClient()
   const [
     { data: { user } },
     { data: cnpjsRaw },
+    { data: categoriasRaw },
   ] = await Promise.all([
     supabase.auth.getUser(),
     supabase.from('cnpjs_recebimento').select('*').order('nome'),
+    supabase.from('categorias_despesa').select('*').order('nome'),
   ])
 
   const cnpjs = (cnpjsRaw ?? []) as CnpjRecebimento[]
+  const categorias = (categoriasRaw ?? []) as CategoriaDespesa[]
 
   return (
     <div className="p-6 md:p-8">
@@ -59,6 +63,9 @@ export default async function ConfiguracoesPage() {
 
         {/* CNPJs de Recebimento */}
         <CnpjRecebimentoSection cnpjs={cnpjs} />
+
+        {/* Categorias de Despesas */}
+        <CategoriasDespesaSection categorias={categorias} />
 
         {/* Alterar senha */}
         <AlterarSenhaForm />

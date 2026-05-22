@@ -1,95 +1,200 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Pencil, Trash2, Plus, X } from 'lucide-react'
-import { Conta, ContaInsert, CnpjRecebimento } from '@/lib/types'
+import { Pencil, Trash2, Plus, X, FileSpreadsheet, FileText, CheckCircle2, AlertCircle, Clock, CalendarClock } from 'lucide-react'
+import { Conta, ContaInsert, CnpjRecebimento, DespesaFixa, DespesaFixaInsert, DespesaCategoria } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 
 interface Props {
   contas: Conta[]
   onAtualizar: () => void
   cnpjs: CnpjRecebimento[]
+  despesasFixas: DespesaFixa[]
+  categorias: string[]
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatBRL(value: number): string {
-  return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+function formatBRL(v: number) {
+  return `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
-function formatDate(dateStr: string): string {
-  if (!dateStr) return '—'
-  const [year, month, day] = dateStr.split('T')[0].split('-')
-  return `${day}/${month}/${year}`
+function formatDate(s: string | null) {
+  if (!s) return '—'
+  const [y, m, d] = s.split('T')[0].split('-')
+  return `${d}/${m}/${y}`
 }
 
-function isOverdue(dateStr: string): boolean {
-  if (!dateStr) return false
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const d = new Date(dateStr + 'T00:00:00')
-  return d < today
+function todayStr() {
+  return new Date().toISOString().split('T')[0]
 }
 
-// ─── ContaModal ───────────────────────────────────────────────────────────────
+function currentMonthPrefix() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
 
-interface ModalProps {
-  tipo: 'receber' | 'pagar'
-  contaEditando?: Conta
+function isOverdue(vencimento: string, status: string) {
+  return status === 'Pendente' && vencimento.split('T')[0] < todayStr()
+}
+
+async function exportExcel(filename: string, rows: Record<string, string | number>[]) {
+  const xlsx = await import('xlsx')
+  const ws = xlsx.utils.json_to_sheet(rows)
+  const wb = xlsx.utils.book_new()
+  xlsx.utils.book_append_sheet(wb, ws, 'Contas')
+  xlsx.writeFile(wb, `${filename}.xlsx`)
+}
+
+async function exportPDF(title: string, filename: string, headers: string[], rows: (string | number)[][]) {
+  const { default: jsPDF } = await import('jspdf')
+  const autoTable = (await import('jspdf-autotable')).default
+  const doc = new jsPDF({ orientation: 'landscape' })
+  doc.setFontSize(14)
+  doc.setTextColor(45, 31, 78)
+  doc.text(title, 14, 16)
+  autoTable(doc, {
+    head: [headers],
+    body: rows,
+    startY: 22,
+    headStyles: { fillColor: [45, 31, 78] as [number, number, number], textColor: 255 },
+    alternateRowStyles: { fillColor: [250, 248, 245] as [number, number, number] },
+    styles: { fontSize: 9 },
+  })
+  doc.save(`${filename}.pdf`)
+}
+
+// ─── Summary Cards ────────────────────────────────────────────────────────────
+
+function SummaryCards({ contas }: { contas: Conta[] }) {
+  const mes = currentMonthPrefix()
+  const today = todayStr()
+
+  const pagarMes = contas.filter(c => c.tipo === 'pagar' && c.vencimento.startsWith(mes))
+  const totalPagar = pagarMes.reduce((s, c) => s + c.valor, 0)
+  const totalPago = pagarMes.filter(c => c.status === 'Pago').reduce((s, c) => s + c.valor, 0)
+  const totalAtraso = contas
+    .filter(c => c.tipo === 'pagar' && c.status === 'Pendente' && c.vencimento.split('T')[0] < today)
+    .reduce((s, c) => s + c.valor, 0)
+
+  const proxima = contas
+    .filter(c => c.tipo === 'pagar' && c.status === 'Pendente' && c.vencimento.split('T')[0] >= today)
+    .sort((a, b) => a.vencimento.localeCompare(b.vencimento))[0]
+
+  const cards = [
+    {
+      label: 'Total a pagar no mês',
+      value: formatBRL(totalPagar),
+      icon: Clock,
+      cor: '#2d1f4e',
+      bg: '#f0ecf8',
+    },
+    {
+      label: 'Total já pago',
+      value: formatBRL(totalPago),
+      icon: CheckCircle2,
+      cor: '#15803d',
+      bg: '#dcfce7',
+    },
+    {
+      label: 'Total em atraso',
+      value: formatBRL(totalAtraso),
+      icon: AlertCircle,
+      cor: '#b91c1c',
+      bg: '#fee2e2',
+    },
+    {
+      label: 'Próximo vencimento',
+      value: proxima ? formatDate(proxima.vencimento) : '—',
+      icon: CalendarClock,
+      cor: '#b89a6a',
+      bg: '#fdf5e8',
+    },
+  ]
+
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {cards.map(({ label, value, icon: Icon, cor, bg }) => (
+        <div key={label} className="bg-white rounded-xl p-4" style={{ border: '1px solid #e8e4dd' }}>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="rounded-lg p-1.5" style={{ backgroundColor: bg }}>
+              <Icon size={16} style={{ color: cor }} />
+            </div>
+            <span className="text-xs" style={{ color: '#9ca3af' }}>{label}</span>
+          </div>
+          <p className="text-xl font-bold" style={{ color: cor }}>{value}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ─── Status Badge ─────────────────────────────────────────────────────────────
+
+function StatusBadge({ status, vencimento, onClick }: { status: string; vencimento: string; onClick?: () => void }) {
+  const overdue = isOverdue(vencimento, status)
+  let bg = '#fef3c7'; let color = '#92400e'; let label = status
+  if (status === 'Pago') { bg = '#dcfce7'; color = '#15803d' }
+  if (status === 'Recebido') { bg = '#dcfce7'; color = '#15803d' }
+  if (overdue) { bg = '#fee2e2'; color = '#b91c1c'; label = 'Vencido' }
+
+  return (
+    <button
+      onClick={onClick}
+      title={onClick ? (status === 'Pago' ? 'Marcar como Pendente' : 'Marcar como Pago') : undefined}
+      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${onClick ? 'cursor-pointer hover:opacity-75 transition-opacity' : 'cursor-default'}`}
+      style={{ backgroundColor: bg, color }}
+    >
+      {label}
+    </button>
+  )
+}
+
+// ─── DespesaFixa Modal ────────────────────────────────────────────────────────
+
+interface DespesaModalProps {
+  editando?: DespesaFixa
+  cnpjs: CnpjRecebimento[]
+  categorias: string[]
   onClose: () => void
   onSalvo: () => void
-  cnpjs: CnpjRecebimento[]
 }
 
-function ContaModal({ tipo, contaEditando, onClose, onSalvo, cnpjs }: ModalProps) {
+function DespesaFixaModal({ editando, cnpjs, categorias, onClose, onSalvo }: DespesaModalProps) {
   const supabase = createClient()
-
-  const statusOpcoes: Conta['status'][] =
-    tipo === 'receber' ? ['Pendente', 'Recebido'] : ['Pendente', 'Pago']
-
-  const [descricao, setDescricao] = useState(contaEditando?.descricao ?? '')
-  const [valor, setValor] = useState(contaEditando ? String(contaEditando.valor) : '')
-  const [vencimento, setVencimento] = useState(contaEditando?.vencimento ?? '')
-  const [status, setStatus] = useState<Conta['status']>(
-    contaEditando?.status ?? 'Pendente'
-  )
-  const [observacoes, setObservacoes] = useState(contaEditando?.observacoes ?? '')
-  const [empresa, setEmpresa] = useState<string>(contaEditando?.empresa ?? '')
+  const [nome, setNome] = useState(editando?.nome ?? '')
+  const [valor, setValor] = useState(editando ? String(editando.valor) : '')
+  const [dia, setDia] = useState(editando ? String(editando.dia_vencimento) : '')
+  const [categoria, setCategoria] = useState<DespesaCategoria>(editando?.categoria ?? 'Outros')
+  const [empresa, setEmpresa] = useState(editando?.empresa ?? '')
+  const [ativo, setAtivo] = useState(editando?.ativo ?? true)
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
   async function handleSalvar() {
-    if (!descricao.trim()) { setErro('Descrição é obrigatória.'); return }
+    if (!nome.trim()) { setErro('Nome é obrigatório.'); return }
     if (!valor || isNaN(Number(valor)) || Number(valor) <= 0) { setErro('Valor inválido.'); return }
-    if (!vencimento) { setErro('Vencimento é obrigatório.'); return }
-    if (!empresa) { setErro('Empresa é obrigatória.'); return }
+    const diaNum = Number(dia)
+    if (!dia || isNaN(diaNum) || diaNum < 1 || diaNum > 31) { setErro('Dia de vencimento inválido (1-31).'); return }
 
-    setSalvando(true)
-    setErro(null)
+    setSalvando(true); setErro(null)
 
-    const dados: ContaInsert = {
-      tipo,
-      descricao: descricao.trim(),
+    const dados: DespesaFixaInsert = {
+      nome: nome.trim(),
       valor: Number(valor),
-      vencimento,
-      status,
-      observacoes: observacoes.trim() || null,
+      dia_vencimento: diaNum,
+      categoria,
       empresa: empresa || null,
+      ativo,
     }
 
-    let dbErr
-    if (contaEditando) {
-      const res = await supabase.from('contas').update(dados).eq('id', contaEditando.id)
-      dbErr = res.error
-    } else {
-      const res = await supabase.from('contas').insert(dados)
-      dbErr = res.error
-    }
+    const res = editando
+      ? await supabase.from('despesas_fixas').update(dados).eq('id', editando.id)
+      : await supabase.from('despesas_fixas').insert(dados)
 
     setSalvando(false)
-    if (dbErr) { setErro(dbErr.message); return }
-    onSalvo()
-    onClose()
+    if (res.error) { setErro(res.error.message); return }
+    onSalvo(); onClose()
   }
 
   return (
@@ -97,110 +202,70 @@ function ContaModal({ tipo, contaEditando, onClose, onSalvo, cnpjs }: ModalProps
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-base font-semibold" style={{ color: '#2d1f4e' }}>
-            {contaEditando ? 'Editar Conta' : tipo === 'receber' ? 'Nova Conta a Receber' : 'Nova Conta a Pagar'}
+            {editando ? 'Editar Despesa Fixa' : 'Nova Despesa Fixa'}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X size={18} />
-          </button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
         </div>
 
-        {erro && (
-          <div className="mb-4 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{erro}</div>
-        )}
+        {erro && <div className="mb-4 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{erro}</div>}
 
         <div className="space-y-4">
-          {/* Descrição */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Descrição *</label>
-            <input
-              type="text"
-              value={descricao}
-              onChange={e => setDescricao(e.target.value)}
+            <label className="block text-xs font-medium text-gray-600 mb-1">Nome *</label>
+            <input type="text" value={nome} onChange={e => setNome(e.target.value)}
               className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2"
-              style={{ '--tw-ring-color': '#b89a6a' } as React.CSSProperties}
-              placeholder="Ex: Mensalidade cliente XYZ"
-            />
+              placeholder="Ex: Aluguel do escritório" />
           </div>
 
-          {/* Valor */}
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Valor (R$) *</label>
-            <input
-              type="number"
-              value={valor}
-              onChange={e => setValor(e.target.value)}
-              min="0"
-              step="0.01"
-              className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2"
-              placeholder="0,00"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Valor (R$) *</label>
+              <input type="number" value={valor} onChange={e => setValor(e.target.value)}
+                min="0" step="0.01"
+                className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2"
+                placeholder="0,00" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Dia de vencimento *</label>
+              <input type="number" value={dia} onChange={e => setDia(e.target.value)}
+                min="1" max="31"
+                className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2"
+                placeholder="Ex: 10" />
+            </div>
           </div>
 
-          {/* Vencimento */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Vencimento *</label>
-            <input
-              type="date"
-              value={vencimento}
-              onChange={e => setVencimento(e.target.value)}
-              className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2"
-            />
-          </div>
-
-          {/* Status */}
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Status</label>
-            <select
-              value={status}
-              onChange={e => setStatus(e.target.value as Conta['status'])}
-              className="w-full border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2"
-            >
-              {statusOpcoes.map(s => (
-                <option key={s} value={s}>{s}</option>
-              ))}
+            <label className="block text-xs font-medium text-gray-600 mb-1">Categoria *</label>
+            <select value={categoria} onChange={e => setCategoria(e.target.value)}
+              className="w-full border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2">
+              {categorias.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
 
-          {/* Observações */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Observações</label>
-            <textarea
-              value={observacoes}
-              onChange={e => setObservacoes(e.target.value)}
-              rows={3}
-              className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 resize-none"
-              placeholder="Opcional"
-            />
-          </div>
-
-          {/* Empresa */}
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Empresa *</label>
-            <select
-              value={empresa}
-              onChange={e => setEmpresa(e.target.value)}
-              className="w-full border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2"
-              style={{ borderColor: '#e8e4dd' }}
-            >
-              <option value="">Selecionar empresa...</option>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Empresa</label>
+            <select value={empresa} onChange={e => setEmpresa(e.target.value)}
+              className="w-full border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2">
+              <option value="">Selecionar...</option>
               {cnpjs.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
             </select>
           </div>
+
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={ativo} onChange={e => setAtivo(e.target.checked)}
+              className="w-4 h-4 rounded" />
+            <span className="text-sm text-gray-700">Despesa ativa (gera conta todo mês)</span>
+          </label>
         </div>
 
         <div className="flex gap-3 mt-6">
-          <button
-            onClick={onClose}
-            className="flex-1 border rounded-xl py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-          >
+          <button onClick={onClose}
+            className="flex-1 border rounded-xl py-2 text-sm text-gray-600 hover:bg-gray-50">
             Cancelar
           </button>
-          <button
-            onClick={handleSalvar}
-            disabled={salvando}
-            className="flex-1 rounded-xl py-2 text-sm font-medium text-white transition-colors disabled:opacity-60"
-            style={{ backgroundColor: '#2d1f4e' }}
-          >
+          <button onClick={handleSalvar} disabled={salvando}
+            className="flex-1 rounded-xl py-2 text-sm font-medium text-white disabled:opacity-60"
+            style={{ backgroundColor: '#2d1f4e' }}>
             {salvando ? 'Salvando…' : 'Salvar'}
           </button>
         </div>
@@ -209,160 +274,473 @@ function ContaModal({ tipo, contaEditando, onClose, onSalvo, cnpjs }: ModalProps
   )
 }
 
-// ─── StatusBadge ──────────────────────────────────────────────────────────────
+// ─── Despesas Fixas Section ───────────────────────────────────────────────────
 
-interface BadgeProps {
-  conta: Conta
-  onClick: () => void
-}
-
-function StatusBadge({ conta, onClick }: BadgeProps) {
-  const { status, tipo } = conta
-  // For tipo=receber: Pendente ↔ Recebido
-  // For tipo=pagar: Pendente ↔ Pago
-  const isClickable =
-    (tipo === 'receber' && (status === 'Pendente' || status === 'Recebido')) ||
-    (tipo === 'pagar' && (status === 'Pendente' || status === 'Pago'))
-
-  let bg = '#fef3c7'
-  let text = '#92400e'
-  if (status === 'Recebido') { bg = '#dcfce7'; text = '#15803d' }
-  if (status === 'Pago') { bg = '#dbeafe'; text = '#1d4ed8' }
-
-  const title =
-    tipo === 'receber'
-      ? status === 'Pendente' ? 'Clique para marcar como Recebido' : 'Clique para marcar como Pendente'
-      : status === 'Pendente' ? 'Clique para marcar como Pago' : 'Clique para marcar como Pendente'
-
-  return (
-    <button
-      onClick={isClickable ? onClick : undefined}
-      title={isClickable ? title : undefined}
-      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium transition-opacity ${isClickable ? 'cursor-pointer hover:opacity-80' : 'cursor-default'}`}
-      style={{ backgroundColor: bg, color: text }}
-    >
-      {status}
-    </button>
-  )
-}
-
-// ─── Section ──────────────────────────────────────────────────────────────────
-
-interface SectionProps {
-  tipo: 'receber' | 'pagar'
+function DespesasFixasSection({ despesasFixas, contas, cnpjs, categorias, onAtualizar }: {
+  despesasFixas: DespesaFixa[]
   contas: Conta[]
-  allContas: Conta[]
-  onAtualizar: () => void
-  today: string
   cnpjs: CnpjRecebimento[]
-}
-
-function ContasSection({ tipo, contas, allContas, onAtualizar, today, cnpjs }: SectionProps) {
+  categorias: string[]
+  onAtualizar: () => void
+}) {
   const supabase = createClient()
   const [modalAberto, setModalAberto] = useState(false)
-  const [contaEditando, setContaEditando] = useState<Conta | undefined>(undefined)
+  const [editando, setEditando] = useState<DespesaFixa | undefined>()
+  const mes = currentMonthPrefix()
 
-  const label = tipo === 'receber' ? 'Receber' : 'Pagar'
-  const totalPendente = allContas
-    .filter(c => c.tipo === tipo && c.status === 'Pendente')
-    .reduce((sum, c) => sum + c.valor, 0)
+  function contaDoMes(despesaId: string) {
+    return contas.find(c => c.despesa_fixa_id === despesaId && c.vencimento.startsWith(mes))
+  }
 
-  async function toggleStatus(conta: Conta) {
-    let novoStatus: Conta['status']
-    if (tipo === 'receber') {
-      novoStatus = conta.status === 'Pendente' ? 'Recebido' : 'Pendente'
-    } else {
-      novoStatus = conta.status === 'Pendente' ? 'Pago' : 'Pendente'
-    }
-    await supabase.from('contas').update({ status: novoStatus }).eq('id', conta.id)
+  async function handleDelete(d: DespesaFixa) {
+    if (!confirm(`Excluir a despesa "${d.nome}"? As contas já geradas não serão removidas.`)) return
+    await supabase.from('despesas_fixas').delete().eq('id', d.id)
     onAtualizar()
   }
 
-  async function handleDelete(conta: Conta) {
-    if (!confirm(`Excluir "${conta.descricao}"? Esta ação não pode ser desfeita.`)) return
-    await supabase.from('contas').delete().eq('id', conta.id)
-    onAtualizar()
-  }
-
-  function abrirModal(conta?: Conta) {
-    setContaEditando(conta)
+  function abrirModal(d?: DespesaFixa) {
+    setEditando(d)
     setModalAberto(true)
   }
 
   return (
     <>
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        {/* Section header */}
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+      <div className="bg-white rounded-xl overflow-hidden" style={{ border: '1px solid #e8e4dd' }}>
+        <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #f0ece6' }}>
           <div>
-            <h3 className="font-semibold text-sm" style={{ color: '#2d1f4e' }}>
-              Contas a {label}
-            </h3>
-            <p className="text-xs mt-0.5" style={{ color: '#b89a6a' }}>
-              Total Pendente: <span className="font-semibold">{formatBRL(totalPendente)}</span>
+            <h3 className="font-semibold text-sm" style={{ color: '#2d1f4e' }}>Despesas Fixas</h3>
+            <p className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>
+              Geram automaticamente uma conta a pagar todo mês
             </p>
           </div>
-          <button
-            onClick={() => abrirModal()}
-            className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-80"
-            style={{ backgroundColor: '#2d1f4e' }}
-          >
-            <Plus size={13} />
-            Adicionar
+          <button onClick={() => abrirModal()}
+            className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium text-white hover:opacity-80"
+            style={{ backgroundColor: '#2d1f4e' }}>
+            <Plus size={13} /> Nova despesa
           </button>
         </div>
 
-        {/* Table */}
-        {contas.length === 0 ? (
-          <div className="px-5 py-8 text-center text-gray-400 text-sm">
+        {despesasFixas.length === 0 ? (
+          <div className="px-5 py-8 text-center text-sm" style={{ color: '#9ca3af' }}>
+            Nenhuma despesa fixa cadastrada.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs uppercase tracking-wide" style={{ backgroundColor: '#f9f8f6', color: '#6b7280' }}>
+                  <th className="px-4 py-3 text-left font-medium">Nome</th>
+                  <th className="px-4 py-3 text-left font-medium">Categoria</th>
+                  <th className="px-4 py-3 text-left font-medium">Valor</th>
+                  <th className="px-4 py-3 text-left font-medium">Dia</th>
+                  <th className="px-4 py-3 text-left font-medium">Empresa</th>
+                  <th className="px-4 py-3 text-left font-medium">Este mês</th>
+                  <th className="px-4 py-3 text-left font-medium">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {despesasFixas.map(d => {
+                  const conta = contaDoMes(d.id)
+                  return (
+                    <tr key={d.id} className={`hover:bg-gray-50 transition-colors ${!d.ativo ? 'opacity-50' : ''}`}>
+                      <td className="px-4 py-3 font-medium" style={{ color: '#1f2937' }}>
+                        {d.nome}
+                        {!d.ativo && <span className="ml-2 text-xs text-gray-400">(inativa)</span>}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-500">{d.categoria}</td>
+                      <td className="px-4 py-3 font-medium" style={{ color: '#2d1f4e' }}>{formatBRL(d.valor)}</td>
+                      <td className="px-4 py-3 text-gray-500">Dia {d.dia_vencimento}</td>
+                      <td className="px-4 py-3 text-gray-500">{d.empresa ?? '—'}</td>
+                      <td className="px-4 py-3">
+                        {conta ? (
+                          <StatusBadge status={conta.status} vencimento={conta.vencimento} />
+                        ) : (
+                          <span className="text-xs text-gray-400">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => abrirModal(d)} title="Editar"
+                            className="text-gray-400 hover:text-[#2d1f4e] transition-colors">
+                            <Pencil size={15} />
+                          </button>
+                          <button onClick={() => handleDelete(d)} title="Excluir"
+                            className="text-gray-400 hover:text-red-600 transition-colors">
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {modalAberto && (
+        <DespesaFixaModal
+          editando={editando}
+          cnpjs={cnpjs}
+          categorias={categorias}
+          onClose={() => setModalAberto(false)}
+          onSalvo={() => { setModalAberto(false); onAtualizar() }}
+        />
+      )}
+    </>
+  )
+}
+
+// ─── Conta Manual Modal ───────────────────────────────────────────────────────
+
+interface ContaModalProps {
+  tipo: 'receber' | 'pagar'
+  editando?: Conta
+  cnpjs: CnpjRecebimento[]
+  categorias: string[]
+  onClose: () => void
+  onSalvo: () => void
+}
+
+function ContaModal({ tipo, editando, cnpjs, categorias, onClose, onSalvo }: ContaModalProps) {
+  const supabase = createClient()
+  const [descricao, setDescricao] = useState(editando?.descricao ?? '')
+  const [valor, setValor] = useState(editando ? String(editando.valor) : '')
+  const [vencimento, setVencimento] = useState(editando?.vencimento ?? '')
+  const [status, setStatus] = useState<Conta['status']>(editando?.status ?? 'Pendente')
+  const [empresa, setEmpresa] = useState(editando?.empresa ?? '')
+  const [categoria, setCategoria] = useState(editando?.categoria ?? '')
+  const [observacoes, setObservacoes] = useState(editando?.observacoes ?? '')
+  const [salvando, setSalvando] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
+
+  async function handleSalvar() {
+    if (!descricao.trim()) { setErro('Descrição é obrigatória.'); return }
+    if (!valor || isNaN(Number(valor)) || Number(valor) <= 0) { setErro('Valor inválido.'); return }
+    if (!vencimento) { setErro('Vencimento é obrigatório.'); return }
+
+    setSalvando(true); setErro(null)
+
+    const dados: ContaInsert = {
+      tipo,
+      descricao: descricao.trim(),
+      valor: Number(valor),
+      vencimento,
+      status,
+      empresa: empresa || null,
+      categoria: categoria || null,
+      observacoes: observacoes.trim() || null,
+      despesa_fixa_id: null,
+    }
+
+    const res = editando
+      ? await supabase.from('contas').update(dados).eq('id', editando.id)
+      : await supabase.from('contas').insert(dados)
+
+    setSalvando(false)
+    if (res.error) { setErro(res.error.message); return }
+    onSalvo(); onClose()
+  }
+
+  const statusOpcoes: Conta['status'][] = tipo === 'receber' ? ['Pendente', 'Recebido'] : ['Pendente', 'Pago']
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-base font-semibold" style={{ color: '#2d1f4e' }}>
+            {editando ? 'Editar Conta' : tipo === 'receber' ? 'Nova Conta a Receber' : 'Nova Conta a Pagar'}
+          </h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+        </div>
+
+        {erro && <div className="mb-4 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{erro}</div>}
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Descrição *</label>
+            <input type="text" value={descricao} onChange={e => setDescricao(e.target.value)}
+              className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2"
+              placeholder="Ex: Mensalidade cliente XYZ" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Valor (R$) *</label>
+              <input type="number" value={valor} onChange={e => setValor(e.target.value)}
+                min="0" step="0.01"
+                className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2" placeholder="0,00" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Vencimento *</label>
+              <input type="date" value={vencimento} onChange={e => setVencimento(e.target.value)}
+                className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2" />
+            </div>
+          </div>
+
+          {tipo === 'pagar' && (
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Categoria</label>
+              <select value={categoria} onChange={e => setCategoria(e.target.value)}
+                className="w-full border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2">
+                <option value="">Sem categoria</option>
+                {categorias.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Empresa</label>
+            <select value={empresa} onChange={e => setEmpresa(e.target.value)}
+              className="w-full border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2">
+              <option value="">Selecionar...</option>
+              {cnpjs.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Status</label>
+            <select value={status} onChange={e => setStatus(e.target.value as Conta['status'])}
+              className="w-full border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2">
+              {statusOpcoes.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Observações</label>
+            <textarea value={observacoes} onChange={e => setObservacoes(e.target.value)}
+              rows={2} className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 resize-none"
+              placeholder="Opcional" />
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button onClick={onClose} className="flex-1 border rounded-xl py-2 text-sm text-gray-600 hover:bg-gray-50">
+            Cancelar
+          </button>
+          <button onClick={handleSalvar} disabled={salvando}
+            className="flex-1 rounded-xl py-2 text-sm font-medium text-white disabled:opacity-60"
+            style={{ backgroundColor: '#2d1f4e' }}>
+            {salvando ? 'Salvando…' : 'Salvar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Contas a Pagar Section ───────────────────────────────────────────────────
+
+function ContasPagarSection({ contas, allContas, cnpjs, categorias, onAtualizar }: {
+  contas: Conta[]
+  allContas: Conta[]
+  cnpjs: CnpjRecebimento[]
+  categorias: string[]
+  onAtualizar: () => void
+}) {
+  const supabase = createClient()
+  const [modalAberto, setModalAberto] = useState(false)
+  const [editando, setEditando] = useState<Conta | undefined>()
+  const [filtroStatus, setFiltroStatus] = useState<'Todos' | 'Pendente' | 'Pago' | 'Vencido'>('Todos')
+  const [filtroEmpresa, setFiltroEmpresa] = useState('')
+  const [filtroCategoria, setFiltroCategoria] = useState('')
+  const [dataInicio, setDataInicio] = useState('')
+  const [dataFim, setDataFim] = useState('')
+  const today = todayStr()
+
+  const filtered = useMemo(() => {
+    return contas.filter(c => {
+      if (filtroEmpresa && c.empresa !== filtroEmpresa) return false
+      if (filtroCategoria && c.categoria !== filtroCategoria) return false
+      if (dataInicio && c.vencimento < dataInicio) return false
+      if (dataFim && c.vencimento > dataFim) return false
+      if (filtroStatus === 'Vencido') return c.status === 'Pendente' && c.vencimento.split('T')[0] < today
+      if (filtroStatus !== 'Todos') return c.status === filtroStatus
+      return true
+    })
+  }, [contas, filtroStatus, filtroEmpresa, filtroCategoria, dataInicio, dataFim, today])
+
+  const totalPendente = allContas.filter(c => c.status === 'Pendente').reduce((s, c) => s + c.valor, 0)
+  const filtersActive = filtroStatus !== 'Todos' || !!filtroEmpresa || !!filtroCategoria || !!dataInicio || !!dataFim
+
+  function limpar() {
+    setFiltroStatus('Todos'); setFiltroEmpresa(''); setFiltroCategoria(''); setDataInicio(''); setDataFim('')
+  }
+
+  async function toggleStatus(conta: Conta) {
+    const novoStatus: Conta['status'] = conta.status === 'Pago' ? 'Pendente' : 'Pago'
+    await supabase.from('contas').update({ status: novoStatus }).eq('id', conta.id)
+    onAtualizar()
+  }
+
+  async function handleDelete(conta: Conta) {
+    if (!confirm(`Excluir "${conta.descricao}"?`)) return
+    await supabase.from('contas').delete().eq('id', conta.id)
+    onAtualizar()
+  }
+
+  function abrirModal(c?: Conta) { setEditando(c); setModalAberto(true) }
+
+  // Export
+  function exportarExcel() {
+    const rows = filtered.map(c => ({
+      Descrição: c.descricao,
+      Categoria: c.categoria ?? '—',
+      Valor: c.valor,
+      Vencimento: c.vencimento,
+      Status: isOverdue(c.vencimento, c.status) ? 'Vencido' : c.status,
+      Empresa: c.empresa ?? '—',
+    }))
+    exportExcel('contas_pagar', rows)
+  }
+
+  function exportarPDF() {
+    const rows = filtered.map(c => [
+      c.descricao,
+      c.categoria ?? '—',
+      formatBRL(c.valor),
+      formatDate(c.vencimento),
+      isOverdue(c.vencimento, c.status) ? 'Vencido' : c.status,
+      c.empresa ?? '—',
+    ])
+    exportPDF('Contas a Pagar', 'contas_pagar', ['Descrição', 'Categoria', 'Valor', 'Vencimento', 'Status', 'Empresa'], rows)
+  }
+
+  return (
+    <>
+      <div className="bg-white rounded-xl overflow-hidden" style={{ border: '1px solid #e8e4dd' }}>
+        {/* Header */}
+        <div className="px-5 py-4 flex items-center justify-between flex-wrap gap-3" style={{ borderBottom: '1px solid #f0ece6' }}>
+          <div>
+            <h3 className="font-semibold text-sm" style={{ color: '#2d1f4e' }}>Contas a Pagar</h3>
+            <p className="text-xs mt-0.5" style={{ color: '#b89a6a' }}>
+              Total pendente: <span className="font-semibold">{formatBRL(totalPendente)}</span>
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={exportarExcel}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium"
+              style={{ backgroundColor: '#f4f1ec', color: '#2d1f4e', border: '1px solid #e8e4dd' }}>
+              <FileSpreadsheet size={13} /> Excel
+            </button>
+            <button onClick={exportarPDF}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-white"
+              style={{ backgroundColor: '#2d1f4e' }}>
+              <FileText size={13} /> PDF
+            </button>
+            <button onClick={() => abrirModal()}
+              className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium text-white hover:opacity-80"
+              style={{ backgroundColor: '#b89a6a' }}>
+              <Plus size={13} /> Adicionar
+            </button>
+          </div>
+        </div>
+
+        {/* Filtros */}
+        <div className="px-5 py-3 flex flex-wrap items-end gap-3" style={{ borderBottom: '1px solid #f0ece6', backgroundColor: '#fdfcfb' }}>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-gray-500">Status</label>
+            <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value as typeof filtroStatus)}
+              className="border rounded-lg px-3 py-1.5 text-xs bg-white focus:outline-none" style={{ borderColor: '#e8e4dd' }}>
+              <option value="Todos">Todos</option>
+              <option value="Pendente">Pendente</option>
+              <option value="Pago">Pago</option>
+              <option value="Vencido">Vencido</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-gray-500">Empresa</label>
+            <select value={filtroEmpresa} onChange={e => setFiltroEmpresa(e.target.value)}
+              className="border rounded-lg px-3 py-1.5 text-xs bg-white focus:outline-none" style={{ borderColor: '#e8e4dd' }}>
+              <option value="">Todas</option>
+              {cnpjs.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-gray-500">Categoria</label>
+            <select value={filtroCategoria} onChange={e => setFiltroCategoria(e.target.value)}
+              className="border rounded-lg px-3 py-1.5 text-xs bg-white focus:outline-none" style={{ borderColor: '#e8e4dd' }}>
+              <option value="">Todas</option>
+              {categorias.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-gray-500">De</label>
+            <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)}
+              className="border rounded-lg px-3 py-1.5 text-xs focus:outline-none" style={{ borderColor: '#e8e4dd' }} />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-gray-500">Até</label>
+            <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)}
+              className="border rounded-lg px-3 py-1.5 text-xs focus:outline-none" style={{ borderColor: '#e8e4dd' }} />
+          </div>
+
+          {filtersActive && (
+            <button onClick={limpar}
+              className="flex items-center gap-1 border rounded-lg px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 self-end"
+              style={{ borderColor: '#e8e4dd' }}>
+              <X size={12} /> Limpar
+            </button>
+          )}
+        </div>
+
+        {/* Tabela */}
+        {filtered.length === 0 ? (
+          <div className="px-5 py-8 text-center text-sm" style={{ color: '#9ca3af' }}>
             Nenhuma conta encontrada.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
+                <tr className="text-xs uppercase tracking-wide" style={{ backgroundColor: '#f9f8f6', color: '#6b7280' }}>
                   <th className="px-4 py-3 text-left font-medium">Descrição</th>
+                  <th className="px-4 py-3 text-left font-medium">Categoria</th>
                   <th className="px-4 py-3 text-left font-medium">Valor</th>
                   <th className="px-4 py-3 text-left font-medium">Vencimento</th>
                   <th className="px-4 py-3 text-left font-medium">Status</th>
+                  <th className="px-4 py-3 text-left font-medium">Empresa</th>
                   <th className="px-4 py-3 text-left font-medium">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {contas.map(conta => {
-                  const overdue = conta.status === 'Pendente' && isOverdue(conta.vencimento)
+                {filtered.map(conta => {
+                  const overdue = isOverdue(conta.vencimento, conta.status)
                   return (
-                    <tr key={conta.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 font-medium text-gray-800">{conta.descricao}</td>
-                      <td className="px-4 py-3 text-green-700 font-medium">{formatBRL(conta.valor)}</td>
+                    <tr key={conta.id}
+                      className="hover:bg-gray-50 transition-colors"
+                      style={overdue ? { backgroundColor: '#fff8f8' } : undefined}>
+                      <td className="px-4 py-3 font-medium" style={{ color: overdue ? '#b91c1c' : '#1f2937' }}>
+                        {conta.descricao}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-500">{conta.categoria ?? '—'}</td>
+                      <td className="px-4 py-3 font-medium" style={{ color: '#2d1f4e' }}>{formatBRL(conta.valor)}</td>
                       <td className="px-4 py-3">
                         <span className={overdue ? 'text-red-600 font-medium' : 'text-gray-700'}>
                           {formatDate(conta.vencimento)}
                         </span>
-                        {overdue && (
-                          <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">
-                            Vencido
-                          </span>
-                        )}
                       </td>
                       <td className="px-4 py-3">
-                        <StatusBadge conta={conta} onClick={() => toggleStatus(conta)} />
+                        <StatusBadge
+                          status={conta.status}
+                          vencimento={conta.vencimento}
+                          onClick={() => toggleStatus(conta)}
+                        />
                       </td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">{conta.empresa ?? '—'}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => abrirModal(conta)}
-                            title="Editar"
-                            className="text-gray-400 hover:text-[#2d1f4e] transition-colors"
-                          >
+                          <button onClick={() => abrirModal(conta)} title="Editar"
+                            className="text-gray-400 hover:text-[#2d1f4e] transition-colors">
                             <Pencil size={15} />
                           </button>
-                          <button
-                            onClick={() => handleDelete(conta)}
-                            title="Excluir"
-                            className="text-gray-400 hover:text-red-600 transition-colors"
-                          >
+                          <button onClick={() => handleDelete(conta)} title="Excluir"
+                            className="text-gray-400 hover:text-red-600 transition-colors">
                             <Trash2 size={15} />
                           </button>
                         </div>
@@ -378,14 +756,131 @@ function ContasSection({ tipo, contas, allContas, onAtualizar, today, cnpjs }: S
 
       {modalAberto && (
         <ContaModal
-          tipo={tipo}
-          contaEditando={contaEditando}
-          onClose={() => setModalAberto(false)}
-          onSalvo={() => {
-            setModalAberto(false)
-            onAtualizar()
-          }}
+          tipo="pagar"
+          editando={editando}
           cnpjs={cnpjs}
+          categorias={categorias}
+          onClose={() => setModalAberto(false)}
+          onSalvo={() => { setModalAberto(false); onAtualizar() }}
+        />
+      )}
+    </>
+  )
+}
+
+// ─── Contas a Receber Section ─────────────────────────────────────────────────
+
+function ContasReceberSection({ contas, allContas, cnpjs, categorias, onAtualizar }: {
+  contas: Conta[]
+  allContas: Conta[]
+  cnpjs: CnpjRecebimento[]
+  categorias: string[]
+  onAtualizar: () => void
+}) {
+  const supabase = createClient()
+  const [modalAberto, setModalAberto] = useState(false)
+  const [editando, setEditando] = useState<Conta | undefined>()
+
+  const totalPendente = allContas
+    .filter(c => c.tipo === 'receber' && c.status === 'Pendente')
+    .reduce((s, c) => s + c.valor, 0)
+
+  async function toggleStatus(conta: Conta) {
+    const novoStatus: Conta['status'] = conta.status === 'Recebido' ? 'Pendente' : 'Recebido'
+    await supabase.from('contas').update({ status: novoStatus }).eq('id', conta.id)
+    onAtualizar()
+  }
+
+  async function handleDelete(conta: Conta) {
+    if (!confirm(`Excluir "${conta.descricao}"?`)) return
+    await supabase.from('contas').delete().eq('id', conta.id)
+    onAtualizar()
+  }
+
+  function abrirModal(c?: Conta) { setEditando(c); setModalAberto(true) }
+
+  return (
+    <>
+      <div className="bg-white rounded-xl overflow-hidden" style={{ border: '1px solid #e8e4dd' }}>
+        <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #f0ece6' }}>
+          <div>
+            <h3 className="font-semibold text-sm" style={{ color: '#2d1f4e' }}>Contas a Receber</h3>
+            <p className="text-xs mt-0.5" style={{ color: '#b89a6a' }}>
+              Total pendente: <span className="font-semibold">{formatBRL(totalPendente)}</span>
+            </p>
+          </div>
+          <button onClick={() => abrirModal()}
+            className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium text-white hover:opacity-80"
+            style={{ backgroundColor: '#2d1f4e' }}>
+            <Plus size={13} /> Adicionar
+          </button>
+        </div>
+
+        {contas.length === 0 ? (
+          <div className="px-5 py-8 text-center text-sm" style={{ color: '#9ca3af' }}>
+            Nenhuma conta encontrada.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs uppercase tracking-wide" style={{ backgroundColor: '#f9f8f6', color: '#6b7280' }}>
+                  <th className="px-4 py-3 text-left font-medium">Descrição</th>
+                  <th className="px-4 py-3 text-left font-medium">Valor</th>
+                  <th className="px-4 py-3 text-left font-medium">Vencimento</th>
+                  <th className="px-4 py-3 text-left font-medium">Status</th>
+                  <th className="px-4 py-3 text-left font-medium">Empresa</th>
+                  <th className="px-4 py-3 text-left font-medium">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {contas.map(conta => {
+                  const overdue = isOverdue(conta.vencimento, conta.status)
+                  return (
+                    <tr key={conta.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 font-medium text-gray-800">{conta.descricao}</td>
+                      <td className="px-4 py-3 font-medium" style={{ color: '#15803d' }}>{formatBRL(conta.valor)}</td>
+                      <td className="px-4 py-3">
+                        <span className={overdue ? 'text-red-600 font-medium' : 'text-gray-700'}>
+                          {formatDate(conta.vencimento)}
+                        </span>
+                        {overdue && (
+                          <span className="ml-1.5 px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">Vencido</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusBadge status={conta.status} vencimento={conta.vencimento} onClick={() => toggleStatus(conta)} />
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">{conta.empresa ?? '—'}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => abrirModal(conta)} title="Editar"
+                            className="text-gray-400 hover:text-[#2d1f4e] transition-colors">
+                            <Pencil size={15} />
+                          </button>
+                          <button onClick={() => handleDelete(conta)} title="Excluir"
+                            className="text-gray-400 hover:text-red-600 transition-colors">
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {modalAberto && (
+        <ContaModal
+          tipo="receber"
+          editando={editando}
+          cnpjs={cnpjs}
+          categorias={categorias}
+          onClose={() => setModalAberto(false)}
+          onSalvo={() => { setModalAberto(false); onAtualizar() }}
         />
       )}
     </>
@@ -394,123 +889,37 @@ function ContasSection({ tipo, contas, allContas, onAtualizar, today, cnpjs }: S
 
 // ─── ContasTab (main export) ──────────────────────────────────────────────────
 
-export default function ContasTab({ contas, onAtualizar, cnpjs }: Props) {
-  const [filtroStatus, setFiltroStatus] = useState<'Todos' | Conta['status']>('Todos')
-  const [filtroEmpresa, setFiltroEmpresa] = useState('')
-  const [dataInicio, setDataInicio] = useState('')
-  const [dataFim, setDataFim] = useState('')
-
-  const today = new Date().toISOString().split('T')[0]
-
-  const filtersActive = filtroStatus !== 'Todos' || !!filtroEmpresa || !!dataInicio || !!dataFim
-
-  const filteredContas = useMemo(() => {
-    return contas.filter(c => {
-      if (filtroStatus !== 'Todos' && c.status !== filtroStatus) return false
-      if (filtroEmpresa && c.empresa !== filtroEmpresa) return false
-      if (dataInicio && c.vencimento < dataInicio) return false
-      if (dataFim && c.vencimento > dataFim) return false
-      return true
-    })
-  }, [contas, filtroStatus, filtroEmpresa, dataInicio, dataFim])
-
-  const receber = filteredContas.filter(c => c.tipo === 'receber')
-  const pagar = filteredContas.filter(c => c.tipo === 'pagar')
-
-  function limparFiltros() {
-    setFiltroStatus('Todos')
-    setFiltroEmpresa('')
-    setDataInicio('')
-    setDataFim('')
-  }
+export default function ContasTab({ contas, onAtualizar, cnpjs, despesasFixas, categorias }: Props) {
+  const pagar = contas.filter(c => c.tipo === 'pagar')
+  const receber = contas.filter(c => c.tipo === 'receber')
 
   return (
     <div className="space-y-6">
-      {/* Filter bar */}
-      <div className="bg-white rounded-xl shadow-sm px-5 py-4">
-        <div className="flex flex-wrap items-end gap-3">
-          {/* Empresa */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-gray-500">Empresa</label>
-            <select
-              value={filtroEmpresa}
-              onChange={e => setFiltroEmpresa(e.target.value)}
-              className="border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2"
-              style={{ color: filtroEmpresa ? '#1a1a1a' : '#9a918a' }}
-            >
-              <option value="">Todas as empresas</option>
-              {cnpjs.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
-            </select>
-          </div>
+      <SummaryCards contas={contas} />
 
-          {/* Status */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-gray-500">Status</label>
-            <select
-              value={filtroStatus}
-              onChange={e => setFiltroStatus(e.target.value as typeof filtroStatus)}
-              className="border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 min-w-[130px]"
-            >
-              <option value="Todos">Todos</option>
-              <option value="Pendente">Pendente</option>
-              <option value="Recebido">Recebido</option>
-              <option value="Pago">Pago</option>
-            </select>
-          </div>
+      <DespesasFixasSection
+        despesasFixas={despesasFixas}
+        contas={contas}
+        cnpjs={cnpjs}
+        categorias={categorias}
+        onAtualizar={onAtualizar}
+      />
 
-          {/* Data início */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-gray-500">Vencimento — de</label>
-            <input
-              type="date"
-              value={dataInicio}
-              onChange={e => setDataInicio(e.target.value)}
-              className="border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2"
-            />
-          </div>
+      <ContasPagarSection
+        contas={pagar}
+        allContas={pagar}
+        cnpjs={cnpjs}
+        categorias={categorias}
+        onAtualizar={onAtualizar}
+      />
 
-          {/* Data fim */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-gray-500">Vencimento — até</label>
-            <input
-              type="date"
-              value={dataFim}
-              onChange={e => setDataFim(e.target.value)}
-              className="border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2"
-            />
-          </div>
-
-          {filtersActive && (
-            <button
-              onClick={limparFiltros}
-              className="flex items-center gap-1.5 border rounded-xl px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              <X size={14} />
-              Limpar filtros
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Two sections */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ContasSection
-          tipo="receber"
-          contas={receber}
-          allContas={contas}
-          onAtualizar={onAtualizar}
-          today={today}
-          cnpjs={cnpjs}
-        />
-        <ContasSection
-          tipo="pagar"
-          contas={pagar}
-          allContas={contas}
-          onAtualizar={onAtualizar}
-          today={today}
-          cnpjs={cnpjs}
-        />
-      </div>
+      <ContasReceberSection
+        contas={receber}
+        allContas={receber}
+        cnpjs={cnpjs}
+        categorias={categorias}
+        onAtualizar={onAtualizar}
+      />
     </div>
   )
 }

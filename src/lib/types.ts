@@ -298,9 +298,32 @@ export interface Conta {
   status: 'Pendente' | 'Recebido' | 'Pago'
   observacoes: string | null
   empresa: string | null
+  categoria: string | null
+  despesa_fixa_id: string | null
   criado_em: string
 }
 export type ContaInsert = Omit<Conta, 'id' | 'criado_em'>
+
+export type DespesaCategoria = string
+
+export interface CategoriaDespesa {
+  id: string
+  nome: string
+  ativo: boolean
+  criado_em: string
+}
+
+export interface DespesaFixa {
+  id: string
+  nome: string
+  valor: number
+  dia_vencimento: number
+  categoria: DespesaCategoria
+  empresa: string | null
+  ativo: boolean
+  criado_em: string
+}
+export type DespesaFixaInsert = Omit<DespesaFixa, 'id' | 'criado_em'>
 
 export interface MapeamentoImportacao {
   id: string
