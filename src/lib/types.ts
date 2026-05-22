@@ -59,8 +59,34 @@ export const TIPOS_VENDEDOR = ['Interno', 'Afiliado', 'Corretor Parceiro'] as co
 export const CORRETORAS_VENDEDOR = ['A2 Prime', 'A2 Corretora', 'MEI Alessandro'] as const
 export const NIVEIS_VENDEDOR = ['Iniciante', 'Experiente', 'VIP'] as const
 
-export const EMPRESAS = ['A2 Prime', 'A2 Corretora', 'MEI Alessandro'] as const
-export type Empresa = typeof EMPRESAS[number]
+export interface CnpjRecebimento {
+  id: string
+  nome: string
+  razao_social: string | null
+  cnpj: string | null
+  banco: string | null
+  agencia: string | null
+  conta: string | null
+  tipo_conta: string | null
+  pix: string | null
+  status: string
+  criado_em: string
+}
+export type CnpjRecebimentoInsert = Omit<CnpjRecebimento, 'id' | 'criado_em'>
+
+// Usado pelo OperadoraForm para representar uma regra já vinculada a um CNPJ
+export interface RegraComCnpj {
+  id: string
+  cnpjId: string
+  cnpjNome: string
+  percentual_total: number
+  num_parcelas: number
+  percentual_vitalicio: number
+  desconta_imposto: boolean
+  percentual_imposto: number
+  ativo: boolean
+  repasse: { nivel: string; percentual: number }[]
+}
 
 export interface Vendedor {
   id: string
@@ -210,6 +236,7 @@ export interface Venda {
   status: 'Ativo' | 'Cancelado'
   origem: 'cliente' | 'manual'
   empresa: string | null
+  cnpj_recebimento_id: string | null
   criado_em: string
 }
 export type VendaInsert = Omit<Venda, 'id' | 'criado_em'>
@@ -223,6 +250,7 @@ export interface RegraComissao {
   desconta_imposto: boolean
   percentual_imposto: number
   ativo: boolean
+  cnpj_recebimento_id: string | null
   criado_em: string
 }
 export type RegraComissaoInsert = Omit<RegraComissao, 'id' | 'criado_em'>
