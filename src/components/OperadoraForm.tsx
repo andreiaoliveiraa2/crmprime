@@ -99,8 +99,9 @@ export default function OperadoraForm({ operadora, cnpjsDisponiveis, regrasExist
       }
       setRemovedRegraIds(prev => [...prev, tab.regraId!])
     }
+    const newLength = tabs.length - 1
     setTabs(prev => prev.filter((_, i) => i !== index))
-    setAbaAtiva(prev => Math.min(prev, Math.max(0, tabs.length - 2)))
+    setAbaAtiva(prev => Math.min(prev, Math.max(0, newLength - 1)))
     setErro('')
   }
 
@@ -180,13 +181,18 @@ export default function OperadoraForm({ operadora, cnpjsDisponiveis, regrasExist
       let regraId = tab.regraId
 
       if (regraId) {
-        await supabase.from('regras_comissao').update({
+        const { error: updateRegraError } = await supabase.from('regras_comissao').update({
           operadora: nome.trim(),
           percentual_total: pctTotal, num_parcelas: nParcelas,
           desconta_imposto: tab.descontaImposto, percentual_imposto: pctImposto,
           percentual_vitalicio: pctVitalicio, ativo,
           cnpj_recebimento_id: tab.cnpjId,
         }).eq('id', regraId)
+        if (updateRegraError) {
+          setErro(`Erro ao atualizar regra para ${tab.cnpjNome}: ` + updateRegraError.message)
+          setLoading(false)
+          return
+        }
       } else {
         const { data: rd, error: re } = await supabase.from('regras_comissao').insert({
           operadora: nome.trim(),
