@@ -2,12 +2,13 @@
 
 import { useState, useMemo } from 'react'
 import { Pencil, Trash2, Plus, X } from 'lucide-react'
-import { Conta, ContaInsert, EMPRESAS } from '@/lib/types'
+import { Conta, ContaInsert, CnpjRecebimento } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 
 interface Props {
   contas: Conta[]
   onAtualizar: () => void
+  cnpjs: CnpjRecebimento[]
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -37,9 +38,10 @@ interface ModalProps {
   contaEditando?: Conta
   onClose: () => void
   onSalvo: () => void
+  cnpjs: CnpjRecebimento[]
 }
 
-function ContaModal({ tipo, contaEditando, onClose, onSalvo }: ModalProps) {
+function ContaModal({ tipo, contaEditando, onClose, onSalvo, cnpjs }: ModalProps) {
   const supabase = createClient()
 
   const statusOpcoes: Conta['status'][] =
@@ -181,7 +183,7 @@ function ContaModal({ tipo, contaEditando, onClose, onSalvo }: ModalProps) {
               style={{ borderColor: '#e8e4dd' }}
             >
               <option value="">Selecionar empresa...</option>
-              {EMPRESAS.map(emp => <option key={emp} value={emp}>{emp}</option>)}
+              {cnpjs.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
             </select>
           </div>
         </div>
@@ -252,9 +254,10 @@ interface SectionProps {
   allContas: Conta[]
   onAtualizar: () => void
   today: string
+  cnpjs: CnpjRecebimento[]
 }
 
-function ContasSection({ tipo, contas, allContas, onAtualizar, today }: SectionProps) {
+function ContasSection({ tipo, contas, allContas, onAtualizar, today, cnpjs }: SectionProps) {
   const supabase = createClient()
   const [modalAberto, setModalAberto] = useState(false)
   const [contaEditando, setContaEditando] = useState<Conta | undefined>(undefined)
@@ -382,6 +385,7 @@ function ContasSection({ tipo, contas, allContas, onAtualizar, today }: SectionP
             setModalAberto(false)
             onAtualizar()
           }}
+          cnpjs={cnpjs}
         />
       )}
     </>
@@ -390,7 +394,7 @@ function ContasSection({ tipo, contas, allContas, onAtualizar, today }: SectionP
 
 // ─── ContasTab (main export) ──────────────────────────────────────────────────
 
-export default function ContasTab({ contas, onAtualizar }: Props) {
+export default function ContasTab({ contas, onAtualizar, cnpjs }: Props) {
   const [filtroStatus, setFiltroStatus] = useState<'Todos' | Conta['status']>('Todos')
   const [filtroEmpresa, setFiltroEmpresa] = useState('')
   const [dataInicio, setDataInicio] = useState('')
@@ -435,7 +439,7 @@ export default function ContasTab({ contas, onAtualizar }: Props) {
               style={{ color: filtroEmpresa ? '#1a1a1a' : '#9a918a' }}
             >
               <option value="">Todas as empresas</option>
-              {EMPRESAS.map(e => <option key={e} value={e}>{e}</option>)}
+              {cnpjs.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
             </select>
           </div>
 
@@ -496,6 +500,7 @@ export default function ContasTab({ contas, onAtualizar }: Props) {
           allContas={contas}
           onAtualizar={onAtualizar}
           today={today}
+          cnpjs={cnpjs}
         />
         <ContasSection
           tipo="pagar"
@@ -503,6 +508,7 @@ export default function ContasTab({ contas, onAtualizar }: Props) {
           allContas={contas}
           onAtualizar={onAtualizar}
           today={today}
+          cnpjs={cnpjs}
         />
       </div>
     </div>

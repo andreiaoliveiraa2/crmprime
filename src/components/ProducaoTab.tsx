@@ -2,13 +2,14 @@
 
 import { useState, useMemo } from 'react'
 import { DollarSign, TrendingUp, Repeat, CreditCard, FileText, FileSpreadsheet } from 'lucide-react'
-import { Venda, Comissao, Conta, EMPRESAS } from '@/lib/types'
+import { Venda, Comissao, Conta, CnpjRecebimento } from '@/lib/types'
 import { useOperadoras } from '@/lib/useOperadoras'
 
 interface Props {
   vendas: Venda[]
   comissoes: Comissao[]
   contas: Conta[]
+  cnpjs: CnpjRecebimento[]
 }
 
 function formatBRL(value: number): string {
@@ -23,7 +24,7 @@ function formatDate(dateStr: string): string {
 
 const selectCls = 'border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2'
 
-export default function ProducaoTab({ vendas, comissoes, contas }: Props) {
+export default function ProducaoTab({ vendas, comissoes, contas, cnpjs }: Props) {
   const [filtroOperadora, setFiltroOperadora] = useState('')
   const [filtroVendedor, setFiltroVendedor] = useState('')
   const [dataInicio, setDataInicio] = useState('')
@@ -208,7 +209,7 @@ export default function ProducaoTab({ vendas, comissoes, contas }: Props) {
             style={{ borderColor: '#e8e4dd', color: filtroEmpresa ? '#1a1a1a' : '#9a918a' }}
           >
             <option value="">Todas as empresas</option>
-            {EMPRESAS.map(e => <option key={e} value={e}>{e}</option>)}
+            {cnpjs.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
           </select>
 
           <select

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Venda, Comissao, Conta, RegraComissao } from '@/lib/types'
+import { Venda, Comissao, Conta, RegraComissao, CnpjRecebimento } from '@/lib/types'
 import ProducaoTab from './ProducaoTab'
 import ComissoesTab from './ComissoesTab'
 import ContasTab from './ContasTab'
@@ -15,6 +15,7 @@ interface Props {
   comissoes: Comissao[]
   contas: Conta[]
   regras: RegraComissao[]
+  cnpjs: CnpjRecebimento[]
 }
 
 const ABAS: { id: Aba; label: string }[] = [
@@ -24,7 +25,7 @@ const ABAS: { id: Aba; label: string }[] = [
   { id: 'relatorios', label: 'Relatórios' },
 ]
 
-export default function FinanceiroClient({ vendas, comissoes, contas, regras }: Props) {
+export default function FinanceiroClient({ vendas, comissoes, contas, regras, cnpjs }: Props) {
   const [aba, setAba] = useState<Aba>('producao')
   const router = useRouter()
 
@@ -76,6 +77,7 @@ export default function FinanceiroClient({ vendas, comissoes, contas, regras }: 
           vendas={vendas}
           comissoes={comissoes}
           contas={contas}
+          cnpjs={cnpjs}
         />
       )}
       {aba === 'comissoes' && (
@@ -84,13 +86,14 @@ export default function FinanceiroClient({ vendas, comissoes, contas, regras }: 
           vendas={vendas}
           regras={regras}
           onAtualizar={reload}
+          cnpjs={cnpjs}
         />
       )}
       {aba === 'contas' && (
-        <ContasTab contas={contas} onAtualizar={reload} />
+        <ContasTab contas={contas} onAtualizar={reload} cnpjs={cnpjs} />
       )}
       {aba === 'relatorios' && (
-        <RelatoriosTab vendas={vendas} comissoes={comissoes} contas={contas} />
+        <RelatoriosTab vendas={vendas} comissoes={comissoes} contas={contas} cnpjs={cnpjs} />
       )}
     </div>
   )

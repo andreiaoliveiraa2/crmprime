@@ -2,12 +2,13 @@
 
 import { useState, useMemo } from 'react'
 import { FileSpreadsheet, FileText } from 'lucide-react'
-import { Venda, Comissao, Conta, EMPRESAS } from '@/lib/types'
+import { Venda, Comissao, Conta, CnpjRecebimento } from '@/lib/types'
 
 interface Props {
   vendas: Venda[]
   comissoes: Comissao[]
   contas: Conta[]
+  cnpjs: CnpjRecebimento[]
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -188,7 +189,7 @@ function DataTable({ headers, rows }: DataTableProps) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function RelatoriosTab({ vendas, comissoes, contas }: Props) {
+export default function RelatoriosTab({ vendas, comissoes, contas, cnpjs }: Props) {
   const [modo, setModo] = useState<'mes' | 'periodo'>('mes')
   const [anoMes, setAnoMes] = useState(currentYearMonth())
   const [dataInicio, setDataInicio] = useState('')
@@ -567,7 +568,7 @@ export default function RelatoriosTab({ vendas, comissoes, contas }: Props) {
             style={{ borderColor: '#e8e4dd', color: filtroEmpresa ? '#1a1a1a' : '#9a918a' }}
           >
             <option value="">Todas as empresas (consolidado)</option>
-            {EMPRESAS.map(e => <option key={e} value={e}>{e}</option>)}
+            {cnpjs.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
           </select>
 
           {modo === 'mes' ? (

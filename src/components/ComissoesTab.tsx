@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { CheckCircle, Clock } from 'lucide-react'
-import { Comissao, Venda, RegraComissao, EMPRESAS } from '@/lib/types'
+import { Comissao, Venda, RegraComissao, CnpjRecebimento } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import { useOperadoras } from '@/lib/useOperadoras'
 
@@ -11,6 +11,7 @@ interface Props {
   vendas: Venda[]
   regras: RegraComissao[]
   onAtualizar: () => void
+  cnpjs: CnpjRecebimento[]
 }
 
 function formatBRL(value: number): string {
@@ -30,7 +31,7 @@ type ComissaoComVenda = Comissao & {
   operadora: string
 }
 
-export default function ComissoesTab({ comissoes, vendas, regras, onAtualizar }: Props) {
+export default function ComissoesTab({ comissoes, vendas, regras, onAtualizar, cnpjs }: Props) {
   const supabase = createClient()
   const operadoras = useOperadoras()
 
@@ -183,7 +184,7 @@ export default function ComissoesTab({ comissoes, vendas, regras, onAtualizar }:
             style={{ borderColor: '#e8e4dd', color: filtroEmpresa ? '#1a1a1a' : '#9a918a' }}
           >
             <option value="">Todas as empresas</option>
-            {EMPRESAS.map(e => <option key={e} value={e}>{e}</option>)}
+            {cnpjs.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
           </select>
 
           <select
