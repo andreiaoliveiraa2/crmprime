@@ -41,6 +41,14 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
+  // CNPJ de recebimento state
+  interface CnpjOpcao { id: string; nome: string }
+
+  const [cnpjRecebimentoId, setCnpjRecebimentoId]     = useState('')
+  const [cnpjRecebimentoNome, setCnpjRecebimentoNome] = useState('')
+  const [cnpjsParaOperadora, setCnpjsParaOperadora]   = useState<CnpjOpcao[]>([])
+  const [carregandoCnpjs, setCarregandoCnpjs]         = useState(false)
+
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -76,10 +84,49 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
     setClienteNome(c.nome)
     setClienteId(c.id)
     if (c.operadora) setOperadora(c.operadora)
+    if (c.operadora) carregarCnpjs(c.operadora)
     if (c.valor_plano) setValorPlano(String(c.valor_plano))
     if (c.vendedor) setVendedor(c.vendedor)
     setSugestoes([])
     setDropdownAberto(false)
+  }
+
+  async function carregarCnpjs(op: string) {
+    setCarregandoCnpjs(true)
+    setCnpjRecebimentoId('')
+    setCnpjRecebimentoNome('')
+    setCnpjsParaOperadora([])
+
+    const { data: regras } = await supabase
+      .from('regras_comissao')
+      .select('cnpj_recebimento_id')
+      .eq('operadora', op)
+      .eq('ativo', true)
+      .not('cnpj_recebimento_id', 'is', null)
+
+    const cnpjIds = [...new Set((regras ?? []).map((r: { cnpj_recebimento_id: string }) => r.cnpj_recebimento_id).filter(Boolean))]
+
+    if (cnpjIds.length === 0) {
+      setCarregandoCnpjs(false)
+      return
+    }
+
+    const { data: cnpjs } = await supabase
+      .from('cnpjs_recebimento')
+      .select('id, nome')
+      .in('id', cnpjIds)
+      .eq('status', 'Ativo')
+      .order('nome')
+
+    const lista = (cnpjs ?? []) as CnpjOpcao[]
+    setCnpjsParaOperadora(lista)
+
+    if (lista.length === 1) {
+      setCnpjRecebimentoId(lista[0].id)
+      setCnpjRecebimentoNome(lista[0].nome)
+    }
+
+    setCarregandoCnpjs(false)
   }
 
   async function handleSalvar() {
@@ -88,6 +135,7 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
     // Validation
     if (!clienteNome.trim()) { setErro('Informe o nome do cliente.'); return }
     if (!operadora) { setErro('Selecione a operadora.'); return }
+    if (!cnpjRecebimentoId) { setErro('Selecione o CNPJ de recebimento.'); return }
     if (!valorPlano || isNaN(Number(valorPlano)) || Number(valorPlano) <= 0) { setErro('Informe um valor de plano válido.'); return }
     if (!vendedor) { setErro('Selecione o vendedor.'); return }
     if (!dataVenda) { setErro('Informe a data da venda.'); return }
@@ -102,6 +150,8 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
           cliente_id: clienteId,
           cliente_nome: clienteNome.trim(),
           operadora,
+          empresa: cnpjRecebimentoNome,
+          cnpj_recebimento_id: cnpjRecebimentoId,
           valor_plano: Number(valorPlano),
           vendedor,
           data_venda: dataVenda,
@@ -125,6 +175,7 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
         .from('regras_comissao')
         .select('id, percentual_total, num_parcelas, percentual_vitalicio')
         .eq('operadora', operadora)
+        .eq('cnpj_recebimento_id', cnpjRecebimentoId)
         .eq('ativo', true)
         .maybeSingle()
 
@@ -150,6 +201,7 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
           data_prevista: string
           data_recebida_empresa: null
           data_recebida_vendedor: null
+          empresa: string
         }[] = []
 
         // Generate parcela commissions
@@ -175,6 +227,7 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
             data_prevista: dataPrev.toISOString().split('T')[0],
             data_recebida_empresa: null,
             data_recebida_vendedor: null,
+            empresa: cnpjRecebimentoNome,
           })
         }
 
@@ -200,6 +253,7 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
           data_prevista: dataVit.toISOString().split('T')[0],
           data_recebida_empresa: null,
           data_recebida_vendedor: null,
+          empresa: cnpjRecebimentoNome,
         })
 
         // Insert all commissions
@@ -298,7 +352,11 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
             <label className={labelCls} style={labelStyle}>Operadora <span style={{ color: '#b91c1c' }}>*</span></label>
             <select
               value={operadora}
-              onChange={e => setOperadora(e.target.value)}
+              onChange={e => {
+                setOperadora(e.target.value)
+                if (e.target.value) carregarCnpjs(e.target.value)
+                else { setCnpjsParaOperadora([]); setCnpjRecebimentoId(''); setCnpjRecebimentoNome('') }
+              }}
               className={inputCls}
               style={{ ...inputStyle, color: operadora ? '#1a1a1a' : '#9a918a' }}
             >
@@ -306,6 +364,33 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
               {operadoras.map(o => <option key={o} value={o}>{o}</option>)}
             </select>
           </div>
+
+          {/* CNPJ de Recebimento */}
+          {operadora && (
+            <div>
+              <label className={labelCls} style={labelStyle}>CNPJ de Recebimento <span style={{ color: '#b91c1c' }}>*</span></label>
+              {carregandoCnpjs ? (
+                <p className="text-xs mt-1" style={{ color: '#9a918a' }}>Carregando...</p>
+              ) : cnpjsParaOperadora.length === 0 ? (
+                <div className="rounded-xl px-4 py-3 text-xs" style={{ backgroundColor: '#fef3c7', color: '#92400e' }}>
+                  Esta operadora não tem regras cadastradas. Configure em Gestão → Operadoras.
+                </div>
+              ) : (
+                <select
+                  value={cnpjRecebimentoId}
+                  onChange={e => {
+                    setCnpjRecebimentoId(e.target.value)
+                    setCnpjRecebimentoNome(cnpjsParaOperadora.find(c => c.id === e.target.value)?.nome ?? '')
+                  }}
+                  className={inputCls}
+                  style={{ ...inputStyle, color: cnpjRecebimentoId ? '#1a1a1a' : '#9a918a' }}
+                >
+                  <option value="">Selecione o CNPJ de recebimento</option>
+                  {cnpjsParaOperadora.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                </select>
+              )}
+            </div>
+          )}
 
           {/* Valor do Plano */}
           <div>
