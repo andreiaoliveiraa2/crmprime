@@ -186,8 +186,8 @@ export default async function DashboardPage() {
                   )
                 })}
 
-                {/* Eventos de hoje */}
-                {eventosHoje.map(ev => {
+                {/* Eventos de hoje — máx 3 */}
+                {eventosHoje.slice(0, 3).map(ev => {
                   const cor = TIPO_COR[ev.tipo] ?? '#6b7280'
                   const urgente = isUrgente(ev.data_hora) && ev.status === 'Agendado'
                   const sc = STATUS_COR[ev.status]
