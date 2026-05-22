@@ -92,10 +92,10 @@ export default function Sidebar() {
           <Image
             src="/logo-a2prime.png"
             alt="A2 Prime"
-            width={140}
+            width={48}
             height={48}
-            className="object-contain"
-            style={{ maxHeight: '48px', width: 'auto' }}
+            className="object-cover rounded-full"
+            style={{ width: '48px', height: '48px' }}
             priority
           />
         </div>
