@@ -107,7 +107,7 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
 
     for (let i = 1; i <= regra.num_parcelas; i++) {
       const valorBruto    = payloadLocal.valor_plano * (regra.percentual_total / 100) / regra.num_parcelas
-      const valorVendedor = valorBruto * (nivelPct / 100)
+      const valorVendedor = payloadLocal.valor_plano * (nivelPct / 100) / regra.num_parcelas
       let valorEmpresa    = valorBruto - valorVendedor
 
       if (regra.desconta_imposto && regra.percentual_imposto > 0) {

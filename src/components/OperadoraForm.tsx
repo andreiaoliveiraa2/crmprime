@@ -379,7 +379,7 @@ export default function OperadoraForm({ operadora, cnpjsDisponiveis, regrasExist
                 <div className="pt-4 border-t" style={{ borderColor: '#e8e4dd' }}>
                   <p className="text-xs font-semibold mb-3" style={{ color: '#2d1f4e' }}>Repasse por Nível do Vendedor</p>
                   <p className="text-xs mb-3" style={{ color: '#9a918a' }}>
-                    % de cada parcela que vai para o vendedor. A corretora fica com o restante.
+                    % do total pago pela operadora que vai para o vendedor. Máximo: % total pago pela operadora. A corretora fica com o restante.
                   </p>
                   <div className="grid grid-cols-3 gap-4">
                     {(NIVEIS_VENDEDOR as readonly string[]).map(nivel => {
@@ -388,7 +388,7 @@ export default function OperadoraForm({ operadora, cnpjsDisponiveis, regrasExist
                         <div key={nivel}>
                           <label className={labelCls} style={labelStyle}>{nivel}</label>
                           <div className="relative">
-                            <input type="number" step="0.01" min="0" max="100"
+                            <input type="number" step="0.01" min="0" max={tab.percentualTotal || undefined}
                               value={tab[key as keyof CnpjTab] as string}
                               onChange={e => updateTab(abaAtiva, { [key]: e.target.value })}
                               placeholder="0" className={inputCls} style={{ ...inputStyle, paddingRight: '2rem' }} />
