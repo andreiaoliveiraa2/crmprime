@@ -97,8 +97,8 @@ export default async function DashboardPage() {
     return { ...v, comprimento, offset }
   })
 
-  const leadsRecentes    = leads.filter(l => l.etapa !== 'Vendido' && l.etapa !== 'Perdido').slice(0,4)
-  const clientesRecentes = clientes.slice(0,4)
+  const leadsRecentes    = leads.filter(l => l.etapa !== 'Vendido' && l.etapa !== 'Perdido').slice(0,3)
+  const clientesRecentes = clientes.slice(0,3)
   const dataFormatada    = agora.toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long', year:'numeric' })
   const mesAtual         = agora.toLocaleDateString('pt-BR', { month:'long', year:'numeric' })
 
@@ -144,66 +144,8 @@ export default async function DashboardPage() {
           subtitle={`vendas em ${mesAtual}`} iconBg="#e8f5ee" iconColor="#2e8b57" />
       </div>
 
-      {/* Leads + Clientes recentes */}
+      {/* Compromissos de Hoje + Vendas por Operadora */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4">
-        <div className="bg-white p-4" style={{ border:'1px solid #e8e4dd', borderRadius:'12px' }}>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold" style={{ color:'#2d1f4e' }}>Leads Recentes</h3>
-            <Link href="/crm" className="flex items-center gap-0.5 text-xs font-medium" style={{ color:'#b89a6a' }}>
-              Ver todos <ChevronRight size={12} />
-            </Link>
-          </div>
-          {leadsRecentes.length === 0
-            ? <p className="text-xs py-6 text-center" style={{ color:'#9a918a' }}>Nenhum lead cadastrado.</p>
-            : <ul className="divide-y" style={{ borderColor:'#f0ece6' }}>
-                {leadsRecentes.map(l => {
-                  const badge = etapaBadge[l.etapa] ?? { bg:'#f0f0f0', color:'#6b7280' }
-                  return (
-                    <li key={l.id} className="py-2 flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium truncate" style={{ color:'#1a1a1a' }}>{l.nome}</p>
-                        <p className="text-xs mt-0.5" style={{ color:'#9a918a' }}>
-                          {[l.tipo_plano, l.operadora].filter(Boolean).join(' · ') || '—'}
-                        </p>
-                      </div>
-                      <span className="shrink-0 text-xs font-medium px-2.5 py-0.5 rounded-full whitespace-nowrap"
-                        style={{ backgroundColor:badge.bg, color:badge.color }}>{l.etapa}</span>
-                    </li>
-                  )
-                })}
-              </ul>
-          }
-        </div>
-
-        <div className="bg-white p-4" style={{ border:'1px solid #e8e4dd', borderRadius:'12px' }}>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold" style={{ color:'#2d1f4e' }}>Clientes Recentes</h3>
-            <Link href="/clientes" className="flex items-center gap-0.5 text-xs font-medium" style={{ color:'#b89a6a' }}>
-              Ver todos <ChevronRight size={12} />
-            </Link>
-          </div>
-          {clientesRecentes.length === 0
-            ? <p className="text-xs py-6 text-center" style={{ color:'#9a918a' }}>Nenhum cliente cadastrado ainda.</p>
-            : <ul className="divide-y" style={{ borderColor:'#f0ece6' }}>
-                {clientesRecentes.map(c => (
-                  <li key={c.id} className="py-2 flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate" style={{ color:'#1a1a1a' }}>{c.nome}</p>
-                      <p className="text-xs mt-0.5" style={{ color:'#9a918a' }}>
-                        {[c.operadora, c.quantidade_vidas ? `${c.quantidade_vidas} vidas` : null].filter(Boolean).join(' · ') || '—'}
-                      </p>
-                    </div>
-                    <span className="shrink-0 text-xs font-medium px-2.5 py-0.5 rounded-full"
-                      style={{ backgroundColor:'#dcfce7', color:'#15803d' }}>Ativo</span>
-                  </li>
-                ))}
-              </ul>
-          }
-        </div>
-      </div>
-
-      {/* Lembretes de Hoje + Vendas por Operadora */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
 
         {/* Lembretes */}
         <div className="bg-white p-4" style={{ border:'1px solid #e8e4dd', borderRadius:'12px' }}>
@@ -322,6 +264,64 @@ export default async function DashboardPage() {
                   })}
                 </div>
               </div>
+          }
+        </div>
+      </div>
+
+      {/* Leads Recentes + Clientes Recentes */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-3">
+        <div className="bg-white p-4" style={{ border:'1px solid #e8e4dd', borderRadius:'12px' }}>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold" style={{ color:'#2d1f4e' }}>Leads Recentes</h3>
+            <Link href="/crm" className="flex items-center gap-0.5 text-xs font-medium" style={{ color:'#b89a6a' }}>
+              Ver todos <ChevronRight size={12} />
+            </Link>
+          </div>
+          {leadsRecentes.length === 0
+            ? <p className="text-xs py-6 text-center" style={{ color:'#9a918a' }}>Nenhum lead cadastrado.</p>
+            : <ul className="divide-y" style={{ borderColor:'#f0ece6' }}>
+                {leadsRecentes.map(l => {
+                  const badge = etapaBadge[l.etapa] ?? { bg:'#f0f0f0', color:'#6b7280' }
+                  return (
+                    <li key={l.id} className="py-2 flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate" style={{ color:'#1a1a1a' }}>{l.nome}</p>
+                        <p className="text-xs mt-0.5" style={{ color:'#9a918a' }}>
+                          {[l.tipo_plano, l.operadora].filter(Boolean).join(' · ') || '—'}
+                        </p>
+                      </div>
+                      <span className="shrink-0 text-xs font-medium px-2.5 py-0.5 rounded-full whitespace-nowrap"
+                        style={{ backgroundColor:badge.bg, color:badge.color }}>{l.etapa}</span>
+                    </li>
+                  )
+                })}
+              </ul>
+          }
+        </div>
+
+        <div className="bg-white p-4" style={{ border:'1px solid #e8e4dd', borderRadius:'12px' }}>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold" style={{ color:'#2d1f4e' }}>Clientes Recentes</h3>
+            <Link href="/clientes" className="flex items-center gap-0.5 text-xs font-medium" style={{ color:'#b89a6a' }}>
+              Ver todos <ChevronRight size={12} />
+            </Link>
+          </div>
+          {clientesRecentes.length === 0
+            ? <p className="text-xs py-6 text-center" style={{ color:'#9a918a' }}>Nenhum cliente cadastrado ainda.</p>
+            : <ul className="divide-y" style={{ borderColor:'#f0ece6' }}>
+                {clientesRecentes.map(c => (
+                  <li key={c.id} className="py-2 flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate" style={{ color:'#1a1a1a' }}>{c.nome}</p>
+                      <p className="text-xs mt-0.5" style={{ color:'#9a918a' }}>
+                        {[c.operadora, c.quantidade_vidas ? `${c.quantidade_vidas} vidas` : null].filter(Boolean).join(' · ') || '—'}
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-xs font-medium px-2.5 py-0.5 rounded-full"
+                      style={{ backgroundColor:'#dcfce7', color:'#15803d' }}>Ativo</span>
+                  </li>
+                ))}
+              </ul>
           }
         </div>
       </div>
