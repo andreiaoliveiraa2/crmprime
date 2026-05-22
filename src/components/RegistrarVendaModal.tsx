@@ -19,6 +19,8 @@ interface ClienteSugestao {
   vendedor: string | null
 }
 
+interface CnpjOpcao { id: string; nome: string }
+
 export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Props) {
   const supabase = createClient()
   const operadoras = useOperadoras()
@@ -42,7 +44,7 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
   const [erro, setErro] = useState<string | null>(null)
 
   // CNPJ de recebimento state
-  interface CnpjOpcao { id: string; nome: string }
+  const latestOperadoraRef = useRef('')
 
   const [cnpjRecebimentoId, setCnpjRecebimentoId]     = useState('')
   const [cnpjRecebimentoNome, setCnpjRecebimentoNome] = useState('')
@@ -92,6 +94,7 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
   }
 
   async function carregarCnpjs(op: string) {
+    latestOperadoraRef.current = op
     setCarregandoCnpjs(true)
     setCnpjRecebimentoId('')
     setCnpjRecebimentoNome('')
@@ -107,7 +110,7 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
     const cnpjIds = [...new Set((regras ?? []).map((r: { cnpj_recebimento_id: string }) => r.cnpj_recebimento_id).filter(Boolean))]
 
     if (cnpjIds.length === 0) {
-      setCarregandoCnpjs(false)
+      if (latestOperadoraRef.current === op) setCarregandoCnpjs(false)
       return
     }
 
@@ -117,6 +120,12 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
       .in('id', cnpjIds)
       .eq('status', 'Ativo')
       .order('nome')
+
+    // Bail if newer operadora selected during this fetch
+    if (latestOperadoraRef.current !== op) {
+      setCarregandoCnpjs(false)
+      return
+    }
 
     const lista = (cnpjs ?? []) as CnpjOpcao[]
     setCnpjsParaOperadora(lista)
