@@ -3,7 +3,7 @@
 -- 1. Tabela de CNPJs de Recebimento
 CREATE TABLE IF NOT EXISTS cnpjs_recebimento (
   id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  nome         text NOT NULL,
+  nome         text NOT NULL UNIQUE,
   razao_social text,
   cnpj         text,
   banco        text,
@@ -24,8 +24,8 @@ ON CONFLICT DO NOTHING;
 
 -- 3. Adicionar cnpj_recebimento_id em regras_comissao
 ALTER TABLE regras_comissao
-  ADD COLUMN IF NOT EXISTS cnpj_recebimento_id uuid REFERENCES cnpjs_recebimento(id);
+  ADD COLUMN IF NOT EXISTS cnpj_recebimento_id uuid REFERENCES cnpjs_recebimento(id) ON DELETE SET NULL;
 
 -- 4. Adicionar cnpj_recebimento_id em vendas
 ALTER TABLE vendas
-  ADD COLUMN IF NOT EXISTS cnpj_recebimento_id uuid REFERENCES cnpjs_recebimento(id);
+  ADD COLUMN IF NOT EXISTS cnpj_recebimento_id uuid REFERENCES cnpjs_recebimento(id) ON DELETE SET NULL;
