@@ -16,6 +16,7 @@ interface Props {
   contas: Conta[]
   regras: RegraComissao[]
   cnpjs: CnpjRecebimento[]
+  operadoras: { id: string; nome: string }[]
 }
 
 const ABAS: { id: Aba; label: string }[] = [
@@ -25,7 +26,7 @@ const ABAS: { id: Aba; label: string }[] = [
   { id: 'relatorios', label: 'Relatórios' },
 ]
 
-export default function FinanceiroClient({ vendas, comissoes, contas, regras, cnpjs }: Props) {
+export default function FinanceiroClient({ vendas, comissoes, contas, regras, cnpjs, operadoras }: Props) {
   const [aba, setAba] = useState<Aba>('producao')
   const router = useRouter()
 
@@ -93,7 +94,7 @@ export default function FinanceiroClient({ vendas, comissoes, contas, regras, cn
         <ContasTab contas={contas} onAtualizar={reload} cnpjs={cnpjs} />
       )}
       {aba === 'relatorios' && (
-        <RelatoriosTab vendas={vendas} comissoes={comissoes} contas={contas} cnpjs={cnpjs} />
+        <RelatoriosTab vendas={vendas} comissoes={comissoes} contas={contas} cnpjs={cnpjs} operadoras={operadoras} />
       )}
     </div>
   )

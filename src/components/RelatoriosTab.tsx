@@ -9,6 +9,7 @@ interface Props {
   comissoes: Comissao[]
   contas: Conta[]
   cnpjs: CnpjRecebimento[]
+  operadoras: { id: string; nome: string }[]
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -189,12 +190,14 @@ function DataTable({ headers, rows }: DataTableProps) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function RelatoriosTab({ vendas, comissoes, contas, cnpjs }: Props) {
+export default function RelatoriosTab({ vendas, comissoes, contas, cnpjs, operadoras }: Props) {
   const [modo, setModo] = useState<'mes' | 'periodo'>('mes')
   const [anoMes, setAnoMes] = useState(currentYearMonth())
   const [dataInicio, setDataInicio] = useState('')
   const [dataFim, setDataFim] = useState('')
   const [filtroEmpresa, setFiltroEmpresa] = useState('')
+  const [filtroOperadora, setFiltroOperadora] = useState('')
+
 
   // Compute effective date range
   const [rangeStart, rangeEnd] = useMemo<[string, string]>(() => {
@@ -210,9 +213,10 @@ export default function RelatoriosTab({ vendas, comissoes, contas, cnpjs }: Prop
     if (!hasRange) return []
     return vendas.filter((v) =>
       inRange(v.data_venda, rangeStart, rangeEnd) &&
-      (!filtroEmpresa || v.empresa === filtroEmpresa)
+      (!filtroEmpresa || v.empresa === filtroEmpresa) &&
+      (!filtroOperadora || v.operadora === filtroOperadora)
     )
-  }, [vendas, rangeStart, rangeEnd, hasRange, filtroEmpresa])
+  }, [vendas, rangeStart, rangeEnd, hasRange, filtroEmpresa, filtroOperadora])
 
   const vendasPorOperadora = useMemo(() => {
     const map = new Map<string, { quantidade: number; total: number }>()
@@ -241,9 +245,10 @@ export default function RelatoriosTab({ vendas, comissoes, contas, cnpjs }: Prop
       const venda = vendasMap.get(c.venda_id)
       if (!venda) return false
       if (filtroEmpresa && c.empresa !== filtroEmpresa) return false
+      if (filtroOperadora && venda.operadora !== filtroOperadora) return false
       return inRange(venda.data_venda, rangeStart, rangeEnd)
     })
-  }, [comissoes, vendasMap, rangeStart, rangeEnd, hasRange, filtroEmpresa])
+  }, [comissoes, vendasMap, rangeStart, rangeEnd, hasRange, filtroEmpresa, filtroOperadora])
 
   const comissaoPorVendedor = useMemo(() => {
     const map = new Map<string, { recebido: number; pendente: number; producao: number }>()
@@ -272,9 +277,10 @@ export default function RelatoriosTab({ vendas, comissoes, contas, cnpjs }: Prop
       (c) =>
         c.status_empresa === 'Recebido' &&
         (!filtroEmpresa || c.empresa === filtroEmpresa) &&
+        (!filtroOperadora || (vendasMap.get(c.venda_id)?.operadora ?? '') === filtroOperadora) &&
         inRange(c.data_recebida_empresa, rangeStart, rangeEnd)
     )
-  }, [comissoes, rangeStart, rangeEnd, hasRange, filtroEmpresa])
+  }, [comissoes, vendasMap, rangeStart, rangeEnd, hasRange, filtroEmpresa, filtroOperadora])
 
   const totalComissoesEmpresa = useMemo(
     () => comissoesEmpresaPeriodo.reduce((acc, c) => acc + c.valor_empresa, 0),
@@ -297,12 +303,13 @@ export default function RelatoriosTab({ vendas, comissoes, contas, cnpjs }: Prop
 
   // ── Report 4: Vitalícios Ativos ────────────────────────────────────────────
   const vitaliciosAtivos = useMemo(() => {
-    return comissoes.filter((c) =>
-      c.tipo === 'vitalicio' &&
-      c.status_empresa === 'Pendente' &&
-      (!filtroEmpresa || c.empresa === filtroEmpresa)
-    )
-  }, [comissoes, filtroEmpresa])
+    return comissoes.filter((c) => {
+      if (c.tipo !== 'vitalicio' || c.status_empresa !== 'Pendente') return false
+      if (filtroEmpresa && c.empresa !== filtroEmpresa) return false
+      if (filtroOperadora && (vendasMap.get(c.venda_id)?.operadora ?? '') !== filtroOperadora) return false
+      return true
+    })
+  }, [comissoes, vendasMap, filtroEmpresa, filtroOperadora])
 
   const totalVitalicioEmpresa = useMemo(
     () => vitaliciosAtivos.reduce((acc, c) => acc + c.valor_empresa, 0),
@@ -320,9 +327,10 @@ export default function RelatoriosTab({ vendas, comissoes, contas, cnpjs }: Prop
       (c) =>
         (c.status_empresa === 'Pendente' || c.status_vendedor === 'Pendente') &&
         (!filtroEmpresa || c.empresa === filtroEmpresa) &&
+        (!filtroOperadora || (vendasMap.get(c.venda_id)?.operadora ?? '') === filtroOperadora) &&
         inRange(c.data_prevista, rangeStart, rangeEnd)
     )
-  }, [comissoes, rangeStart, rangeEnd, hasRange, filtroEmpresa])
+  }, [comissoes, vendasMap, rangeStart, rangeEnd, hasRange, filtroEmpresa, filtroOperadora])
 
   const contasVencidas = useMemo(() => {
     const today = todayStr()
@@ -567,8 +575,18 @@ export default function RelatoriosTab({ vendas, comissoes, contas, cnpjs }: Prop
             className="border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2"
             style={{ borderColor: '#e8e4dd', color: filtroEmpresa ? '#1a1a1a' : '#9a918a' }}
           >
-            <option value="">Todas as empresas (consolidado)</option>
+            <option value="">Todas as empresas</option>
             {cnpjs.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
+          </select>
+
+          <select
+            value={filtroOperadora}
+            onChange={e => setFiltroOperadora(e.target.value)}
+            className="border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2"
+            style={{ borderColor: '#e8e4dd', color: filtroOperadora ? '#1a1a1a' : '#9a918a' }}
+          >
+            <option value="">Todas as operadoras</option>
+            {operadoras.map(op => <option key={op.id} value={op.nome}>{op.nome}</option>)}
           </select>
 
           {modo === 'mes' ? (
