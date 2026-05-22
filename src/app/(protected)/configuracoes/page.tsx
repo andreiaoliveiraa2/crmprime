@@ -1,9 +1,19 @@
 import { createClient } from '@/lib/supabase/server'
 import AlterarSenhaForm from '@/components/AlterarSenhaForm'
+import CnpjRecebimentoSection from '@/components/CnpjRecebimentoSection'
+import { CnpjRecebimento } from '@/lib/types'
 
 export default async function ConfiguracoesPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const [
+    { data: { user } },
+    { data: cnpjsRaw },
+  ] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase.from('cnpjs_recebimento').select('*').order('nome'),
+  ])
+
+  const cnpjs = (cnpjsRaw ?? []) as CnpjRecebimento[]
 
   return (
     <div className="p-6 md:p-8">
@@ -12,9 +22,9 @@ export default async function ConfiguracoesPage() {
         <p className="text-sm mt-1" style={{ color: '#7a7065' }}>Dados da conta e cadastros do sistema</p>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-lg">
         {/* Perfil */}
-        <div className="bg-white rounded-2xl border p-6 max-w-lg" style={{ borderColor: '#e8e4dd' }}>
+        <div className="bg-white rounded-2xl border p-6" style={{ borderColor: '#e8e4dd' }}>
           <h3 className="text-base font-semibold mb-5" style={{ color: '#2d1f4e' }}>Perfil</h3>
           <div className="space-y-4">
             <div>
@@ -35,7 +45,7 @@ export default async function ConfiguracoesPage() {
         </div>
 
         {/* Operadoras */}
-        <div className="bg-white rounded-2xl border p-6 max-w-lg" style={{ borderColor: '#e8e4dd' }}>
+        <div className="bg-white rounded-2xl border p-6" style={{ borderColor: '#e8e4dd' }}>
           <h3 className="text-base font-semibold mb-2" style={{ color: '#2d1f4e' }}>Operadoras</h3>
           <p className="text-sm mb-4" style={{ color: '#7a7065' }}>
             Cadastre e configure operadoras, regras de comissão e repasse por nível.
@@ -46,6 +56,9 @@ export default async function ConfiguracoesPage() {
             Gerenciar Operadoras
           </a>
         </div>
+
+        {/* CNPJs de Recebimento */}
+        <CnpjRecebimentoSection cnpjs={cnpjs} />
 
         {/* Alterar senha */}
         <AlterarSenhaForm />
