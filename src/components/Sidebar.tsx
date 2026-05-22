@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard,
@@ -87,11 +88,16 @@ export default function Sidebar() {
         style={{ backgroundColor: '#2d1f4e' }}
       >
         {/* Logo */}
-        <div className="px-6 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-          <h2 className="text-base font-bold text-white tracking-wide">A2 Prime</h2>
-          <p className="text-xs mt-0.5 font-medium" style={{ color: '#b89a6a' }}>
-            Corretora de Seguros
-          </p>
+        <div className="px-6 py-5 flex items-center" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+          <Image
+            src="/logo-a2prime.png"
+            alt="A2 Prime"
+            width={140}
+            height={48}
+            className="object-contain"
+            style={{ maxHeight: '48px', width: 'auto' }}
+            priority
+          />
         </div>
 
         {/* Navegação */}

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -50,10 +51,21 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f4f1ec' }}>
       <div className="bg-white p-8 rounded-2xl shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Bem-vinda</h1>
-        <p className="text-sm text-gray-500 mb-6">Acesse o seu sistema de gestão</p>
+        <div className="flex justify-center mb-6">
+          <Image
+            src="/logo-a2prime.png"
+            alt="A2 Prime"
+            width={180}
+            height={64}
+            className="object-contain"
+            style={{ maxHeight: '64px', width: 'auto' }}
+            priority
+          />
+        </div>
+        <h1 className="text-2xl font-bold mb-1" style={{ color: '#2d1f4e' }}>Bem-vinda</h1>
+        <p className="text-sm mb-6" style={{ color: '#7a7065' }}>Acesse o seu sistema de gestão</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
