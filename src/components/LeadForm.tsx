@@ -8,6 +8,7 @@ import { useOperadoras } from '@/lib/useOperadoras'
 
 interface Props {
   lead?: Lead
+  vendedorAtual?: { id: string; nome: string } | null
 }
 
 const inputCls = `w-full border rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 transition-shadow`
@@ -19,7 +20,7 @@ function hoje() {
   return new Date().toISOString().slice(0, 10)
 }
 
-export default function LeadForm({ lead }: Props) {
+export default function LeadForm({ lead, vendedorAtual }: Props) {
   const [nome, setNome] = useState(lead?.nome ?? '')
   const [telefone, setTelefone] = useState(lead?.telefone ?? '')
   const [origem, setOrigem] = useState(lead?.origem ?? '')
@@ -27,7 +28,7 @@ export default function LeadForm({ lead }: Props) {
   const [tipo_plano, setTipoPlano] = useState(lead?.tipo_plano ?? '')
   const [operadora, setOperadora] = useState(lead?.operadora ?? '')
   const [responsavel, setResponsavel] = useState(lead?.responsavel ?? '')
-  const [vendedor, setVendedor] = useState(lead?.vendedor ?? '')
+  const [vendedor, setVendedor] = useState(lead?.vendedor ?? vendedorAtual?.nome ?? '')
   const [observacoes, setObservacoes] = useState(lead?.observacoes ?? '')
   const [dataEntrada, setDataEntrada] = useState(
     lead?.criado_em ? lead.criado_em.slice(0, 10) : hoje()
@@ -63,7 +64,7 @@ export default function LeadForm({ lead }: Props) {
 
     setLoading(true)
 
-    const payload: LeadInsert = {
+    const payload: LeadInsert & { vendedor_id?: string | null } = {
       nome: nome.trim() || null,
       telefone: telefone.trim() || null,
       origem: origem || null,
@@ -72,6 +73,7 @@ export default function LeadForm({ lead }: Props) {
       operadora: operadora.trim() || null,
       responsavel: responsavel.trim() || null,
       vendedor: vendedor.trim() || null,
+      vendedor_id: lead?.vendedor_id ?? vendedorAtual?.id ?? null,
       observacoes: observacoes.trim() || null,
       etapa: lead?.etapa ?? 'Novo Lead',
       criado_em: dataEntrada ? new Date(dataEntrada).toISOString() : undefined,
@@ -143,10 +145,19 @@ export default function LeadForm({ lead }: Props) {
         {/* Vendedor */}
         <div>
           <label htmlFor="vendedor" className={labelCls} style={labelStyle}>Vendedor</label>
-          <select id="vendedor" value={vendedor} onChange={e => setVendedor(e.target.value)}
-            className={inputCls} style={{ ...inputStyle, color: vendedor ? '#1a1a1a' : '#9a918a' }}>
+          <select
+            id="vendedor"
+            value={vendedor}
+            onChange={e => setVendedor(e.target.value)}
+            className={inputCls}
+            style={{ ...inputStyle, color: vendedor ? '#1a1a1a' : '#9a918a' }}
+            disabled={!!vendedorAtual}
+          >
             <option value="">Selecione o vendedor...</option>
-            {vendedoresLista.map(v => <option key={v} value={v}>{v}</option>)}
+            {vendedorAtual
+              ? <option value={vendedorAtual.nome}>{vendedorAtual.nome}</option>
+              : vendedoresLista.map(v => <option key={v} value={v}>{v}</option>)
+            }
           </select>
         </div>
 

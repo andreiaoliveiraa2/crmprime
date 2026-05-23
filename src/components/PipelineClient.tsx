@@ -13,9 +13,10 @@ type Visao = 'kanban' | 'lista'
 
 interface Props {
   leads: Lead[]
+  perfil: 'admin' | 'vendedor'
 }
 
-export default function PipelineClient({ leads: leadsIniciais }: Props) {
+export default function PipelineClient({ leads: leadsIniciais, perfil }: Props) {
   const [leads, setLeads]               = useState(leadsIniciais)
   const [visao, setVisao]               = useState<Visao>('kanban')
   const [filtroEtapa, setFiltroEtapa]   = useState('')
@@ -140,15 +141,17 @@ export default function PipelineClient({ leads: leadsIniciais }: Props) {
           </select>
 
           {/* Vendedor — busca dinâmica da tabela vendedores */}
-          <select
-            value={filtroVendedor}
-            onChange={e => setFiltroVendedor(e.target.value)}
-            className={selectCls}
-            style={selectStyle(filtroVendedor)}
-          >
-            <option value="">Todos os vendedores</option>
-            {vendedores.map(v => <option key={v} value={v}>{v}</option>)}
-          </select>
+          {perfil === 'admin' && (
+            <select
+              value={filtroVendedor}
+              onChange={e => setFiltroVendedor(e.target.value)}
+              className={selectCls}
+              style={selectStyle(filtroVendedor)}
+            >
+              <option value="">Todos os vendedores</option>
+              {vendedores.map(v => <option key={v} value={v}>{v}</option>)}
+            </select>
+          )}
 
           {/* Período */}
           <div className="flex items-center gap-2">
