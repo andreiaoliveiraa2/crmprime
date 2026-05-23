@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getUsuarioAtual } from '@/lib/getUsuarioAtual'
 import DashboardCard from '@/components/DashboardCard'
 import { Users, ArrowLeftRight, FileText, CheckCircle, Calendar, ChevronRight, AlertCircle } from 'lucide-react'
 import { Lead, Cliente, Compromisso, TIPO_COR, STATUS_COR } from '@/lib/types'
@@ -31,6 +32,11 @@ function isUrgente(iso: string) {
 export default async function DashboardPage() {
   const supabase = await createClient()
 
+  const usuario = await getUsuarioAtual()
+  const isVendedor = usuario?.perfil === 'vendedor'
+  const vendedorId = usuario?.vendedor_id ?? null
+  const nomeUsuario = usuario?.nome ?? 'Você'
+
   const agora = new Date()
   const inicioDia = new Date(agora); inicioDia.setHours(0,0,0,0)
   const fimDia    = new Date(agora); fimDia.setHours(23,59,59,999)
@@ -42,30 +48,27 @@ export default async function DashboardPage() {
   fimSemana.setHours(23,59,59,999)
   const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1)
 
+  let leadsQuery    = supabase.from('leads').select('*').order('criado_em', { ascending: false })
+  let clientesQuery = supabase.from('clientes').select('*').order('criado_em', { ascending: false })
+  let agendaHojeQ   = supabase.from('agenda').select('*').gte('data_hora', inicioDia.toISOString()).lte('data_hora', fimDia.toISOString()).order('data_hora', { ascending: true })
+  let agendaSemanaQ = supabase.from('agenda').select('*').gte('data_hora', inicioSemana.toISOString()).lte('data_hora', fimSemana.toISOString()).order('data_hora', { ascending: true }).limit(5)
+  let pendentesQ    = supabase.from('agenda').select('*').eq('status', 'Agendado').lt('data_hora', inicioDia.toISOString()).order('data_hora', { ascending: false }).limit(3)
+
+  if (isVendedor && vendedorId) {
+    leadsQuery    = leadsQuery.eq('vendedor_id', vendedorId)
+    clientesQuery = clientesQuery.eq('vendedor_id', vendedorId)
+    agendaHojeQ   = agendaHojeQ.eq('vendedor_id', vendedorId)
+    agendaSemanaQ = agendaSemanaQ.eq('vendedor_id', vendedorId)
+    pendentesQ    = pendentesQ.eq('vendedor_id', vendedorId)
+  }
+
   const [
     { data: leadsData },
     { data: clientesData },
     { data: eventosHojeData },
     { data: eventosSemanaData },
     { data: pendentesData },
-  ] = await Promise.all([
-    supabase.from('leads').select('*').order('criado_em', { ascending: false }),
-    supabase.from('clientes').select('*').order('criado_em', { ascending: false }),
-    supabase.from('agenda').select('*')
-      .gte('data_hora', inicioDia.toISOString())
-      .lte('data_hora', fimDia.toISOString())
-      .order('data_hora', { ascending: true }),
-    supabase.from('agenda').select('*')
-      .gte('data_hora', inicioSemana.toISOString())
-      .lte('data_hora', fimSemana.toISOString())
-      .order('data_hora', { ascending: true })
-      .limit(5),
-    supabase.from('agenda').select('*')
-      .eq('status', 'Agendado')
-      .lt('data_hora', inicioDia.toISOString())
-      .order('data_hora', { ascending: false })
-      .limit(3),
-  ])
+  ] = await Promise.all([leadsQuery, clientesQuery, agendaHojeQ, agendaSemanaQ, pendentesQ])
 
   const leads: Lead[]           = leadsData ?? []
   const clientes: Cliente[]     = clientesData ?? []
@@ -109,7 +112,7 @@ export default async function DashboardPage() {
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-5">
         <div className="py-1">
           <h1 className="font-semibold" style={{ fontSize:'22px', color:'#2d1f4e', lineHeight:'1.3' }}>
-            Olá, Andreia 👋
+            Olá, {nomeUsuario} 👋
           </h1>
           <p className="mt-1" style={{ fontSize:'13px', color:'#7a7065' }}>
             {eventosHoje.length > 0
