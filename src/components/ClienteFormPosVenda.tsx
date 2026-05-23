@@ -85,34 +85,25 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual }: Props) {
 
     if (!regra) return
 
-    let nivelPct = 0
-    if (payloadLocal.vendedor) {
-      const { data: vend } = await supabase
-        .from('vendedores')
-        .select('nivel')
-        .eq('nome', payloadLocal.vendedor)
-        .maybeSingle()
+    const { data: parcelas } = await supabase
+      .from('parcelas_regra')
+      .select('numero_parcela, percentual_empresa, percentual_vendedor')
+      .eq('regra_id', regra.id)
+      .order('numero_parcela')
 
-      if (vend?.nivel) {
-        const { data: rep } = await supabase
-          .from('repasse_grupo_vendedor')
-          .select('percentual')
-          .eq('regra_id', regra.id)
-          .eq('nivel', vend.nivel)
-          .maybeSingle()
-        nivelPct = rep?.percentual ?? 0
-      }
-    }
-
+    const parcelasArr = parcelas ?? []
     const comissoes: object[] = []
 
     for (let i = 1; i <= regra.num_parcelas; i++) {
-      const valorBruto    = payloadLocal.valor_plano * (regra.percentual_total / 100) / regra.num_parcelas
-      const valorVendedor = payloadLocal.valor_plano * (nivelPct / 100) / regra.num_parcelas
-      let valorEmpresa    = valorBruto - valorVendedor
+      const parcelaRegra    = parcelasArr.find(p => p.numero_parcela === i)
+      const pctEmpresa      = parcelaRegra?.percentual_empresa  ?? 50
+      const pctVendedor     = parcelaRegra?.percentual_vendedor ?? 50
+      const valorBruto      = payloadLocal.valor_plano * (regra.percentual_total / 100) / regra.num_parcelas
+      const valorEmpresa    = valorBruto * (pctEmpresa / 100)
+      let   valorVendedor   = valorBruto * (pctVendedor / 100)
 
       if (regra.desconta_imposto && regra.percentual_imposto > 0) {
-        valorEmpresa = valorEmpresa * (1 - regra.percentual_imposto / 100)
+        valorVendedor = valorVendedor * (1 - regra.percentual_imposto / 100)
       }
 
       const d = new Date(dataVendaFinal)
@@ -131,14 +122,24 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual }: Props) {
     }
 
     if (regra.percentual_vitalicio > 0) {
-      const valorBruto = payloadLocal.valor_plano * (regra.percentual_vitalicio / 100)
+      const valorBruto      = payloadLocal.valor_plano * (regra.percentual_vitalicio / 100)
+      const ultimaParcela   = parcelasArr[parcelasArr.length - 1]
+      const pctEmpresaVit   = ultimaParcela?.percentual_empresa  ?? 100
+      const pctVendedorVit  = ultimaParcela?.percentual_vendedor ?? 0
+      const valorEmpresaVit = valorBruto * (pctEmpresaVit / 100)
+      let   valorVendedorVit = valorBruto * (pctVendedorVit / 100)
+
+      if (regra.desconta_imposto && regra.percentual_imposto > 0 && valorVendedorVit > 0) {
+        valorVendedorVit = valorVendedorVit * (1 - regra.percentual_imposto / 100)
+      }
+
       const d = new Date(dataVendaFinal)
       d.setMonth(d.getMonth() + regra.num_parcelas)
       comissoes.push({
         venda_id: vendaId, tipo: 'vitalicio', numero_parcela: null,
         valor_bruto: valorBruto,
-        valor_empresa: valorBruto,
-        valor_vendedor: 0,
+        valor_empresa: valorEmpresaVit,
+        valor_vendedor: valorVendedorVit,
         status_empresa: 'Pendente', status_vendedor: 'Pendente',
         data_prevista: d.toISOString().split('T')[0],
         data_recebida_empresa: null, data_recebida_vendedor: null,

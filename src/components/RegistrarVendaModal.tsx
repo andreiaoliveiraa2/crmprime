@@ -182,7 +182,7 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
       // 2. Check for commission rule
       const { data: regra } = await supabase
         .from('regras_comissao')
-        .select('id, percentual_total, num_parcelas, percentual_vitalicio')
+        .select('id, percentual_total, num_parcelas, percentual_vitalicio, desconta_imposto, percentual_imposto')
         .eq('operadora', operadora)
         .eq('cnpj_recebimento_id', cnpjRecebimentoId)
         .eq('ativo', true)
@@ -224,13 +224,19 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
           const dataPrev = new Date(dataVenda)
           dataPrev.setMonth(dataPrev.getMonth() + (i - 1))
 
+          const valorEmpresaParcela  = valorBruto * (pctEmpresa / 100)
+          let   valorVendedorParcela = valorBruto * (pctVendedor / 100)
+          if (regra.desconta_imposto && regra.percentual_imposto > 0) {
+            valorVendedorParcela = valorVendedorParcela * (1 - regra.percentual_imposto / 100)
+          }
+
           comissoesParaInserir.push({
             venda_id: vendaId,
             tipo: 'parcela',
             numero_parcela: i,
             valor_bruto: valorBruto,
-            valor_empresa: valorBruto * (pctEmpresa / 100),
-            valor_vendedor: valorBruto * (pctVendedor / 100),
+            valor_empresa: valorEmpresaParcela,
+            valor_vendedor: valorVendedorParcela,
             status_empresa: 'Pendente',
             status_vendedor: 'Pendente',
             data_prevista: dataPrev.toISOString().split('T')[0],
@@ -250,13 +256,19 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
         const dataVit = new Date(dataVenda)
         dataVit.setMonth(dataVit.getMonth() + regra.num_parcelas)
 
+        const valorEmpresaVit  = valorBrutoVitalicio * (pctEmpresaVit / 100)
+        let   valorVendedorVit = valorBrutoVitalicio * (pctVendedorVit / 100)
+        if (regra.desconta_imposto && regra.percentual_imposto > 0) {
+          valorVendedorVit = valorVendedorVit * (1 - regra.percentual_imposto / 100)
+        }
+
         comissoesParaInserir.push({
           venda_id: vendaId,
           tipo: 'vitalicio',
           numero_parcela: null,
           valor_bruto: valorBrutoVitalicio,
-          valor_empresa: valorBrutoVitalicio * (pctEmpresaVit / 100),
-          valor_vendedor: valorBrutoVitalicio * (pctVendedorVit / 100),
+          valor_empresa: valorEmpresaVit,
+          valor_vendedor: valorVendedorVit,
           status_empresa: 'Pendente',
           status_vendedor: 'Pendente',
           data_prevista: dataVit.toISOString().split('T')[0],

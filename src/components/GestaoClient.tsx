@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Vendedor, TIPOS_VENDEDOR, NIVEIS_VENDEDOR } from '@/lib/types'
-import { Plus, Search, Eye, Pencil, UserX } from 'lucide-react'
+import { Plus, Search, Eye, Pencil, UserX, Trash2 } from 'lucide-react'
 
 interface Props {
   vendedores: Vendedor[]
@@ -19,7 +19,8 @@ export default function GestaoClient({ vendedores: inicial }: Props) {
   const [filtroTipo, setFiltroTipo]     = useState('')
   const [filtroNivel, setFiltroNivel]   = useState('')
   const [filtroStatus, setFiltroStatus] = useState('')
-  const [confirmandoId, setConfirmandoId]     = useState<string | null>(null)
+  const [confirmandoId, setConfirmandoId]         = useState<string | null>(null)
+  const [confirmandoExcluirId, setConfirmandoExcluirId] = useState<string | null>(null)
 
   const supabase = createClient()
 
@@ -44,6 +45,12 @@ export default function GestaoClient({ vendedores: inicial }: Props) {
     await supabase.from('vendedores').update({ ativo: false }).eq('id', id)
     setLista(prev => prev.map(v => v.id === id ? { ...v, ativo: false } : v))
     setConfirmandoId(null)
+  }
+
+  async function excluir(id: string) {
+    await supabase.from('vendedores').delete().eq('id', id)
+    setLista(prev => prev.filter(v => v.id !== id))
+    setConfirmandoExcluirId(null)
   }
 
   return (
@@ -194,18 +201,47 @@ export default function GestaoClient({ vendedores: inicial }: Props) {
                             Cancelar
                           </button>
                         </div>
+                      ) : confirmandoExcluirId === v.id ? (
+                        <div className="flex items-center gap-1 ml-1">
+                          <span className="text-xs" style={{ color: '#9a918a' }}>Excluir?</span>
+                          <button
+                            onClick={() => excluir(v.id)}
+                            className="px-2 py-1 text-xs rounded-lg text-white"
+                            style={{ backgroundColor: '#ef4444' }}
+                          >
+                            Sim
+                          </button>
+                          <button
+                            onClick={() => setConfirmandoExcluirId(null)}
+                            className="px-2 py-1 text-xs rounded-lg"
+                            style={{ backgroundColor: '#e8e4dd', color: '#4a4a4a' }}
+                          >
+                            Não
+                          </button>
+                        </div>
                       ) : (
-                        <button
-                          onClick={() => setConfirmandoId(v.id)}
-                          className="p-1.5 rounded-lg hover:bg-gray-100"
-                          title="Desativar"
-                          disabled={!v.ativo}
-                        >
-                          <UserX
-                            size={15}
-                            style={{ color: v.ativo ? '#ef4444' : '#d1d5db' }}
-                          />
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => setConfirmandoId(v.id)}
+                            className="p-1.5 rounded-lg hover:bg-gray-100"
+                            title="Desativar"
+                            disabled={!v.ativo}
+                          >
+                            <UserX
+                              size={15}
+                              style={{ color: v.ativo ? '#ef4444' : '#d1d5db' }}
+                            />
+                          </button>
+                          {!v.ativo && (
+                            <button
+                              onClick={() => setConfirmandoExcluirId(v.id)}
+                              className="p-1.5 rounded-lg hover:bg-gray-100"
+                              title="Excluir definitivamente"
+                            >
+                              <Trash2 size={15} style={{ color: '#ef4444' }} />
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                   </td>

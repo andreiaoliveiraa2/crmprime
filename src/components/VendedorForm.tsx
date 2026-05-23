@@ -7,7 +7,6 @@ import {
   Vendedor,
   VendedorInsert,
   TIPOS_VENDEDOR,
-  CORRETORAS_VENDEDOR,
   NIVEIS_VENDEDOR,
 } from '@/lib/types'
 import { ChevronDown, ChevronUp } from 'lucide-react'
@@ -78,7 +77,6 @@ export default function VendedorForm({ vendedor }: Props) {
 
   // Dados profissionais
   const [tipo, setTipo]                 = useState(vendedor?.tipo ?? '')
-  const [corretora, setCorretora]       = useState(vendedor?.corretora ?? '')
   const [nivel, setNivel]               = useState(vendedor?.nivel ?? '')
   const [dataAdmissao, setDataAdmissao] = useState(vendedor?.data_admissao ?? '')
   const [dataDemissao, setDataDemissao] = useState(vendedor?.data_demissao ?? '')
@@ -130,7 +128,6 @@ export default function VendedorForm({ vendedor }: Props) {
       endereco_cidade:       enderecoCidade || null,
       endereco_estado:       enderecoEstado || null,
       tipo:                  tipo || null,
-      corretora:             corretora || null,
       nivel:                 nivel || null,
       data_admissao:         dataAdmissao || null,
       data_demissao:         dataDemissao || null,
@@ -237,13 +234,6 @@ export default function VendedorForm({ vendedor }: Props) {
           <select className={inputCls} style={inputStyle} value={tipo} onChange={e => setTipo(e.target.value)}>
             <option value="">Selecione</option>
             {TIPOS_VENDEDOR.map(t => <option key={t}>{t}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className={labelCls} style={labelStyle}>Corretora vinculada</label>
-          <select className={inputCls} style={inputStyle} value={corretora} onChange={e => setCorretora(e.target.value)}>
-            <option value="">Selecione</option>
-            {CORRETORAS_VENDEDOR.map(c => <option key={c}>{c}</option>)}
           </select>
         </div>
         <div>

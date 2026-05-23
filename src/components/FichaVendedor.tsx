@@ -196,7 +196,6 @@ export default function FichaVendedor({ vendedor, vendas, comissoes }: Props) {
             <p className={sectionTitleCls} style={sectionTitleStyle}>Dados Profissionais</p>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <Campo label="Tipo"             value={vendedor.tipo} />
-              <Campo label="Corretora"        value={vendedor.corretora} />
               <Campo label="Nível"            value={vendedor.nivel} />
               <Campo label="Data de admissão" value={vendedor.data_admissao} />
               <Campo label="Data de demissão" value={vendedor.data_demissao} />
