@@ -27,6 +27,7 @@ export default function PipelineClient({ leads: leadsIniciais, perfil }: Props) 
   const [vendedores, setVendedores]     = useState<string[]>([])
 
   useEffect(() => {
+    if (perfil !== 'admin') return
     const supabase = createClient()
     supabase
       .from('vendedores')
@@ -36,7 +37,7 @@ export default function PipelineClient({ leads: leadsIniciais, perfil }: Props) 
       .then(({ data }) => {
         if (data) setVendedores(data.map((v: { nome: string }) => v.nome))
       })
-  }, [])
+  }, [perfil])
 
   const handleLeadMoved = useCallback((id: string, novaEtapa: EtapaLead) => {
     setLeads(prev => prev.map(l => l.id === id ? { ...l, etapa: novaEtapa } : l))

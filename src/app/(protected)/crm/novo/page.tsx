@@ -13,7 +13,12 @@ export default async function NovoLeadPage() {
       .select('id, nome')
       .eq('id', usuario.vendedor_id)
       .single()
-    if (data) vendedorAtual = data
+    if (data) {
+      vendedorAtual = data
+    } else {
+      // vendedor_id set but record not found — lock field to prevent arbitrary selection
+      vendedorAtual = { id: usuario.vendedor_id, nome: '(vendedor não encontrado)' }
+    }
   }
 
   return (
