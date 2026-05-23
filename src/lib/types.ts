@@ -51,6 +51,7 @@ export interface Lead {
   o_que_procura: string | null
   observacoes: string | null
   vendedor: string | null
+  vendedor_id: string | null
   etapa: EtapaLead
   criado_em: string
 }
@@ -163,6 +164,7 @@ export interface Cliente {
   data_implantacao: string | null
   status: StatusCliente
   vendedor: string | null
+  vendedor_id: string | null
   comissao: number | null
   observacoes: string | null
   lead_id: string | null
@@ -219,6 +221,7 @@ export interface Compromisso {
   tipo: string
   status: StatusCompromisso
   observacoes: string | null
+  vendedor_id: string | null
   criado_em: string
 }
 
@@ -352,3 +355,15 @@ export interface DocumentoCliente {
   tamanho_bytes: number | null
   criado_em: string
 }
+
+export interface Usuario {
+  id: string
+  auth_user_id: string
+  nome: string
+  email: string | null
+  perfil: 'admin' | 'vendedor'
+  vendedor_id: string | null
+  ativo: boolean
+  criado_em: string
+}
+export type UsuarioInsert = Omit<Usuario, 'id' | 'criado_em'>
