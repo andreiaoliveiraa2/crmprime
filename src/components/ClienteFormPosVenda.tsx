@@ -169,7 +169,7 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual }: Props) {
       administradora:    administradora.trim() || null,
       tipo_plano:        tipo_plano || null,
       quantidade_vidas:  qtdVidas ? Number(qtdVidas) : null,
-      valor_plano:       valor_plano ? Number(valor_plano.replace(',', '.')) : null,
+      valor_plano:       valor_plano ? Number(valor_plano.replace(/\./g, '').replace(',', '.')) : null,
       numero_contrato:   numeroContrato.trim() || null,
       data_venda:        dataVenda || null,
       data_implantacao:  dataImplantacao || null,
@@ -213,7 +213,9 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual }: Props) {
           .from('vendas')
           .select('id')
           .eq('cliente_id', cliente.id)
-          .eq('origem', 'cliente')
+          .eq('status', 'Ativo')
+          .order('criado_em', { ascending: false })
+          .limit(1)
           .maybeSingle()
 
         let vendaId: string | null = null
