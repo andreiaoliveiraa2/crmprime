@@ -4,38 +4,43 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import {
-  LayoutDashboard,
-  Users,
-  UserCheck,
-  Calendar,
-  DollarSign,
-  BarChart2,
-  Megaphone,
-  Settings,
-  LogOut,
-  Menu,
-  X,
+  LayoutDashboard, Users, UserCheck, Calendar,
+  DollarSign, BarChart2, Megaphone, Settings, LogOut, Menu, X,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-const navItems = [
-  { href: '/dashboard',     label: 'Dashboard',     icon: LayoutDashboard },
-  { href: '/crm',           label: 'CRM',            icon: Users           },
-  { href: '/clientes',      label: 'Clientes',       icon: UserCheck       },
-  { href: '/agenda',        label: 'Agenda',         icon: Calendar,  badge: true },
-  { href: '/financeiro',    label: 'Financeiro',     icon: DollarSign      },
-  { href: '/gestao',        label: 'Gestão',         icon: BarChart2       },
-  { href: '/marketing',     label: 'Marketing',      icon: Megaphone       },
-  { href: '/configuracoes', label: 'Configurações',  icon: Settings        },
+const NAV_ADMIN = [
+  { href: '/dashboard',     label: 'Dashboard',    icon: LayoutDashboard },
+  { href: '/crm',           label: 'CRM',           icon: Users           },
+  { href: '/clientes',      label: 'Clientes',      icon: UserCheck       },
+  { href: '/agenda',        label: 'Agenda',        icon: Calendar, badge: true },
+  { href: '/financeiro',    label: 'Financeiro',    icon: DollarSign      },
+  { href: '/gestao',        label: 'Gestão',        icon: BarChart2       },
+  { href: '/marketing',     label: 'Marketing',     icon: Megaphone       },
+  { href: '/configuracoes', label: 'Configurações', icon: Settings        },
 ]
 
-export default function Sidebar() {
+const NAV_VENDEDOR = [
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/crm',       label: 'CRM',       icon: Users           },
+  { href: '/clientes',  label: 'Clientes',  icon: UserCheck       },
+  { href: '/agenda',    label: 'Agenda',    icon: Calendar, badge: true },
+]
+
+interface Props {
+  perfil: 'admin' | 'vendedor'
+  nome: string
+}
+
+export default function Sidebar({ perfil, nome }: Props) {
   const pathname = usePathname()
   const [aberto, setAberto] = useState(false)
   const [agendaHoje, setAgendaHoje] = useState(0)
   const router = useRouter()
   const supabase = createClient()
+
+  const navItems = perfil === 'admin' ? NAV_ADMIN : NAV_VENDEDOR
 
   useEffect(() => {
     const inicio = new Date(); inicio.setHours(0,0,0,0)
@@ -51,43 +56,34 @@ export default function Sidebar() {
     router.push('/login')
   }
 
-  const isActive = (href: string) =>
-    pathname === href || pathname.startsWith(href + '/')
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
+
+  const iniciais = nome
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(p => p[0].toUpperCase())
+    .join('')
 
   return (
     <>
-      {/* Botão hambúrguer — mobile */}
       <button
         className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-lg shadow-md"
         style={{ backgroundColor: '#2d1f4e' }}
         onClick={() => setAberto(!aberto)}
         aria-label="Abrir menu"
       >
-        {aberto
-          ? <X    size={20} className="text-white" />
-          : <Menu size={20} className="text-white" />
-        }
+        {aberto ? <X size={20} className="text-white" /> : <Menu size={20} className="text-white" />}
       </button>
 
-      {/* Overlay escuro — mobile */}
       {aberto && (
-        <div
-          className="md:hidden fixed inset-0 bg-black/50 z-40"
-          onClick={() => setAberto(false)}
-        />
+        <div className="md:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setAberto(false)} />
       )}
 
-      {/* Sidebar */}
       <aside
-        className={`
-          fixed top-0 left-0 h-full w-64 z-40 flex flex-col
-          transition-transform duration-200
-          ${aberto ? 'translate-x-0' : '-translate-x-full'}
-          md:translate-x-0
-        `}
+        className={`fixed top-0 left-0 h-full w-64 z-40 flex flex-col transition-transform duration-200 ${aberto ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}
         style={{ backgroundColor: '#2d1f4e' }}
       >
-        {/* Logo */}
         <div className="px-6 py-5 flex items-center" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
           <Image
             src="/logo-a2prime.png"
@@ -100,7 +96,6 @@ export default function Sidebar() {
           />
         </div>
 
-        {/* Navegação */}
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
           {navItems.map(({ href, label, icon: Icon, badge }) => {
             const active = isActive(href)
@@ -131,19 +126,18 @@ export default function Sidebar() {
           })}
         </nav>
 
-        {/* Rodapé — avatar + usuária + logout */}
         <div className="px-3 py-4" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
           <div className="flex items-center gap-3 px-3 py-2 mb-1">
             <div
               className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 select-none"
               style={{ backgroundColor: '#b89a6a', color: '#2d1f4e' }}
             >
-              AO
+              {iniciais}
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-white truncate">Andreia Oliveira</p>
+              <p className="text-sm font-semibold text-white truncate">{nome}</p>
               <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                CEO · A2 Prime
+                {perfil === 'admin' ? 'Admin · A2 Prime' : 'Vendedor'}
               </p>
             </div>
           </div>
