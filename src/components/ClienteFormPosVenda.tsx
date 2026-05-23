@@ -50,7 +50,7 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual }: Props) {
   const [observacoes, setObservacoes]               = useState(cliente?.observacoes ?? '')
 
   const operadorasLista = useOperadoras()
-  const [vendedoresLista, setVendedoresLista] = useState<string[]>([])
+  const [vendedoresLista, setVendedoresLista] = useState<{ id: string; nome: string }[]>([])
   const [erro, setErro]   = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -65,11 +65,11 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual }: Props) {
   useEffect(() => {
     supabase
       .from('vendedores')
-      .select('nome')
+      .select('id, nome')
       .eq('ativo', true)
       .order('nome')
       .then(({ data }) => {
-        if (data) setVendedoresLista(data.map((v: { nome: string }) => v.nome))
+        if (data) setVendedoresLista(data as { id: string; nome: string }[])
       })
   }, [])
 
@@ -174,7 +174,7 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual }: Props) {
       data_implantacao:  dataImplantacao || null,
       status:            status as Cliente['status'],
       vendedor:          vendedor || null,
-      vendedor_id:       cliente?.vendedor_id ?? vendedorAtual?.id ?? null,
+      vendedor_id:       cliente?.vendedor_id ?? vendedorAtual?.id ?? (vendedoresLista.find(v => v.nome === vendedor)?.id ?? null),
       comissao:          null,
       observacoes:       observacoes.trim() || null,
       lead_id:           cliente?.lead_id ?? null,
@@ -506,7 +506,7 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual }: Props) {
               <option value="">Selecione o vendedor...</option>
               {vendedorAtual && !editando
                 ? <option value={vendedorAtual.nome}>{vendedorAtual.nome}</option>
-                : vendedoresLista.map(v => <option key={v} value={v}>{v}</option>)
+                : vendedoresLista.map(v => <option key={v.id} value={v.nome}>{v.nome}</option>)
               }
             </select>
           </div>
