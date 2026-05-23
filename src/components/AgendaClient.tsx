@@ -15,6 +15,7 @@ type Visao = 'dia' | 'semana' | 'mes'
 
 interface Props {
   eventos: Compromisso[]
+  vendedorId?: string | null
 }
 
 function isoDate(d: Date) {
@@ -46,7 +47,7 @@ function formatarTitulo(visao: Visao, data: Date) {
   return `${meses[data.getMonth()]} ${data.getFullYear()}`
 }
 
-export default function AgendaClient({ eventos: inicial }: Props) {
+export default function AgendaClient({ eventos: inicial, vendedorId }: Props) {
   const [visao, setVisao] = useState<Visao>('semana')
   const [dataSelecionada, setDataSelecionada] = useState(() => {
     const d = new Date(); d.setHours(0,0,0,0); return d
@@ -201,8 +202,9 @@ export default function AgendaClient({ eventos: inicial }: Props) {
         <EventoModal
           evento={eventoEditando}
           dataInicial={isoDate(dataSelecionada)}
-          onClose={() => setModalAberto(false)}
+          onClose={() => { setModalAberto(false); setEventoEditando(undefined) }}
           onSalvo={reload}
+          vendedorId={vendedorId}
         />
       )}
     </div>

@@ -13,6 +13,7 @@ interface Props {
   dataInicial?: string
   onClose: () => void
   onSalvo: () => void
+  vendedorId?: string | null
 }
 
 const inputCls = 'w-full border rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2'
@@ -28,7 +29,7 @@ function toLocalDateTimeInput(iso: string) {
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-export default function EventoModal({ evento, dataInicial, onClose, onSalvo }: Props) {
+export default function EventoModal({ evento, dataInicial, onClose, onSalvo, vendedorId }: Props) {
   const [titulo, setTitulo]     = useState(evento?.titulo ?? '')
   const [dataHora, setDataHora] = useState(
     evento ? toLocalDateTimeInput(evento.data_hora)
@@ -93,12 +94,13 @@ export default function EventoModal({ evento, dataInicial, onClose, onSalvo }: P
     setLoading(true)
     setErro('')
 
-    const payload: CompromissoInsert = {
-      titulo:     titulo.trim(),
-      data_hora:  new Date(dataHora).toISOString(),
+    const payload: CompromissoInsert & { vendedor_id?: string | null } = {
+      titulo:      titulo.trim(),
+      data_hora:   new Date(dataHora).toISOString(),
       tipo,
       status,
       observacoes: observacoes.trim() || null,
+      vendedor_id: evento?.vendedor_id ?? vendedorId ?? null,
     }
 
     try {
