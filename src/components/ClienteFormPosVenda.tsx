@@ -9,6 +9,7 @@ import DocumentosCliente from './DocumentosCliente'
 
 interface Props {
   cliente?: Cliente
+  vendedorAtual?: { id: string; nome: string } | null
 }
 
 const inputCls = 'w-full border rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 transition-shadow'
@@ -18,7 +19,7 @@ const labelStyle = { color: '#2d1f4e' }
 const sectionTitleCls = 'text-sm font-bold mb-4 pb-2 border-b'
 const sectionTitleStyle = { color: '#2d1f4e', borderColor: '#e8e4dd' }
 
-export default function ClienteFormPosVenda({ cliente }: Props) {
+export default function ClienteFormPosVenda({ cliente, vendedorAtual }: Props) {
   // Dados Pessoais
   const [nome, setNome]                   = useState(cliente?.nome ?? '')
   const [cpf, setCpf]                     = useState(cliente?.cpf ?? '')
@@ -44,7 +45,7 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
   const [abrangencia, setAbrangencia]                 = useState(cliente?.abrangencia ?? '')
   const [carencia, setCarencia]                       = useState(cliente?.carencia ?? false)
   // Dados Comerciais
-  const [vendedor, setVendedor]                     = useState(cliente?.vendedor ?? '')
+  const [vendedor, setVendedor]                     = useState(cliente?.vendedor ?? vendedorAtual?.nome ?? '')
   const [corretoraResponsavel, setCorretoraResponsavel] = useState(cliente?.corretora_responsavel ?? '')
   const [observacoes, setObservacoes]               = useState(cliente?.observacoes ?? '')
 
@@ -173,6 +174,7 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
       data_implantacao:  dataImplantacao || null,
       status:            status as Cliente['status'],
       vendedor:          vendedor || null,
+      vendedor_id:       cliente?.vendedor_id ?? vendedorAtual?.id ?? null,
       comissao:          null,
       observacoes:       observacoes.trim() || null,
       lead_id:           cliente?.lead_id ?? null,
@@ -494,10 +496,18 @@ export default function ClienteFormPosVenda({ cliente }: Props) {
 
           <div>
             <label className={labelCls} style={labelStyle}>Vendedor</label>
-            <select value={vendedor} onChange={e => setVendedor(e.target.value)}
-              className={inputCls} style={{ ...inputStyle, color: vendedor ? '#1a1a1a' : '#9a918a' }}>
+            <select
+              value={vendedor}
+              onChange={e => setVendedor(e.target.value)}
+              className={inputCls}
+              style={{ ...inputStyle, color: vendedor ? '#1a1a1a' : '#9a918a' }}
+              disabled={!!vendedorAtual && !editando}
+            >
               <option value="">Selecione o vendedor...</option>
-              {vendedoresLista.map(v => <option key={v} value={v}>{v}</option>)}
+              {vendedorAtual && !editando
+                ? <option value={vendedorAtual.nome}>{vendedorAtual.nome}</option>
+                : vendedoresLista.map(v => <option key={v} value={v}>{v}</option>)
+              }
             </select>
           </div>
 
