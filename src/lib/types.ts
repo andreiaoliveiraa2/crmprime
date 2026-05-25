@@ -303,6 +303,10 @@ export interface Conta {
   empresa: string | null
   categoria: string | null
   despesa_fixa_id: string | null
+  tipo_lancamento: 'unica' | 'parcelada' | 'recorrente'
+  grupo_id: string | null
+  parcela_numero: number | null
+  total_parcelas: number | null
   criado_em: string
 }
 export type ContaInsert = Omit<Conta, 'id' | 'criado_em'>
@@ -313,6 +317,7 @@ export interface CategoriaDespesa {
   id: string
   nome: string
   ativo: boolean
+  tipo_padrao: 'unica' | 'recorrente'
   criado_em: string
 }
 
