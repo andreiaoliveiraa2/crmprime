@@ -16,16 +16,17 @@ export default function CategoriasDespesaSection({ categorias }: Props) {
   const [editando, setEditando] = useState<CategoriaDespesa | null>(null)
   const [criando, setCriando] = useState(false)
   const [nome, setNome] = useState('')
+  const [tipoPadrao, setTipoPadrao] = useState<'unica' | 'recorrente'>('unica')
   const [ativo, setAtivo] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
 
   function abrirNovo() {
-    setNome(''); setAtivo(true); setEditando(null); setCriando(true); setErro('')
+    setNome(''); setTipoPadrao('unica'); setAtivo(true); setEditando(null); setCriando(true); setErro('')
   }
 
   function abrirEditar(c: CategoriaDespesa) {
-    setNome(c.nome); setAtivo(c.ativo); setEditando(c); setCriando(false); setErro('')
+    setNome(c.nome); setTipoPadrao(c.tipo_padrao); setAtivo(c.ativo); setEditando(c); setCriando(false); setErro('')
   }
 
   function fechar() {
@@ -39,13 +40,13 @@ export default function CategoriasDespesaSection({ categorias }: Props) {
     if (editando) {
       const { error } = await supabase
         .from('categorias_despesa')
-        .update({ nome: nome.trim(), ativo })
+        .update({ nome: nome.trim(), ativo, tipo_padrao: tipoPadrao })
         .eq('id', editando.id)
       if (error) { setErro('Erro: ' + error.message); setSalvando(false); return }
     } else {
       const { error } = await supabase
         .from('categorias_despesa')
-        .insert({ nome: nome.trim(), ativo })
+        .insert({ nome: nome.trim(), ativo, tipo_padrao: tipoPadrao })
       if (error) { setErro('Erro: ' + error.message); setSalvando(false); return }
     }
 
@@ -64,7 +65,7 @@ export default function CategoriasDespesaSection({ categorias }: Props) {
             Categorias de Despesas
           </h3>
           <p className="text-sm mt-0.5" style={{ color: '#7a7065' }}>
-            Categorias disponíveis no cadastro de despesas fixas.
+            Categorias disponíveis no cadastro de contas. O tipo padrão pré-seleciona o campo Tipo no formulário.
           </p>
         </div>
         <button onClick={abrirNovo}
@@ -82,9 +83,14 @@ export default function CategoriasDespesaSection({ categorias }: Props) {
           <div key={c.id}
             className="flex items-center justify-between px-4 py-3 rounded-xl"
             style={{ backgroundColor: '#f9f7f4', border: '1px solid #e8e4dd' }}>
-            <p className="text-sm font-medium" style={{ color: c.ativo ? '#2d1f4e' : '#9ca3af' }}>
-              {c.nome}
-            </p>
+            <div>
+              <p className="text-sm font-medium" style={{ color: c.ativo ? '#2d1f4e' : '#9ca3af' }}>
+                {c.nome}
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: '#9a918a' }}>
+                {c.tipo_padrao === 'recorrente' ? '🔁 Recorrente' : '📄 Única'}
+              </p>
+            </div>
             <div className="flex items-center gap-3">
               <span className="text-xs px-2 py-0.5 rounded-full font-medium"
                 style={{
@@ -126,8 +132,26 @@ export default function CategoriasDespesaSection({ categorias }: Props) {
                   onChange={e => setNome(e.target.value)}
                   className="w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2"
                   style={{ borderColor: '#e8e4dd' }}
-                  placeholder="Ex: Limpeza, Estacionamento..."
+                  placeholder="Ex: Aluguel, Contador, Retirada de Sócio..."
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold mb-1.5" style={{ color: '#2d1f4e' }}>Tipo padrão</label>
+                <div className="flex gap-3">
+                  {(['unica', 'recorrente'] as const).map(v => (
+                    <button key={v} type="button"
+                      onClick={() => setTipoPadrao(v)}
+                      className="flex-1 py-2 rounded-xl text-sm font-medium border transition-all"
+                      style={{
+                        borderColor: tipoPadrao === v ? '#2d1f4e' : '#e8e4dd',
+                        backgroundColor: tipoPadrao === v ? '#2d1f4e' : '#ffffff',
+                        color: tipoPadrao === v ? '#ffffff' : '#5a4e3c',
+                      }}>
+                      {v === 'unica' ? '📄 Única' : '🔁 Recorrente'}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div>
