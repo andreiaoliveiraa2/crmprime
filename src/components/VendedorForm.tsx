@@ -138,6 +138,7 @@ export default function VendedorForm({ vendedor }: Props) {
       tipo_conta:            tipoConta || null,
       pix:                   pix || null,
       observacoes:           observacoes || null,
+      corretora:             null,
     }
 
     const { error } = editando

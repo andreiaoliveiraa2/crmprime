@@ -1,11 +1,9 @@
 'use client'
 
-import { useState } from 'react'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Lead, EtapaLead, ETAPAS_LEAD } from '@/lib/types'
-import ConversaoModal from './ConversaoModal'
 import Link from 'next/link'
 import { Plus, Calendar, User, ArrowRight } from 'lucide-react'
 
@@ -24,7 +22,6 @@ const etapaAccent: Record<EtapaLead, string> = {
 }
 
 export default function KanbanBoard({ leads, onLeadMoved }: Props) {
-  const [leadConvertendo, setLeadConvertendo] = useState<Lead | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -56,17 +53,6 @@ export default function KanbanBoard({ leads, onLeadMoved }: Props) {
       console.warn('[Kanban] Update sem efeito — nenhuma linha atualizada. Lead ID:', draggableId)
       // Não reverte: o lead pode ter sido excluído ou RLS bloqueou
     }
-  }
-
-  async function handleCancelarConversao() {
-    if (!leadConvertendo) return
-    onLeadMoved(leadConvertendo.id, 'Negociação')
-    await supabase
-      .from('leads')
-      .update({ etapa: 'Negociação' })
-      .eq('id', leadConvertendo.id)
-    setLeadConvertendo(null)
-    router.refresh()
   }
 
   return (
@@ -182,7 +168,7 @@ export default function KanbanBoard({ leads, onLeadMoved }: Props) {
                               {/* Botão converter — só na coluna Vendido */}
                               {etapa === 'Vendido' && (
                                 <button
-                                  onClick={e => { e.stopPropagation(); setLeadConvertendo(l) }}
+                                  onClick={e => { e.stopPropagation(); router.push(`/clientes/novo?lead_id=${l.id}`) }}
                                   className="mt-2.5 w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-80"
                                   style={{ backgroundColor: '#2d1f4e', color: '#ffffff' }}
                                 >
@@ -205,14 +191,6 @@ export default function KanbanBoard({ leads, onLeadMoved }: Props) {
         </div>
       </DragDropContext>
 
-      {leadConvertendo && (
-        <ConversaoModal
-          lead={leadConvertendo}
-          onClose={() => { setLeadConvertendo(null); router.refresh() }}
-          onCancelar={handleCancelarConversao}
-          onReverteFechado={handleCancelarConversao}
-        />
-      )}
     </>
   )
 }

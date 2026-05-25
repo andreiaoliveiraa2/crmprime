@@ -66,6 +66,7 @@ export default function ConversaoModal({ lead, onClose, onCancelar, onReverteFec
       data_implantacao: null,
       status:           'Ativo',
       vendedor:         lead.vendedor ?? null,
+      vendedor_id:      lead.vendedor_id ?? null,
       comissao:         null,
       // Dados do Plano — novos
       data_inicio_plano:       null,

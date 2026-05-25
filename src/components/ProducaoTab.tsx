@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { DollarSign, TrendingUp, Repeat, CreditCard, FileText, FileSpreadsheet } from 'lucide-react'
+import { DollarSign, TrendingUp, Repeat, CreditCard, FileText, FileSpreadsheet, ArrowDownCircle } from 'lucide-react'
 import { Venda, Comissao, Conta, CnpjRecebimento } from '@/lib/types'
 import { useOperadoras } from '@/lib/useOperadoras'
 
@@ -24,11 +24,24 @@ function formatDate(dateStr: string): string {
 
 const selectCls = 'border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2'
 
+function mesVigente() {
+  const hoje = new Date()
+  const ano = hoje.getFullYear()
+  const mes = String(hoje.getMonth() + 1).padStart(2, '0')
+  const ultimo = new Date(ano, hoje.getMonth() + 1, 0).getDate()
+  return {
+    inicio: `${ano}-${mes}-01`,
+    fim: `${ano}-${mes}-${String(ultimo).padStart(2, '0')}`,
+    prefixo: `${ano}-${mes}`,
+  }
+}
+
 export default function ProducaoTab({ vendas, comissoes, contas, cnpjs }: Props) {
+  const mv = mesVigente()
   const [filtroOperadora, setFiltroOperadora] = useState('')
   const [filtroVendedor, setFiltroVendedor] = useState('')
-  const [dataInicio, setDataInicio] = useState('')
-  const [dataFim, setDataFim] = useState('')
+  const [dataInicio, setDataInicio] = useState(mv.inicio)
+  const [dataFim, setDataFim] = useState(mv.fim)
   const [filtroEmpresa, setFiltroEmpresa] = useState('')
 
   const operadoras = useOperadoras()
@@ -45,10 +58,19 @@ export default function ProducaoTab({ vendas, comissoes, contas, cnpjs }: Props)
     [vendas, mesAtual]
   )
 
-  const comissaoAReceber = useMemo(() =>
+  // Total bruto a receber da operadora — só parcelas (vitalício começa na 4ª, é separado)
+  const totalAReceber = useMemo(() =>
     comissoes
-      .filter(c => c.status_empresa === 'Pendente')
-      .reduce((sum, c) => sum + (c.valor_empresa ?? 0), 0),
+      .filter(c => c.status_empresa === 'Pendente' && c.tipo === 'parcela')
+      .reduce((sum, c) => sum + (c.valor_bruto ?? 0), 0),
+    [comissoes]
+  )
+
+  // Comissão a pagar aos vendedores — só parcelas (já descontado imposto)
+  const comissaoAPagarVendedor = useMemo(() =>
+    comissoes
+      .filter(c => c.status_vendedor === 'Pendente' && c.tipo === 'parcela')
+      .reduce((sum, c) => sum + (c.valor_vendedor ?? 0), 0),
     [comissoes]
   )
 
@@ -60,6 +82,13 @@ export default function ProducaoTab({ vendas, comissoes, contas, cnpjs }: Props)
     )
     return vendaIds.size
   }, [comissoes])
+
+  const totalVitalicio = useMemo(() =>
+    comissoes
+      .filter(c => c.tipo === 'vitalicio' && c.status_empresa === 'Pendente')
+      .reduce((sum, c) => sum + (c.valor_bruto ?? 0), 0),
+    [comissoes]
+  )
 
   const contasAPagar = useMemo(() =>
     contas
@@ -96,14 +125,15 @@ export default function ProducaoTab({ vendas, comissoes, contas, cnpjs }: Props)
     return { entries, max }
   }, [vendasFiltradas])
 
-  const temFiltro = filtroEmpresa || filtroOperadora || filtroVendedor || dataInicio || dataFim
+  const temFiltro = filtroEmpresa || filtroOperadora || filtroVendedor ||
+    dataInicio !== mv.inicio || dataFim !== mv.fim
 
   function limparFiltros() {
     setFiltroEmpresa('')
     setFiltroOperadora('')
     setFiltroVendedor('')
-    setDataInicio('')
-    setDataFim('')
+    setDataInicio(mv.inicio)
+    setDataFim(mv.fim)
   }
 
   // Excel export
@@ -153,7 +183,7 @@ export default function ProducaoTab({ vendas, comissoes, contas, cnpjs }: Props)
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
         {/* Card 1 — Produção do Mês */}
         <div className="bg-white rounded-xl shadow-sm p-6 flex items-start gap-4" style={{ border: '1px solid #e8e4dd' }}>
           <div className="p-2 rounded-xl" style={{ backgroundColor: '#ede9f8' }}>
@@ -165,35 +195,50 @@ export default function ProducaoTab({ vendas, comissoes, contas, cnpjs }: Props)
           </div>
         </div>
 
-        {/* Card 2 — Comissão a Receber */}
+        {/* Card 2 — Total a Receber (bruto da operadora) */}
         <div className="bg-white rounded-xl shadow-sm p-6 flex items-start gap-4" style={{ border: '1px solid #e8e4dd' }}>
           <div className="p-2 rounded-xl" style={{ backgroundColor: '#fef9e7' }}>
             <TrendingUp size={20} style={{ color: '#b89a6a' }} />
           </div>
           <div>
-            <p className="text-sm text-gray-500">Comissão a Receber</p>
-            <p className="text-2xl font-bold mt-1" style={{ color: '#2d1f4e' }}>{formatBRL(comissaoAReceber)}</p>
+            <p className="text-sm text-gray-500">Total a Receber</p>
+            <p className="text-xs text-gray-400">da operadora (bruto)</p>
+            <p className="text-2xl font-bold mt-1" style={{ color: '#2d1f4e' }}>{formatBRL(totalAReceber)}</p>
           </div>
         </div>
 
-        {/* Card 3 — Vitalícios Ativos */}
+        {/* Card 3 — Comissão a Pagar (vendedores) */}
+        <div className="bg-white rounded-xl shadow-sm p-6 flex items-start gap-4" style={{ border: '1px solid #e8e4dd' }}>
+          <div className="p-2 rounded-xl" style={{ backgroundColor: '#fce7f3' }}>
+            <ArrowDownCircle size={20} style={{ color: '#be185d' }} />
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">Comissão a Pagar</p>
+            <p className="text-xs text-gray-400">aos vendedores</p>
+            <p className="text-2xl font-bold mt-1" style={{ color: '#be185d' }}>{formatBRL(comissaoAPagarVendedor)}</p>
+          </div>
+        </div>
+
+        {/* Card 4 — Vitalícios Ativos */}
         <div className="bg-white rounded-xl shadow-sm p-6 flex items-start gap-4" style={{ border: '1px solid #e8e4dd' }}>
           <div className="p-2 rounded-xl" style={{ backgroundColor: '#dcfce7' }}>
             <Repeat size={20} style={{ color: '#15803d' }} />
           </div>
           <div>
             <p className="text-sm text-gray-500">Vitalícios Ativos</p>
-            <p className="text-2xl font-bold mt-1" style={{ color: '#2d1f4e' }}>{vitaliciosAtivos}</p>
+            <p className="text-xs text-gray-400">{vitaliciosAtivos} cliente{vitaliciosAtivos !== 1 ? 's' : ''}</p>
+            <p className="text-2xl font-bold mt-1" style={{ color: '#15803d' }}>{formatBRL(totalVitalicio)}</p>
           </div>
         </div>
 
-        {/* Card 4 — Contas a Pagar */}
+        {/* Card 5 — Contas a Pagar */}
         <div className="bg-white rounded-xl shadow-sm p-6 flex items-start gap-4" style={{ border: '1px solid #e8e4dd' }}>
           <div className="p-2 rounded-xl" style={{ backgroundColor: '#fee2e2' }}>
             <CreditCard size={20} style={{ color: '#b91c1c' }} />
           </div>
           <div>
             <p className="text-sm text-gray-500">Contas a Pagar</p>
+            <p className="text-xs text-gray-400">este mês</p>
             <p className="text-2xl font-bold mt-1" style={{ color: '#2d1f4e' }}>{formatBRL(contasAPagar)}</p>
           </div>
         </div>

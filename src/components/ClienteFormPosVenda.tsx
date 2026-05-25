@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Cliente, ClienteInsert, TIPOS_PLANO, STATUS_CLIENTE } from '@/lib/types'
+import { Cliente, ClienteInsert, Lead, TIPOS_PLANO, STATUS_CLIENTE } from '@/lib/types'
 import { useOperadoras } from '@/lib/useOperadoras'
 import DocumentosCliente from './DocumentosCliente'
 
 interface Props {
   cliente?: Cliente
   vendedorAtual?: { id: string; nome: string } | null
+  leadPrefill?: Lead | null
 }
 
 const inputCls = 'w-full border rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 transition-shadow'
@@ -19,18 +20,18 @@ const labelStyle = { color: '#2d1f4e' }
 const sectionTitleCls = 'text-sm font-bold mb-4 pb-2 border-b'
 const sectionTitleStyle = { color: '#2d1f4e', borderColor: '#e8e4dd' }
 
-export default function ClienteFormPosVenda({ cliente, vendedorAtual }: Props) {
+export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefill }: Props) {
   // Dados Pessoais
-  const [nome, setNome]                   = useState(cliente?.nome ?? '')
+  const [nome, setNome]                   = useState(cliente?.nome ?? leadPrefill?.nome ?? '')
   const [cpf, setCpf]                     = useState(cliente?.cpf ?? '')
   const [dataNascimento, setDataNasc]     = useState(cliente?.data_nascimento ?? '')
-  const [contato, setContato]             = useState(cliente?.contato ?? '')
+  const [contato, setContato]             = useState(cliente?.contato ?? leadPrefill?.telefone ?? '')
   const [email, setEmail]                 = useState(cliente?.email ?? '')
   const [endereco, setEndereco]           = useState(cliente?.endereco ?? '')
   // Dados do Plano
-  const [operadora, setOperadora]         = useState(cliente?.operadora ?? '')
+  const [operadora, setOperadora]         = useState(cliente?.operadora ?? leadPrefill?.operadora ?? '')
   const [administradora, setAdministradora] = useState(cliente?.administradora ?? '')
-  const [tipo_plano, setTipoPlano]        = useState(cliente?.tipo_plano ?? '')
+  const [tipo_plano, setTipoPlano]        = useState(cliente?.tipo_plano ?? leadPrefill?.tipo_plano ?? '')
   const [qtdVidas, setQtdVidas]           = useState(cliente?.quantidade_vidas?.toString() ?? '')
   const [valor_plano, setValorPlano]      = useState(cliente?.valor_plano?.toString() ?? '')
   const [numeroContrato, setNumContrato]  = useState(cliente?.numero_contrato ?? '')
@@ -45,9 +46,9 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual }: Props) {
   const [abrangencia, setAbrangencia]                 = useState(cliente?.abrangencia ?? '')
   const [carencia, setCarencia]                       = useState(cliente?.carencia ?? false)
   // Dados Comerciais
-  const [vendedor, setVendedor]                     = useState(cliente?.vendedor ?? vendedorAtual?.nome ?? '')
+  const [vendedor, setVendedor]                     = useState(cliente?.vendedor ?? vendedorAtual?.nome ?? leadPrefill?.vendedor ?? '')
   const [corretoraResponsavel, setCorretoraResponsavel] = useState(cliente?.corretora_responsavel ?? '')
-  const [observacoes, setObservacoes]               = useState(cliente?.observacoes ?? '')
+  const [observacoes, setObservacoes]               = useState(cliente?.observacoes ?? leadPrefill?.observacoes ?? '')
 
   const operadorasLista = useOperadoras()
   const [vendedoresLista, setVendedoresLista] = useState<{ id: string; nome: string }[]>([])
@@ -175,10 +176,10 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual }: Props) {
       data_implantacao:  dataImplantacao || null,
       status:            status as Cliente['status'],
       vendedor:          vendedor || null,
-      vendedor_id:       cliente?.vendedor_id ?? vendedorAtual?.id ?? (vendedoresLista.find(v => v.nome === vendedor)?.id ?? null),
+      vendedor_id:       cliente?.vendedor_id ?? vendedorAtual?.id ?? leadPrefill?.vendedor_id ?? (vendedoresLista.find(v => v.nome === vendedor)?.id ?? null),
       comissao:          null,
       observacoes:       observacoes.trim() || null,
-      lead_id:           cliente?.lead_id ?? null,
+      lead_id:           cliente?.lead_id ?? leadPrefill?.id ?? null,
       // Dados do Plano — novos
       data_inicio_plano:       dataInicioPlano || null,
       data_vencimento_plano:   dataVencimentoPlano || null,
@@ -277,6 +278,10 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual }: Props) {
           const dvFinal = payload.data_venda ?? new Date().toISOString().split('T')[0]
           await gerarComissoes(novaVenda.id, dvFinal, payload, empresa)
         }
+      }
+
+      if (leadPrefill?.id) {
+        await supabase.from('leads').delete().eq('id', leadPrefill.id)
       }
     }
 

@@ -93,7 +93,7 @@ export default function FinanceiroClient({ vendas, comissoes, contas, regras, cn
         />
       )}
       {aba === 'contas' && (
-        <ContasTab contas={contas} onAtualizar={reload} cnpjs={cnpjs} despesasFixas={despesasFixas} categorias={categorias} />
+        <ContasTab contas={contas} comissoes={comissoes} vendas={vendas} onAtualizar={reload} cnpjs={cnpjs} despesasFixas={despesasFixas} categorias={categorias} />
       )}
       {aba === 'relatorios' && (
         <RelatoriosTab vendas={vendas} comissoes={comissoes} contas={contas} cnpjs={cnpjs} operadoras={operadoras} />

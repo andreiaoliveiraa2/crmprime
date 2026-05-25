@@ -26,6 +26,17 @@ function formatDate(dateStr: string): string {
 
 const selectCls = 'border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2'
 
+function mesVigenteComissoes() {
+  const hoje = new Date()
+  const ano = hoje.getFullYear()
+  const mes = String(hoje.getMonth() + 1).padStart(2, '0')
+  const ultimo = new Date(ano, hoje.getMonth() + 1, 0).getDate()
+  return {
+    inicio: `${ano}-${mes}-01`,
+    fim: `${ano}-${mes}-${String(ultimo).padStart(2, '0')}`,
+  }
+}
+
 type ComissaoComVenda = Comissao & {
   cliente_nome: string
   operadora: string
@@ -34,6 +45,7 @@ type ComissaoComVenda = Comissao & {
 export default function ComissoesTab({ comissoes, vendas, regras, onAtualizar, cnpjs }: Props) {
   const supabase = createClient()
   const operadoras = useOperadoras()
+  const mv = mesVigenteComissoes()
 
   // Filter state
   const [filtroOperadora, setFiltroOperadora] = useState('')
@@ -42,8 +54,8 @@ export default function ComissoesTab({ comissoes, vendas, regras, onAtualizar, c
   const [filtroStatusEmpresa, setFiltroStatusEmpresa] = useState<'todos' | 'Pendente' | 'Recebido'>('todos')
   const [filtroStatusVendedor, setFiltroStatusVendedor] = useState<'todos' | 'Pendente' | 'Recebido'>('todos')
   const [filtroEmpresa, setFiltroEmpresa] = useState('')
-  const [dataInicio, setDataInicio] = useState('')
-  const [dataFim, setDataFim] = useState('')
+  const [dataInicio, setDataInicio] = useState(mv.inicio)
+  const [dataFim, setDataFim] = useState(mv.fim)
 
   // Build lookup maps
   const vendaMap = useMemo(() => {
@@ -92,21 +104,30 @@ export default function ComissoesTab({ comissoes, vendas, regras, onAtualizar, c
 
   // Filtered commissions
   const comissoesFiltradas = useMemo(() => {
-    return comissoesComVenda.filter(c => {
-      const venda = vendaMap.get(c.venda_id)
-      if (filtroOperadora && c.operadora !== filtroOperadora) return false
-      if (filtroVendedor && venda?.vendedor !== filtroVendedor) return false
-      if (filtroTipo !== 'todos' && c.tipo !== filtroTipo) return false
-      if (filtroStatusEmpresa !== 'todos' && c.status_empresa !== filtroStatusEmpresa) return false
-      if (filtroStatusVendedor !== 'todos' && c.status_vendedor !== filtroStatusVendedor) return false
-      if (filtroEmpresa && c.empresa !== filtroEmpresa) return false
-      if (dataInicio && c.data_prevista < dataInicio) return false
-      if (dataFim && c.data_prevista > dataFim) return false
-      return true
-    })
+    return comissoesComVenda
+      .filter(c => {
+        const venda = vendaMap.get(c.venda_id)
+        if (filtroOperadora && c.operadora !== filtroOperadora) return false
+        if (filtroVendedor && venda?.vendedor !== filtroVendedor) return false
+        if (filtroTipo !== 'todos' && c.tipo !== filtroTipo) return false
+        if (filtroStatusEmpresa !== 'todos' && c.status_empresa !== filtroStatusEmpresa) return false
+        if (filtroStatusVendedor !== 'todos' && c.status_vendedor !== filtroStatusVendedor) return false
+        if (filtroEmpresa && c.empresa !== filtroEmpresa) return false
+        if (dataInicio && c.data_prevista < dataInicio) return false
+        if (dataFim && c.data_prevista > dataFim) return false
+        return true
+      })
+      .sort((a, b) => {
+        if (a.venda_id !== b.venda_id) return a.venda_id.localeCompare(b.venda_id)
+        if (a.tipo === 'parcela' && b.tipo === 'vitalicio') return -1
+        if (a.tipo === 'vitalicio' && b.tipo === 'parcela') return 1
+        return (a.numero_parcela ?? 999) - (b.numero_parcela ?? 999)
+      })
   }, [comissoesComVenda, vendaMap, filtroOperadora, filtroVendedor, filtroTipo, filtroStatusEmpresa, filtroStatusVendedor, filtroEmpresa, dataInicio, dataFim])
 
-  const temFiltro = filtroEmpresa || filtroOperadora || filtroVendedor || filtroTipo !== 'todos' || filtroStatusEmpresa !== 'todos' || filtroStatusVendedor !== 'todos' || dataInicio || dataFim
+  const temFiltro = filtroEmpresa || filtroOperadora || filtroVendedor || filtroTipo !== 'todos' ||
+    filtroStatusEmpresa !== 'todos' || filtroStatusVendedor !== 'todos' ||
+    dataInicio !== mv.inicio || dataFim !== mv.fim
 
   function limparFiltros() {
     setFiltroEmpresa('')
@@ -115,8 +136,8 @@ export default function ComissoesTab({ comissoes, vendas, regras, onAtualizar, c
     setFiltroTipo('todos')
     setFiltroStatusEmpresa('todos')
     setFiltroStatusVendedor('todos')
-    setDataInicio('')
-    setDataFim('')
+    setDataInicio(mv.inicio)
+    setDataFim(mv.fim)
   }
 
   async function toggleStatusEmpresa(comissao: Comissao) {
@@ -322,14 +343,27 @@ export default function ComissoesTab({ comissoes, vendas, regras, onAtualizar, c
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <button
-                      onClick={() => toggleStatusVendedor(c)}
-                      className="px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity"
-                      style={c.status_vendedor === 'Recebido' ? badgeRecebido : badgePendente}
-                      title="Clique para alternar status"
-                    >
-                      {c.status_vendedor}
-                    </button>
+                    {c.tipo === 'vitalicio' ? (
+                      <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: '#ede9f8', color: '#2d1f4e' }}>—</span>
+                    ) : c.status_vendedor === 'Recebido' ? (
+                      <button
+                        onClick={() => toggleStatusVendedor(c)}
+                        className="px-3 py-1 rounded-lg text-xs font-semibold hover:opacity-80 transition-opacity"
+                        style={{ backgroundColor: '#dcfce7', color: '#15803d' }}
+                        title="Clique para desfazer"
+                      >
+                        ✓ Pago
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => toggleStatusVendedor(c)}
+                        className="px-3 py-1 rounded-lg text-xs font-semibold hover:opacity-90 transition-opacity"
+                        style={{ backgroundColor: '#2d1f4e', color: '#ffffff' }}
+                        title="Marcar como pago ao vendedor"
+                      >
+                        Pagar Vendedor
+                      </button>
+                    )}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap" style={{ color: '#5a4e3c' }}>{formatDate(c.data_prevista)}</td>
                 </tr>
