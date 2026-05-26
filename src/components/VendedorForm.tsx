@@ -7,12 +7,13 @@ import {
   Vendedor,
   VendedorInsert,
   TIPOS_VENDEDOR,
-  NIVEIS_VENDEDOR,
+  NivelVendedor,
 } from '@/lib/types'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 
 interface Props {
   vendedor?: Vendedor
+  niveis: NivelVendedor[]
 }
 
 const inputCls =
@@ -56,7 +57,7 @@ function Secao({
   )
 }
 
-export default function VendedorForm({ vendedor }: Props) {
+export default function VendedorForm({ vendedor, niveis }: Props) {
   const editando = !!vendedor
 
   // Dados pessoais
@@ -241,7 +242,7 @@ export default function VendedorForm({ vendedor }: Props) {
           <label className={labelCls} style={labelStyle}>Nível</label>
           <select className={inputCls} style={inputStyle} value={nivel} onChange={e => setNivel(e.target.value)}>
             <option value="">Selecione</option>
-            {NIVEIS_VENDEDOR.map(n => <option key={n}>{n}</option>)}
+            {niveis.map(n => <option key={n.id} value={n.nome}>{n.nome}</option>)}
           </select>
         </div>
         <div>

@@ -1,6 +1,15 @@
+import { createClient } from '@/lib/supabase/server'
 import VendedorForm from '@/components/VendedorForm'
+import { NivelVendedor } from '@/lib/types'
 
-export default function NovoVendedorPage() {
+export default async function NovoVendedorPage() {
+  const supabase = await createClient()
+  const { data: niveisRaw } = await supabase
+    .from('niveis_vendedor')
+    .select('*')
+    .eq('ativo', true)
+    .order('nome')
+
   return (
     <div className="p-6 md:p-8">
       <div className="mb-6">
@@ -9,7 +18,7 @@ export default function NovoVendedorPage() {
           Cadastre um vendedor ou corretor
         </p>
       </div>
-      <VendedorForm />
+      <VendedorForm niveis={(niveisRaw ?? []) as NivelVendedor[]} />
     </div>
   )
 }

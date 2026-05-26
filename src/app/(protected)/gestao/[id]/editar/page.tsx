@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import VendedorForm from '@/components/VendedorForm'
+import { NivelVendedor } from '@/lib/types'
 
 export default async function EditarVendedorPage({
   params,
@@ -9,11 +10,11 @@ export default async function EditarVendedorPage({
 }) {
   const { id } = await params
   const supabase = await createClient()
-  const { data: vendedor } = await supabase
-    .from('vendedores')
-    .select('*')
-    .eq('id', id)
-    .single()
+
+  const [{ data: vendedor }, { data: niveisRaw }] = await Promise.all([
+    supabase.from('vendedores').select('*').eq('id', id).single(),
+    supabase.from('niveis_vendedor').select('*').eq('ativo', true).order('nome'),
+  ])
 
   if (!vendedor) notFound()
 
@@ -23,7 +24,7 @@ export default async function EditarVendedorPage({
         <h1 className="text-2xl font-bold" style={{ color: '#2d1f4e' }}>Editar Vendedor</h1>
         <p className="text-sm mt-0.5" style={{ color: '#9a918a' }}>{vendedor.nome}</p>
       </div>
-      <VendedorForm vendedor={vendedor} />
+      <VendedorForm vendedor={vendedor} niveis={(niveisRaw ?? []) as NivelVendedor[]} />
     </div>
   )
 }

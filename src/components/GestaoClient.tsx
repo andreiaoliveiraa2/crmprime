@@ -3,17 +3,18 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { Vendedor, TIPOS_VENDEDOR, NIVEIS_VENDEDOR } from '@/lib/types'
+import { Vendedor, TIPOS_VENDEDOR, NivelVendedor } from '@/lib/types'
 import { Plus, Search, Eye, Pencil, UserX, Trash2 } from 'lucide-react'
 
 interface Props {
   vendedores: Vendedor[]
+  niveis: NivelVendedor[]
 }
 
 const selectCls = 'border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2'
 const selectStyle = { borderColor: '#e8e4dd' }
 
-export default function GestaoClient({ vendedores: inicial }: Props) {
+export default function GestaoClient({ vendedores: inicial, niveis }: Props) {
   const [lista, setLista]                     = useState(inicial)
   const [busca, setBusca]                     = useState('')
   const [filtroTipo, setFiltroTipo]     = useState('')
@@ -108,7 +109,7 @@ export default function GestaoClient({ vendedores: inicial }: Props) {
           onChange={e => setFiltroNivel(e.target.value)}
         >
           <option value="">Todos os níveis</option>
-          {NIVEIS_VENDEDOR.map(n => <option key={n}>{n}</option>)}
+          {niveis.map(n => <option key={n.id} value={n.nome}>{n.nome}</option>)}
         </select>
         <select
           className={selectCls}
