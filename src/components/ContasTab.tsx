@@ -44,7 +44,7 @@ function SummaryCards({ contas, comissoes }: { contas: Conta[]; comissoes: Comis
   const today = todayStr()
 
   const pagarMes = contas.filter(c => c.tipo === 'pagar' && c.vencimento.startsWith(mes))
-  const comissoesMes = comissoes.filter(c => c.tipo === 'parcela' && c.status_vendedor === 'Pendente' && c.data_prevista?.startsWith(mes))
+  const comissoesMes = comissoes.filter(c => c.tipo === 'parcela' && c.status_vendedor === 'Pendente' && c.status_empresa !== 'Direto' && c.data_prevista?.startsWith(mes))
   const totalComissoesMes = comissoesMes.reduce((s, c) => s + (c.valor_vendedor ?? 0), 0)
   const totalPagar = pagarMes.reduce((s, c) => s + c.valor, 0) + totalComissoesMes
   const totalPago = pagarMes.filter(c => c.status === 'Pago').reduce((s, c) => s + c.valor, 0)
@@ -149,6 +149,7 @@ function ComissoesVendedoresSection({ comissoes, vendas, onAtualizar }: {
       .filter(c =>
         c.tipo === 'parcela' &&
         c.status_vendedor === 'Pendente' &&
+        c.status_empresa !== 'Direto' &&
         (c.valor_vendedor ?? 0) > 0 &&
         (!dataInicio || c.data_prevista >= dataInicio) &&
         (!dataFim || c.data_prevista <= dataFim)
@@ -235,7 +236,7 @@ function ComissoesVendedoresSection({ comissoes, vendas, onAtualizar }: {
                     </td>
                     <td className="px-4 py-3 text-gray-600">{venda?.vendedor ?? '—'}</td>
                     <td className="px-4 py-3 text-gray-600">{venda?.operadora ?? '—'}</td>
-                    <td className="px-4 py-3 text-gray-500">Parcela {c.numero_parcela}</td>
+                    <td className="px-4 py-3 text-gray-500">{c.numero_parcela === 1 ? 'Adesão' : `Parcela ${c.numero_parcela}`}</td>
                     <td className="px-4 py-3 font-semibold" style={{ color: '#be185d' }}>
                       {formatBRL(c.valor_vendedor ?? 0)}
                     </td>

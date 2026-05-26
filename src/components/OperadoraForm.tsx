@@ -16,6 +16,7 @@ interface CnpjTab {
   numParcelas: string
   descontaImposto: boolean
   percentualImposto: string
+  adesaoDireta: boolean
   temVitalicio: boolean
   percentualVitalicio: string
   repassePorNivel: Record<string, string>
@@ -45,6 +46,7 @@ function regraParaTab(r: RegraComCnpj): CnpjTab {
     numParcelas: r.num_parcelas?.toString() ?? '12',
     descontaImposto: r.desconta_imposto ?? false,
     percentualImposto: r.percentual_imposto?.toString() ?? '',
+    adesaoDireta: r.adesao_direta ?? false,
     temVitalicio: (r.percentual_vitalicio ?? 0) > 0,
     percentualVitalicio: r.percentual_vitalicio?.toString() ?? '',
     repassePorNivel: Object.fromEntries(
@@ -117,6 +119,7 @@ export default function OperadoraForm({ operadora, cnpjsDisponiveis, regrasExist
       numParcelas: '12',
       descontaImposto: false,
       percentualImposto: '',
+      adesaoDireta: false,
       temVitalicio: false,
       percentualVitalicio: '',
       repassePorNivel: {},
@@ -182,6 +185,7 @@ export default function OperadoraForm({ operadora, cnpjsDisponiveis, regrasExist
           operadora: nome.trim(),
           percentual_total: pctTotal, num_parcelas: nParcelas,
           desconta_imposto: tab.descontaImposto, percentual_imposto: pctImposto,
+          adesao_direta: tab.adesaoDireta,
           percentual_vitalicio: pctVitalicio, ativo,
           cnpj_recebimento_id: tab.cnpjId,
         }).eq('id', regraId)
@@ -195,6 +199,7 @@ export default function OperadoraForm({ operadora, cnpjsDisponiveis, regrasExist
           operadora: nome.trim(),
           percentual_total: pctTotal, num_parcelas: nParcelas,
           desconta_imposto: tab.descontaImposto, percentual_imposto: pctImposto,
+          adesao_direta: tab.adesaoDireta,
           percentual_vitalicio: pctVitalicio, ativo,
           cnpj_recebimento_id: tab.cnpjId,
         }).select().single()
@@ -414,6 +419,12 @@ export default function OperadoraForm({ operadora, cnpjsDisponiveis, regrasExist
                         placeholder="Ex: 13.5" className={inputCls} style={inputStyle} />
                     </div>
                   )}
+                </div>
+
+                <div className="pt-4 border-t" style={{ borderColor: '#e8e4dd' }}>
+                  <label className={labelCls} style={labelStyle}>Adesão direto ao vendedor?</label>
+                  <p className="text-xs mb-2" style={{ color: '#9a918a' }}>Adesão é paga pelo cliente diretamente ao vendedor — não passa pela corretora. Parcelas seguintes entram pelo 5º dia útil do mês seguinte.</p>
+                  {toggleBtn(tab.adesaoDireta, v => updateTab(abaAtiva, { adesaoDireta: v }))}
                 </div>
 
                 <div className="pt-2">

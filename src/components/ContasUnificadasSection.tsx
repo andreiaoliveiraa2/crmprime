@@ -615,6 +615,20 @@ function ContasSubTab({ tipo, contas, cnpjs, categorias, onAtualizar }: ContasSu
                     <td className="px-4 py-3 text-gray-500 text-xs">{conta.empresa ?? '—'}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
+                        {conta.status === 'Pendente' && tipo === 'pagar' && (
+                          <button onClick={() => toggleStatus(conta)}
+                            className="px-3 py-1 rounded-lg text-xs font-semibold hover:opacity-90 transition-opacity"
+                            style={{ backgroundColor: '#7c3aed', color: '#ffffff' }}>
+                            Pagar
+                          </button>
+                        )}
+                        {conta.status === 'Pendente' && tipo === 'receber' && (
+                          <button onClick={() => toggleStatus(conta)}
+                            className="px-3 py-1 rounded-lg text-xs font-semibold hover:opacity-90 transition-opacity"
+                            style={{ backgroundColor: '#0369a1', color: '#ffffff' }}>
+                            Receber
+                          </button>
+                        )}
                         <button onClick={() => abrirModal(conta)} title="Editar"
                           className="text-gray-400 hover:text-[#2d1f4e] transition-colors">
                           <Pencil size={15} />

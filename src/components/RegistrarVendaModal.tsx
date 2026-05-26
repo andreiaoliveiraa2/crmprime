@@ -32,6 +32,7 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
   const [valorPlano, setValorPlano] = useState('')
   const [vendedor, setVendedor] = useState('')
   const [dataVenda, setDataVenda] = useState(new Date().toISOString().split('T')[0])
+  const [dataVencimento, setDataVencimento] = useState('')
 
   // Client search state
   const [sugestoes, setSugestoes] = useState<ClienteSugestao[]>([])
@@ -164,6 +165,7 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
           valor_plano: Number(valorPlano),
           vendedor,
           data_venda: dataVenda,
+          data_vencimento: dataVencimento || null,
           status: 'Ativo',
           origem: 'manual',
         })
@@ -182,20 +184,41 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
       // 2. Check for commission rule
       const { data: regra } = await supabase
         .from('regras_comissao')
-        .select('id, percentual_total, num_parcelas, percentual_vitalicio, desconta_imposto, percentual_imposto')
+        .select('id, percentual_total, num_parcelas, percentual_vitalicio, desconta_imposto, percentual_imposto, adesao_direta')
         .eq('operadora', operadora)
         .eq('cnpj_recebimento_id', cnpjRecebimentoId)
         .eq('ativo', true)
         .maybeSingle()
 
       if (regra) {
-        // 3. Load parcelas_regra
+        // 3. Buscar nível do vendedor e repasse configurado
+        let nivelVendedor: string | null = null
+        if (vendedor) {
+          const { data: vd } = await supabase
+            .from('vendedores')
+            .select('nivel')
+            .eq('nome', vendedor)
+            .maybeSingle()
+          nivelVendedor = vd?.nivel ?? null
+        }
+
+        let totalRepasse = 0
+        if (nivelVendedor) {
+          const { data: rp } = await supabase
+            .from('repasse_grupo_vendedor')
+            .select('percentual')
+            .eq('regra_id', regra.id)
+            .eq('nivel', nivelVendedor)
+            .maybeSingle()
+          totalRepasse = rp?.percentual ?? 0
+        }
+
+        // Split empresa/pool por parcela
         const { data: parcelas } = await supabase
           .from('parcelas_regra')
-          .select('numero_parcela, percentual_empresa, percentual_vendedor')
+          .select('numero_parcela, percentual_empresa')
           .eq('regra_id', regra.id)
           .order('numero_parcela')
-
         const parcelasArr = parcelas ?? []
 
         const comissoesParaInserir: {
@@ -213,20 +236,54 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
           empresa: string
         }[] = []
 
-        // Generate parcela commissions
+        function quintoDialUtilMesSeguinte(dataBase: string): string {
+          const [y, m] = dataBase.split('-').map(Number)
+          const nextYear = m === 12 ? y + 1 : y
+          const nextMonth = m === 12 ? 1 : m + 1
+          let diasUteis = 0
+          let dia = 1
+          while (diasUteis < 5) {
+            const dow = new Date(nextYear, nextMonth - 1, dia).getDay()
+            if (dow !== 0 && dow !== 6) diasUteis++
+            if (diasUteis < 5) dia++
+          }
+          return `${nextYear}-${String(nextMonth).padStart(2, '0')}-${String(dia).padStart(2, '0')}`
+        }
+
+        const baseDate = dataVencimento || dataVenda
+
+        // Gerar parcelas com distribuição de repasse por nível
         for (let i = 1; i <= regra.num_parcelas; i++) {
-          const parcelaRegra = parcelasArr.find(p => p.numero_parcela === i)
-          const pctEmpresa = parcelaRegra?.percentual_empresa ?? 50
-          const pctVendedor = parcelaRegra?.percentual_vendedor ?? 50
           const valorBruto = valorNum * (regra.percentual_total / 100) / regra.num_parcelas
+          const repasseDestaParcela = Math.max(0, Math.min(100, totalRepasse - (i - 1) * 100))
 
-          // data_prevista = data_venda + (i - 1) months (first parcel on sale date)
-          const dataPrev = new Date(dataVenda)
-          dataPrev.setMonth(dataPrev.getMonth() + (i - 1))
+          let valorEmpresa: number
+          let statusEmpresa: 'Pendente' | 'Direto'
+          let dataPrevista: string
 
-          const valorEmpresaParcela  = valorBruto * (pctEmpresa / 100)
-          let   valorVendedorParcela = valorBruto * (pctVendedor / 100)
-          if (regra.desconta_imposto && regra.percentual_imposto > 0) {
+          if (regra.adesao_direta && i === 1) {
+            valorEmpresa = 0
+            statusEmpresa = 'Direto'
+            dataPrevista = baseDate
+          } else if (regra.adesao_direta) {
+            valorEmpresa = valorBruto * (1 - repasseDestaParcela / 100)
+            statusEmpresa = 'Pendente'
+            const [y, m] = baseDate.split('-').map(Number)
+            const mesParc = new Date(y, m - 1 + (i - 1), 1)
+            const mesStr = `${mesParc.getFullYear()}-${String(mesParc.getMonth() + 1).padStart(2, '0')}-01`
+            dataPrevista = quintoDialUtilMesSeguinte(mesStr)
+          } else {
+            const parcelaRegra = parcelasArr.find(p => p.numero_parcela === i)
+            const pctEmpresa = parcelaRegra?.percentual_empresa ?? 50
+            valorEmpresa = valorBruto * (pctEmpresa / 100)
+            statusEmpresa = 'Pendente'
+            const dataPrev = new Date(baseDate)
+            dataPrev.setMonth(dataPrev.getMonth() + (i - 1))
+            dataPrevista = dataPrev.toISOString().split('T')[0]
+          }
+
+          let valorVendedorParcela = valorBruto * (repasseDestaParcela / 100)
+          if (regra.desconta_imposto && regra.percentual_imposto > 0 && valorVendedorParcela > 0) {
             valorVendedorParcela = valorVendedorParcela * (1 - regra.percentual_imposto / 100)
           }
 
@@ -235,47 +292,47 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
             tipo: 'parcela',
             numero_parcela: i,
             valor_bruto: valorBruto,
-            valor_empresa: valorEmpresaParcela,
+            valor_empresa: valorEmpresa,
             valor_vendedor: valorVendedorParcela,
-            status_empresa: 'Pendente',
+            status_empresa: statusEmpresa,
             status_vendedor: 'Pendente',
-            data_prevista: dataPrev.toISOString().split('T')[0],
+            data_prevista: dataPrevista,
             data_recebida_empresa: null,
             data_recebida_vendedor: null,
             empresa: cnpjRecebimentoNome,
           })
         }
 
-        // Generate vitalício commission
-        const valorBrutoVitalicio = valorNum * (regra.percentual_vitalicio / 100)
-        const ultimaParcela = parcelasArr[parcelasArr.length - 1]
-        const pctEmpresaVit = ultimaParcela?.percentual_empresa ?? 50
-        const pctVendedorVit = ultimaParcela?.percentual_vendedor ?? 50
+        // Vitalício é sempre da corretora (não do vendedor)
+        if (regra.percentual_vitalicio > 0) {
+          const valorBrutoVitalicio = valorNum * (regra.percentual_vitalicio / 100)
+          let dataPrevistaVit: string
+          if (regra.adesao_direta) {
+            const [y, m] = baseDate.split('-').map(Number)
+            const mesVit = new Date(y, m - 1 + regra.num_parcelas, 1)
+            const mesStr = `${mesVit.getFullYear()}-${String(mesVit.getMonth() + 1).padStart(2, '0')}-01`
+            dataPrevistaVit = quintoDialUtilMesSeguinte(mesStr)
+          } else {
+            const dataVit = new Date(baseDate)
+            dataVit.setMonth(dataVit.getMonth() + regra.num_parcelas)
+            dataPrevistaVit = dataVit.toISOString().split('T')[0]
+          }
 
-        // vitalício starts after last parcela
-        const dataVit = new Date(dataVenda)
-        dataVit.setMonth(dataVit.getMonth() + regra.num_parcelas)
-
-        const valorEmpresaVit  = valorBrutoVitalicio * (pctEmpresaVit / 100)
-        let   valorVendedorVit = valorBrutoVitalicio * (pctVendedorVit / 100)
-        if (regra.desconta_imposto && regra.percentual_imposto > 0) {
-          valorVendedorVit = valorVendedorVit * (1 - regra.percentual_imposto / 100)
+          comissoesParaInserir.push({
+            venda_id: vendaId,
+            tipo: 'vitalicio',
+            numero_parcela: null,
+            valor_bruto: valorBrutoVitalicio,
+            valor_empresa: valorBrutoVitalicio,
+            valor_vendedor: 0,
+            status_empresa: 'Pendente',
+            status_vendedor: 'Pendente',
+            data_prevista: dataPrevistaVit,
+            data_recebida_empresa: null,
+            data_recebida_vendedor: null,
+            empresa: cnpjRecebimentoNome,
+          })
         }
-
-        comissoesParaInserir.push({
-          venda_id: vendaId,
-          tipo: 'vitalicio',
-          numero_parcela: null,
-          valor_bruto: valorBrutoVitalicio,
-          valor_empresa: valorEmpresaVit,
-          valor_vendedor: valorVendedorVit,
-          status_empresa: 'Pendente',
-          status_vendedor: 'Pendente',
-          data_prevista: dataVit.toISOString().split('T')[0],
-          data_recebida_empresa: null,
-          data_recebida_vendedor: null,
-          empresa: cnpjRecebimentoNome,
-        })
 
         // Insert all commissions
         const { error: comErr } = await supabase
@@ -283,7 +340,6 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
           .insert(comissoesParaInserir)
 
         if (comErr) {
-          // Don't fail the whole operation — venda was saved, just warn
           console.error('Erro ao inserir comissões:', comErr.message)
         }
       }
@@ -449,6 +505,18 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
               type="date"
               value={dataVenda}
               onChange={e => setDataVenda(e.target.value)}
+              className={inputCls}
+              style={inputStyle}
+            />
+          </div>
+
+          {/* Vencimento do Boleto */}
+          <div>
+            <label className={labelCls} style={labelStyle}>Vencimento do Boleto</label>
+            <input
+              type="date"
+              value={dataVencimento}
+              onChange={e => setDataVencimento(e.target.value)}
               className={inputCls}
               style={inputStyle}
             />

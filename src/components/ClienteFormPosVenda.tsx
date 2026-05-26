@@ -74,49 +74,112 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
       })
   }, [])
 
+  function quintoDialUtilMesSeguinte(dataBase: string): string {
+    const [y, m] = dataBase.split('-').map(Number)
+    const nextYear = m === 12 ? y + 1 : y
+    const nextMonth = m === 12 ? 1 : m + 1
+    let diasUteis = 0
+    let dia = 1
+    while (diasUteis < 5) {
+      const dow = new Date(nextYear, nextMonth - 1, dia).getDay()
+      if (dow !== 0 && dow !== 6) diasUteis++
+      if (diasUteis < 5) dia++
+    }
+    return `${nextYear}-${String(nextMonth).padStart(2, '0')}-${String(dia).padStart(2, '0')}`
+  }
+
   async function gerarComissoes(vendaId: string, dataVendaFinal: string, payloadLocal: ClienteInsert, empresa: string | null) {
     if (!payloadLocal.operadora || !payloadLocal.valor_plano) return
 
     const { data: regra } = await supabase
       .from('regras_comissao')
-      .select('id, percentual_total, num_parcelas, percentual_vitalicio, desconta_imposto, percentual_imposto')
+      .select('id, percentual_total, num_parcelas, percentual_vitalicio, desconta_imposto, percentual_imposto, adesao_direta')
       .eq('operadora', payloadLocal.operadora)
       .eq('ativo', true)
+      .order('criado_em', { ascending: false })
+      .limit(1)
       .maybeSingle()
 
     if (!regra) return
 
+    // Buscar split empresa/pool por parcela
     const { data: parcelas } = await supabase
       .from('parcelas_regra')
-      .select('numero_parcela, percentual_empresa, percentual_vendedor')
+      .select('numero_parcela, percentual_empresa')
       .eq('regra_id', regra.id)
       .order('numero_parcela')
-
     const parcelasArr = parcelas ?? []
+
+    // Descobrir o nível do vendedor e o % de repasse total configurado
+    let nivelVendedor: string | null = null
+    if (payloadLocal.vendedor) {
+      const { data: vd } = await supabase
+        .from('vendedores')
+        .select('nivel')
+        .eq('nome', payloadLocal.vendedor)
+        .maybeSingle()
+      nivelVendedor = vd?.nivel ?? null
+    }
+
+    let totalRepasse = 0
+    if (nivelVendedor && regra) {
+      const { data: rp } = await supabase
+        .from('repasse_grupo_vendedor')
+        .select('percentual')
+        .eq('regra_id', regra.id)
+        .eq('nivel', nivelVendedor)
+        .maybeSingle()
+      totalRepasse = Number(rp?.percentual ?? 0)
+    }
+
     const comissoes: object[] = []
 
-    for (let i = 1; i <= regra.num_parcelas; i++) {
-      const parcelaRegra    = parcelasArr.find(p => p.numero_parcela === i)
-      const pctEmpresa      = parcelaRegra?.percentual_empresa  ?? 50
-      const pctVendedor     = parcelaRegra?.percentual_vendedor ?? 50
-      const valorBruto      = payloadLocal.valor_plano * (regra.percentual_total / 100) / regra.num_parcelas
-      const valorEmpresa    = valorBruto * (pctEmpresa / 100)
-      let   valorVendedor   = valorBruto * (pctVendedor / 100)
+    const baseDate = payloadLocal.data_vencimento_plano || dataVendaFinal
 
-      if (regra.desconta_imposto && regra.percentual_imposto > 0) {
-        valorVendedor = valorVendedor * (1 - regra.percentual_imposto / 100)
+    for (let i = 1; i <= regra.num_parcelas; i++) {
+      const valorBruto = payloadLocal.valor_plano * (regra.percentual_total / 100) / regra.num_parcelas
+      const repasseDestaParcela = Math.max(0, Math.min(100, totalRepasse - (i - 1) * 100))
+
+      let valorEmpresa: number
+      let statusEmpresa: 'Pendente' | 'Direto'
+      let dataPrevista: string
+
+      if (regra.adesao_direta && i === 1) {
+        // Adesão odonto: direto ao vendedor, não passa pela corretora
+        valorEmpresa = 0
+        statusEmpresa = 'Direto'
+        dataPrevista = baseDate
+      } else if (regra.adesao_direta) {
+        // Parcelas 2+ odonto: empresa recebe o que o vendedor não pega; data = 5º dia útil do mês seguinte
+        valorEmpresa = valorBruto * (1 - repasseDestaParcela / 100)
+        statusEmpresa = 'Pendente'
+        const [y, m] = baseDate.split('-').map(Number)
+        const mesParc = new Date(y, m - 1 + (i - 1), 1)
+        const mesStr = `${mesParc.getFullYear()}-${String(mesParc.getMonth() + 1).padStart(2, '0')}-01`
+        dataPrevista = quintoDialUtilMesSeguinte(mesStr)
+      } else {
+        // Regra normal
+        const parcelaRegra = parcelasArr.find(p => p.numero_parcela === i)
+        const pctEmpresa = parcelaRegra?.percentual_empresa ?? 50
+        valorEmpresa = valorBruto * (pctEmpresa / 100)
+        statusEmpresa = 'Pendente'
+        const d = new Date(baseDate)
+        d.setMonth(d.getMonth() + (i - 1))
+        dataPrevista = d.toISOString().split('T')[0]
       }
 
-      const d = new Date(dataVendaFinal)
-      d.setMonth(d.getMonth() + (i - 1))
+      let valorVendedor = valorBruto * (repasseDestaParcela / 100)
+      if (regra.desconta_imposto && regra.percentual_imposto > 0 && valorVendedor > 0) {
+        valorVendedor = valorVendedor * (1 - regra.percentual_imposto / 100)
+      }
 
       comissoes.push({
         venda_id: vendaId, tipo: 'parcela', numero_parcela: i,
         valor_bruto: valorBruto,
         valor_empresa: valorEmpresa,
         valor_vendedor: valorVendedor,
-        status_empresa: 'Pendente', status_vendedor: 'Pendente',
-        data_prevista: d.toISOString().split('T')[0],
+        status_empresa: statusEmpresa, status_vendedor: 'Pendente',
+        data_prevista: dataPrevista,
         data_recebida_empresa: null, data_recebida_vendedor: null,
         empresa,
       })
@@ -124,25 +187,26 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
 
     if (regra.percentual_vitalicio > 0) {
       const valorBruto      = payloadLocal.valor_plano * (regra.percentual_vitalicio / 100)
-      const ultimaParcela   = parcelasArr[parcelasArr.length - 1]
-      const pctEmpresaVit   = ultimaParcela?.percentual_empresa  ?? 100
-      const pctVendedorVit  = ultimaParcela?.percentual_vendedor ?? 0
-      const valorEmpresaVit = valorBruto * (pctEmpresaVit / 100)
-      let   valorVendedorVit = valorBruto * (pctVendedorVit / 100)
+      const valorEmpresaVit = valorBruto
 
-      if (regra.desconta_imposto && regra.percentual_imposto > 0 && valorVendedorVit > 0) {
-        valorVendedorVit = valorVendedorVit * (1 - regra.percentual_imposto / 100)
+      let dataPrevistaVit: string
+      if (regra.adesao_direta) {
+        const [y, m] = baseDate.split('-').map(Number)
+        const mesVit = new Date(y, m - 1 + regra.num_parcelas, 1)
+        const mesStr = `${mesVit.getFullYear()}-${String(mesVit.getMonth() + 1).padStart(2, '0')}-01`
+        dataPrevistaVit = quintoDialUtilMesSeguinte(mesStr)
+      } else {
+        const d = new Date(baseDate)
+        d.setMonth(d.getMonth() + regra.num_parcelas)
+        dataPrevistaVit = d.toISOString().split('T')[0]
       }
-
-      const d = new Date(dataVendaFinal)
-      d.setMonth(d.getMonth() + regra.num_parcelas)
       comissoes.push({
         venda_id: vendaId, tipo: 'vitalicio', numero_parcela: null,
         valor_bruto: valorBruto,
         valor_empresa: valorEmpresaVit,
-        valor_vendedor: valorVendedorVit,
+        valor_vendedor: 0,
         status_empresa: 'Pendente', status_vendedor: 'Pendente',
-        data_prevista: d.toISOString().split('T')[0],
+        data_prevista: dataPrevistaVit,
         data_recebida_empresa: null, data_recebida_vendedor: null,
         empresa,
       })
@@ -227,6 +291,7 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
             valor_plano: payload.valor_plano,
             vendedor: payload.vendedor ?? '',
             data_venda: payload.data_venda ?? new Date().toISOString().split('T')[0],
+            data_vencimento: payload.data_vencimento_plano ?? null,
             status: 'Ativo',
             empresa,
           }).eq('id', vendaExistente.id)
@@ -239,6 +304,7 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
             valor_plano: payload.valor_plano,
             vendedor: payload.vendedor ?? '',
             data_venda: payload.data_venda ?? new Date().toISOString().split('T')[0],
+            data_vencimento: payload.data_vencimento_plano ?? null,
             status: 'Ativo',
             origem: 'cliente',
             empresa,
@@ -264,6 +330,7 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
           valor_plano: payload.valor_plano,
           vendedor: payload.vendedor ?? '',
           data_venda: payload.data_venda ?? new Date().toISOString().split('T')[0],
+          data_vencimento: payload.data_vencimento_plano ?? null,
           status: 'Ativo',
           origem: 'cliente',
           empresa,
@@ -399,20 +466,7 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
           </div>
 
           <div>
-            <label className={labelCls} style={labelStyle}>Data de Implantação</label>
-            <input type="date" value={dataImplantacao} onChange={e => setDataImpl(e.target.value)}
-              className={inputCls} style={inputStyle} />
-          </div>
-
-          {/* Data de Início + Data de Vencimento do Plano */}
-          <div>
-            <label className={labelCls} style={labelStyle}>Data de Início do Plano</label>
-            <input type="date" value={dataInicioPlano} onChange={e => setDataInicioPlano(e.target.value)}
-              className={inputCls} style={inputStyle} />
-          </div>
-
-          <div>
-            <label className={labelCls} style={labelStyle}>Data de Vencimento do Plano</label>
+            <label className={labelCls} style={labelStyle}>Vencimento do Boleto</label>
             <input type="date" value={dataVencimentoPlano} onChange={e => setDataVencimentoPlano(e.target.value)}
               className={inputCls} style={inputStyle} />
           </div>

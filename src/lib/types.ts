@@ -89,6 +89,7 @@ export interface RegraComCnpj {
   percentual_vitalicio: number
   desconta_imposto: boolean
   percentual_imposto: number
+  adesao_direta: boolean
   ativo: boolean
   repasse: { nivel: string; percentual: number }[]
 }
@@ -240,6 +241,7 @@ export interface Venda {
   valor_plano: number
   vendedor: string
   data_venda: string
+  data_vencimento: string | null
   status: 'Ativo' | 'Cancelado'
   origem: 'cliente' | 'manual'
   empresa: string | null
@@ -256,6 +258,7 @@ export interface RegraComissao {
   percentual_vitalicio: number
   desconta_imposto: boolean
   percentual_imposto: number
+  adesao_direta: boolean
   ativo: boolean
   cnpj_recebimento_id: string | null
   criado_em: string
@@ -287,7 +290,7 @@ export interface Comissao {
   valor_bruto: number
   valor_empresa: number
   valor_vendedor: number
-  status_empresa: 'Pendente' | 'Recebido'
+  status_empresa: 'Pendente' | 'Recebido' | 'Direto'
   status_vendedor: 'Pendente' | 'Recebido'
   data_prevista: string
   data_recebida_empresa: string | null

@@ -141,6 +141,7 @@ export default function ComissoesTab({ comissoes, vendas, regras, onAtualizar, c
   }
 
   async function toggleStatusEmpresa(comissao: Comissao) {
+    if (comissao.status_empresa === 'Direto') return
     const novoStatus = comissao.status_empresa === 'Pendente' ? 'Recebido' : 'Pendente'
     const update: Record<string, string | null> = {
       status_empresa: novoStatus,
@@ -162,6 +163,7 @@ export default function ComissoesTab({ comissoes, vendas, regras, onAtualizar, c
 
   function tipoLabel(c: ComissaoComVenda): string {
     if (c.tipo === 'vitalicio') return 'Vitalício'
+    if (c.numero_parcela === 1) return 'Adesão'
     return `Parcela ${c.numero_parcela ?? ''}`
   }
 
@@ -324,14 +326,20 @@ export default function ComissoesTab({ comissoes, vendas, regras, onAtualizar, c
                   <td className="px-4 py-3 whitespace-nowrap" style={{ color: '#5a4e3c' }}>{formatBRL(c.valor_bruto)}</td>
                   <td className="px-4 py-3 whitespace-nowrap font-medium" style={{ color: '#15803d' }}>{formatBRL(c.valor_empresa ?? 0)}</td>
                   <td className="px-4 py-3">
-                    <button
-                      onClick={() => toggleStatusEmpresa(c)}
-                      className="px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity"
-                      style={c.status_empresa === 'Recebido' ? badgeRecebido : badgePendente}
-                      title="Clique para alternar status"
-                    >
-                      {c.status_empresa}
-                    </button>
+                    {c.status_empresa === 'Direto' ? (
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: '#fef3c7', color: '#92400e' }}>
+                        Direto ao Vendedor
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => toggleStatusEmpresa(c)}
+                        className="px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity"
+                        style={c.status_empresa === 'Recebido' ? badgeRecebido : badgePendente}
+                        title="Clique para alternar status"
+                      >
+                        {c.status_empresa}
+                      </button>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     {c.tipo === 'vitalicio' ? (

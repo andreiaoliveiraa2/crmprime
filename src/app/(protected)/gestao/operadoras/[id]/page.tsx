@@ -49,6 +49,7 @@ export default async function EditarOperadoraPage({
     percentual_vitalicio: (r.percentual_vitalicio as number) ?? 0,
     desconta_imposto: (r.desconta_imposto as boolean) ?? false,
     percentual_imposto: (r.percentual_imposto as number) ?? 0,
+    adesao_direta: (r.adesao_direta as boolean) ?? false,
     ativo: (r.ativo as boolean) ?? true,
     repasse: ((repasseTodos ?? []) as Array<{ regra_id: string; nivel: string; percentual: number }>)
       .filter(rp => rp.regra_id === r.id)
