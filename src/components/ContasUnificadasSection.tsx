@@ -207,11 +207,7 @@ function ContaModal({ tipo, editando, cnpjs, categorias, onClose, onSalvo }: Con
     }
 
     if (tipoLancamento === 'recorrente') {
-      const dia = String(Number(diaMes)).padStart(2, '0')
-      const [y, m] = vencimento.split('-')
-      const vencimentoFormatado = `${y}-${m}-${dia}`
-
-      const { data: dfData, error: dfError } = await supabase
+      const { error: dfError } = await supabase
         .from('despesas_fixas')
         .insert({
           nome: descricao.trim(),
@@ -221,29 +217,9 @@ function ContaModal({ tipo, editando, cnpjs, categorias, onClose, onSalvo }: Con
           empresa: empresa || null,
           ativo: true,
         } as DespesaFixaInsert)
-        .select()
-        .single()
-
-      if (dfError) { setSalvando(false); setErro(dfError.message); return }
-
-      const { error: contaError } = await supabase.from('contas').insert({
-        tipo,
-        descricao: descricao.trim(),
-        valor: Number(valor),
-        vencimento: vencimentoFormatado,
-        status: 'Pendente',
-        empresa: empresa || null,
-        categoria: categoriaId || null,
-        observacoes: observacoes.trim() || null,
-        despesa_fixa_id: dfData.id,
-        tipo_lancamento: 'recorrente',
-        grupo_id: null,
-        parcela_numero: null,
-        total_parcelas: null,
-      } as ContaInsert)
 
       setSalvando(false)
-      if (contaError) { setErro(contaError.message); return }
+      if (dfError) { setErro(dfError.message); return }
     }
 
     onSalvo(); onClose()
@@ -406,6 +382,7 @@ function ContasSubTab({ tipo, contas, cnpjs, categorias, onAtualizar }: ContasSu
 
   const [modalAberto, setModalAberto] = useState(false)
   const [editando, setEditando] = useState<Conta | undefined>()
+  const [contaParaExcluir, setContaParaExcluir] = useState<Conta | null>(null)
   const [filtroStatus, setFiltroStatus] = useState<'Todos' | 'Pendente' | 'Pago' | 'Recebido' | 'Vencido'>('Todos')
   const [filtroCategoria, setFiltroCategoria] = useState('')
   const [filtroEmpresa, setFiltroEmpresa] = useState('')
@@ -445,8 +422,22 @@ function ContasSubTab({ tipo, contas, cnpjs, categorias, onAtualizar }: ContasSu
   }
 
   async function handleDelete(conta: Conta) {
+    if (conta.tipo_lancamento === 'recorrente') {
+      setContaParaExcluir(conta)
+      return
+    }
     if (!confirm(`Excluir "${conta.descricao}"?`)) return
     await supabase.from('contas').delete().eq('id', conta.id)
+    onAtualizar()
+  }
+
+  async function confirmarExclusaoRecorrente(modo: 'mes' | 'todos') {
+    if (!contaParaExcluir) return
+    await supabase.from('contas').delete().eq('id', contaParaExcluir.id)
+    if (modo === 'todos' && contaParaExcluir.despesa_fixa_id) {
+      await supabase.from('despesas_fixas').update({ ativo: false }).eq('id', contaParaExcluir.despesa_fixa_id)
+    }
+    setContaParaExcluir(null)
     onAtualizar()
   }
 
@@ -651,6 +642,40 @@ function ContasSubTab({ tipo, contas, cnpjs, categorias, onAtualizar }: ContasSu
           onClose={() => setModalAberto(false)}
           onSalvo={() => { setModalAberto(false); onAtualizar() }}
         />
+      )}
+
+      {contaParaExcluir && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
+            <div className="px-6 py-5">
+              <h3 className="text-base font-bold mb-1" style={{ color: '#2d1f4e' }}>Excluir conta recorrente</h3>
+              <p className="text-sm mb-1" style={{ color: '#5a4e3c' }}>
+                <span className="font-medium">{contaParaExcluir.descricao}</span>
+              </p>
+              <p className="text-sm" style={{ color: '#7a7065' }}>O que deseja fazer?</p>
+            </div>
+            <div className="flex flex-col gap-2 px-6 pb-6">
+              <button
+                onClick={() => confirmarExclusaoRecorrente('mes')}
+                className="w-full py-2.5 rounded-xl text-sm font-medium border hover:opacity-80 transition-opacity"
+                style={{ borderColor: '#e8e4dd', color: '#2d1f4e', backgroundColor: '#f9f7f4' }}>
+                Apagar só este mês
+              </button>
+              <button
+                onClick={() => confirmarExclusaoRecorrente('todos')}
+                className="w-full py-2.5 rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: '#b91c1c', color: '#ffffff' }}>
+                Cancelar recorrência (todos os meses futuros)
+              </button>
+              <button
+                onClick={() => setContaParaExcluir(null)}
+                className="w-full py-2 rounded-xl text-sm font-medium hover:opacity-80"
+                style={{ color: '#9a918a' }}>
+                Voltar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   )
