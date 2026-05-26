@@ -1,9 +1,14 @@
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getUsuarioAtual } from '@/lib/getUsuarioAtual'
 import GestaoClient from '@/components/GestaoClient'
 import Link from 'next/link'
 import { NivelVendedor } from '@/lib/types'
 
 export default async function GestaoPage() {
+  const usuario = await getUsuarioAtual()
+  if (usuario?.perfil !== 'admin') redirect('/dashboard')
+
   const supabase = await createClient()
   const [{ data: vendedores }, { data: niveisRaw }] = await Promise.all([
     supabase.from('vendedores').select('*').order('nome'),

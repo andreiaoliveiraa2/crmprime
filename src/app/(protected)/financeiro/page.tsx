@@ -1,8 +1,13 @@
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getUsuarioAtual } from '@/lib/getUsuarioAtual'
 import FinanceiroClient from '@/components/FinanceiroClient'
 import { CnpjRecebimento, DespesaFixa, CategoriaDespesa } from '@/lib/types'
 
 export default async function FinanceiroPage() {
+  const usuario = await getUsuarioAtual()
+  if (usuario?.perfil !== 'admin') redirect('/dashboard')
+
   const supabase = await createClient()
 
   const [

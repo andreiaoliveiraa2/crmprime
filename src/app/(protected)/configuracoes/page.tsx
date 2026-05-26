@@ -1,4 +1,6 @@
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getUsuarioAtual } from '@/lib/getUsuarioAtual'
 import AlterarSenhaForm from '@/components/AlterarSenhaForm'
 import CnpjRecebimentoSection from '@/components/CnpjRecebimentoSection'
 import CategoriasDespesaSection from '@/components/CategoriasDespesaSection'
@@ -6,6 +8,9 @@ import NiveisVendedorSection from '@/components/NiveisVendedorSection'
 import { CnpjRecebimento, CategoriaDespesa, NivelVendedor } from '@/lib/types'
 
 export default async function ConfiguracoesPage() {
+  const usuario = await getUsuarioAtual()
+  if (usuario?.perfil !== 'admin') redirect('/dashboard')
+
   const supabase = await createClient()
   const [
     { data: { user } },
