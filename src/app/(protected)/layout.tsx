@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { getUsuarioAtual } from '@/lib/getUsuarioAtual'
 import Sidebar from '@/components/Sidebar'
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
@@ -9,12 +8,21 @@ export default async function ProtectedLayout({ children }: { children: React.Re
 
   if (!user) redirect('/login')
 
-  const usuario = await getUsuarioAtual()
+  const { data: usuario } = await supabase
+    .from('usuarios')
+    .select('id, nome, perfil, vendedor_id')
+    .eq('auth_user_id', user.id)
+    .single()
 
-  if (!usuario) redirect('/completar-perfil')
+  if (!usuario) {
+    // Só redireciona para completar-perfil se for vendedor convidado
+    const vendedorId = user.user_metadata?.vendedor_id
+    if (vendedorId) redirect('/completar-perfil')
+    // Admin sem registro em usuarios → usa defaults (não entra em loop)
+  }
 
-  const perfil = usuario.perfil
-  const nome   = usuario.nome
+  const perfil = usuario?.perfil ?? 'admin'
+  const nome   = usuario?.nome ?? user.email ?? 'Usuário'
 
   return (
     <div className="flex min-h-screen" style={{ backgroundColor: '#f4f1ec' }}>

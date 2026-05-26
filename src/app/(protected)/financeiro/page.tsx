@@ -6,7 +6,7 @@ import { CnpjRecebimento, DespesaFixa, CategoriaDespesa } from '@/lib/types'
 
 export default async function FinanceiroPage() {
   const usuario = await getUsuarioAtual()
-  if (usuario?.perfil !== 'admin') redirect('/dashboard')
+  if (usuario !== null && usuario.perfil !== 'admin') redirect('/dashboard')
 
   const supabase = await createClient()
 
