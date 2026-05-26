@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Venda, Comissao, Conta, RegraComissao, CnpjRecebimento, DespesaFixa } from '@/lib/types'
+import { Venda, Comissao, Conta, RegraComissao, CnpjRecebimento, DespesaFixa, CategoriaDespesa } from '@/lib/types'
 import ProducaoTab from './ProducaoTab'
 import ComissoesTab from './ComissoesTab'
 import ContasTab from './ContasTab'
@@ -18,7 +18,7 @@ interface Props {
   cnpjs: CnpjRecebimento[]
   operadoras: { id: string; nome: string }[]
   despesasFixas: DespesaFixa[]
-  categorias: string[]
+  categorias: CategoriaDespesa[]
 }
 
 const ABAS: { id: Aba; label: string }[] = [

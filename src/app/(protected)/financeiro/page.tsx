@@ -58,6 +58,10 @@ export default async function FinanceiroPage() {
       empresa: d.empresa,
       categoria: d.categoria,
       despesa_fixa_id: d.id,
+      tipo_lancamento: 'recorrente' as const,
+      grupo_id: null,
+      parcela_numero: null,
+      total_parcelas: null,
     }))
     await supabase.from('contas').insert(novasContas)
   }
@@ -78,7 +82,7 @@ export default async function FinanceiroPage() {
         cnpjs={(cnpjsRaw ?? []) as CnpjRecebimento[]}
         operadoras={(operadorasRaw ?? []) as { id: string; nome: string }[]}
         despesasFixas={(despesasFixasRaw ?? []) as DespesaFixa[]}
-        categorias={((categoriasRaw ?? []) as CategoriaDespesa[]).map(c => c.nome)}
+        categorias={(categoriasRaw ?? []) as CategoriaDespesa[]}
       />
     </div>
   )
