@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { Operadora, CnpjRecebimento, RegraComCnpj, NIVEIS_VENDEDOR } from '@/lib/types'
+import { Operadora, CnpjRecebimento, RegraComCnpj, NivelVendedor } from '@/lib/types'
 
 interface CnpjTab {
   key: string
@@ -18,15 +18,14 @@ interface CnpjTab {
   percentualImposto: string
   temVitalicio: boolean
   percentualVitalicio: string
-  nivelIniciante: string
-  nivelExperiente: string
-  nivelVip: string
+  repassePorNivel: Record<string, string>
 }
 
 interface Props {
   operadora?: Operadora
   cnpjsDisponiveis: CnpjRecebimento[]
   regrasExistentes?: RegraComCnpj[]
+  niveis: NivelVendedor[]
 }
 
 const inputCls = 'w-full border rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 transition-shadow'
@@ -48,13 +47,13 @@ function regraParaTab(r: RegraComCnpj): CnpjTab {
     percentualImposto: r.percentual_imposto?.toString() ?? '',
     temVitalicio: (r.percentual_vitalicio ?? 0) > 0,
     percentualVitalicio: r.percentual_vitalicio?.toString() ?? '',
-    nivelIniciante: r.repasse.find(rp => rp.nivel === 'Iniciante')?.percentual?.toString() ?? '',
-    nivelExperiente: r.repasse.find(rp => rp.nivel === 'Experiente')?.percentual?.toString() ?? '',
-    nivelVip: r.repasse.find(rp => rp.nivel === 'VIP')?.percentual?.toString() ?? '',
+    repassePorNivel: Object.fromEntries(
+      r.repasse.map(rp => [rp.nivel, rp.percentual?.toString() ?? ''])
+    ),
   }
 }
 
-export default function OperadoraForm({ operadora, cnpjsDisponiveis, regrasExistentes = [] }: Props) {
+export default function OperadoraForm({ operadora, cnpjsDisponiveis, regrasExistentes = [], niveis }: Props) {
   const router = useRouter()
   const supabase = createClient()
   const editando = !!operadora
@@ -120,9 +119,7 @@ export default function OperadoraForm({ operadora, cnpjsDisponiveis, regrasExist
       percentualImposto: '',
       temVitalicio: false,
       percentualVitalicio: '',
-      nivelIniciante: '',
-      nivelExperiente: '',
-      nivelVip: '',
+      repassePorNivel: {},
     }
     setTabs(prev => [...prev, novaTab])
     setAbaAtiva(tabs.length)
@@ -212,11 +209,13 @@ export default function OperadoraForm({ operadora, cnpjsDisponiveis, regrasExist
       // Salvar repasse por nível
       if (regraId) {
         await supabase.from('repasse_grupo_vendedor').delete().eq('regra_id', regraId)
-        await supabase.from('repasse_grupo_vendedor').insert([
-          { regra_id: regraId, nivel: 'Iniciante',  percentual: parseFloat(tab.nivelIniciante)  || 0 },
-          { regra_id: regraId, nivel: 'Experiente', percentual: parseFloat(tab.nivelExperiente) || 0 },
-          { regra_id: regraId, nivel: 'VIP',        percentual: parseFloat(tab.nivelVip)        || 0 },
-        ])
+        await supabase.from('repasse_grupo_vendedor').insert(
+          niveis.map(n => ({
+            regra_id: regraId,
+            nivel: n.nome,
+            percentual: parseFloat(tab.repassePorNivel[n.nome] ?? '0') || 0,
+          }))
+        )
       }
     }
 
@@ -382,22 +381,21 @@ export default function OperadoraForm({ operadora, cnpjsDisponiveis, regrasExist
                     % do total pago pela operadora que vai para o vendedor. Máximo: % total pago pela operadora. A corretora fica com o restante.
                   </p>
                   <div className="grid grid-cols-3 gap-4">
-                    {(NIVEIS_VENDEDOR as readonly string[]).map(nivel => {
-                      const key = nivel === 'Iniciante' ? 'nivelIniciante' : nivel === 'Experiente' ? 'nivelExperiente' : 'nivelVip'
-                      return (
-                        <div key={nivel}>
-                          <label className={labelCls} style={labelStyle}>{nivel}</label>
-                          <div className="relative">
-                            <input type="number" step="0.01" min="0" max={tab.percentualTotal || undefined}
-                              value={tab[key as keyof CnpjTab] as string}
-                              onChange={e => updateTab(abaAtiva, { [key]: e.target.value })}
-                              placeholder="0" className={inputCls} style={{ ...inputStyle, paddingRight: '2rem' }} />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none"
-                              style={{ color: '#9a918a' }}>%</span>
-                          </div>
+                    {niveis.filter(n => n.ativo).map(n => (
+                      <div key={n.id}>
+                        <label className={labelCls} style={labelStyle}>{n.nome}</label>
+                        <div className="relative">
+                          <input type="number" step="0.01" min="0" max={tab.percentualTotal || undefined}
+                            value={tab.repassePorNivel[n.nome] ?? ''}
+                            onChange={e => updateTab(abaAtiva, {
+                              repassePorNivel: { ...tab.repassePorNivel, [n.nome]: e.target.value }
+                            })}
+                            placeholder="0" className={inputCls} style={{ ...inputStyle, paddingRight: '2rem' }} />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none"
+                            style={{ color: '#9a918a' }}>%</span>
                         </div>
-                      )
-                    })}
+                      </div>
+                    ))}
                   </div>
                 </div>
 

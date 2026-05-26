@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import OperadoraForm from '@/components/OperadoraForm'
 import Link from 'next/link'
-import { CnpjRecebimento, RegraComCnpj } from '@/lib/types'
+import { CnpjRecebimento, RegraComCnpj, NivelVendedor } from '@/lib/types'
 
 export default async function EditarOperadoraPage({
   params,
@@ -30,11 +30,12 @@ export default async function EditarOperadoraPage({
   const regraIds = (regrasRaw ?? []).map((r: { id: string }) => r.id)
 
   // Carregar repassos de todas essas regras em paralelo com cnpjs disponíveis
-  const [{ data: repasseTodos }, { data: cnpjsRaw }] = await Promise.all([
+  const [{ data: repasseTodos }, { data: cnpjsRaw }, { data: niveisRaw }] = await Promise.all([
     regraIds.length > 0
       ? supabase.from('repasse_grupo_vendedor').select('*').in('regra_id', regraIds)
       : Promise.resolve({ data: [] }),
     supabase.from('cnpjs_recebimento').select('*').eq('status', 'Ativo').order('nome'),
+    supabase.from('niveis_vendedor').select('*').eq('ativo', true).order('nome'),
   ])
 
   const cnpjsDisponiveis = (cnpjsRaw ?? []) as CnpjRecebimento[]
@@ -70,6 +71,7 @@ export default async function EditarOperadoraPage({
         operadora={operadora}
         cnpjsDisponiveis={cnpjsDisponiveis}
         regrasExistentes={regrasExistentes}
+        niveis={(niveisRaw ?? []) as NivelVendedor[]}
       />
     </div>
   )
