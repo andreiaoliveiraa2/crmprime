@@ -10,8 +10,11 @@ export default async function ProtectedLayout({ children }: { children: React.Re
   if (!user) redirect('/login')
 
   const usuario = await getUsuarioAtual()
-  const perfil = usuario?.perfil ?? 'admin'
-  const nome   = usuario?.nome ?? user.email ?? 'Usuário'
+
+  if (!usuario) redirect('/completar-perfil')
+
+  const perfil = usuario.perfil
+  const nome   = usuario.nome
 
   return (
     <div className="flex min-h-screen" style={{ backgroundColor: '#f4f1ec' }}>
