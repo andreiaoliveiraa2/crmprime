@@ -22,10 +22,11 @@ const NAV_ADMIN = [
 ]
 
 const NAV_VENDEDOR = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/crm',       label: 'CRM',       icon: Users           },
-  { href: '/clientes',  label: 'Clientes',  icon: UserCheck       },
-  { href: '/agenda',    label: 'Agenda',    icon: Calendar, badge: true },
+  { href: '/dashboard',        label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/crm',              label: 'CRM',       icon: Users           },
+  { href: '/clientes',         label: 'Clientes',  icon: UserCheck       },
+  { href: '/agenda',           label: 'Agenda',    icon: Calendar, badge: true },
+  { href: '/minhas-comissoes', label: 'Comissões', icon: DollarSign      },
 ]
 
 interface Props {
