@@ -58,7 +58,11 @@ export interface Lead {
 
 export const TIPOS_VENDEDOR = ['Interno', 'Afiliado', 'Corretor Parceiro'] as const
 export const CORRETORAS_VENDEDOR = ['A2 Prime', 'A2 Corretora', 'MEI Alessandro'] as const
-export const NIVEIS_VENDEDOR = ['Iniciante', 'Experiente', 'VIP'] as const
+export interface NivelVendedor {
+  id: string
+  nome: string
+  ativo: boolean
+}
 
 export interface CnpjRecebimento {
   id: string

@@ -2,7 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import AlterarSenhaForm from '@/components/AlterarSenhaForm'
 import CnpjRecebimentoSection from '@/components/CnpjRecebimentoSection'
 import CategoriasDespesaSection from '@/components/CategoriasDespesaSection'
-import { CnpjRecebimento, CategoriaDespesa } from '@/lib/types'
+import NiveisVendedorSection from '@/components/NiveisVendedorSection'
+import { CnpjRecebimento, CategoriaDespesa, NivelVendedor } from '@/lib/types'
 
 export default async function ConfiguracoesPage() {
   const supabase = await createClient()
@@ -10,14 +11,17 @@ export default async function ConfiguracoesPage() {
     { data: { user } },
     { data: cnpjsRaw },
     { data: categoriasRaw },
+    { data: niveisRaw },
   ] = await Promise.all([
     supabase.auth.getUser(),
     supabase.from('cnpjs_recebimento').select('*').order('nome'),
     supabase.from('categorias_despesa').select('*').order('nome'),
+    supabase.from('niveis_vendedor').select('*').order('nome'),
   ])
 
   const cnpjs = (cnpjsRaw ?? []) as CnpjRecebimento[]
   const categorias = (categoriasRaw ?? []) as CategoriaDespesa[]
+  const niveis = (niveisRaw ?? []) as NivelVendedor[]
 
   return (
     <div className="p-6 md:p-8">
@@ -66,6 +70,9 @@ export default async function ConfiguracoesPage() {
 
         {/* Categorias de Despesas */}
         <CategoriasDespesaSection categorias={categorias} />
+
+        {/* Níveis de Vendedor */}
+        <NiveisVendedorSection niveis={niveis} />
 
         {/* Alterar senha */}
         <AlterarSenhaForm />
