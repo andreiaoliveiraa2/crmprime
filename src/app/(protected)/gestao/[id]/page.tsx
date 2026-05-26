@@ -10,11 +10,10 @@ export default async function FichaVendedorPage({
   const { id } = await params
   const supabase = await createClient()
 
-  const { data: vendedor } = await supabase
-    .from('vendedores')
-    .select('*')
-    .eq('id', id)
-    .single()
+  const [{ data: vendedor }, { data: usuarioVendedor }] = await Promise.all([
+    supabase.from('vendedores').select('*').eq('id', id).single(),
+    supabase.from('usuarios').select('id, perfil, ativo').eq('vendedor_id', id).maybeSingle(),
+  ])
 
   if (!vendedor) notFound()
 
@@ -35,6 +34,7 @@ export default async function FichaVendedorPage({
         vendedor={vendedor}
         vendas={vendas ?? []}
         comissoes={comissoes ?? []}
+        usuarioVinculado={usuarioVendedor ?? null}
       />
     </div>
   )

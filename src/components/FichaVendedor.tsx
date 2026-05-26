@@ -5,10 +5,17 @@ import Link from 'next/link'
 import { Vendedor, Venda, Comissao } from '@/lib/types'
 import { Pencil, ArrowLeft } from 'lucide-react'
 
+interface UsuarioVinculado {
+  id: string
+  perfil: string
+  ativo: boolean
+}
+
 interface Props {
   vendedor: Vendedor
   vendas: Venda[]
   comissoes: Comissao[]
+  usuarioVinculado: UsuarioVinculado | null
 }
 
 const cardCls = 'bg-white rounded-2xl p-6 mb-4'
@@ -35,11 +42,27 @@ function Campo({ label, value }: { label: string; value: string | number | null 
   )
 }
 
-export default function FichaVendedor({ vendedor, vendas, comissoes }: Props) {
+export default function FichaVendedor({ vendedor, vendas, comissoes, usuarioVinculado }: Props) {
   const [tab, setTab]                   = useState<'cadastral' | 'producao'>('cadastral')
   const [filtroInicio, setFiltroInicio] = useState(inicioPadrao)
   const [filtroFim, setFiltroFim]       = useState(fimPadrao)
   const [filtroOp, setFiltroOp]         = useState('')
+  const [convidando, setConvidando]     = useState(false)
+  const [conviteMsg, setConviteMsg]     = useState('')
+
+  async function handleConvidar() {
+    if (!vendedor.email) { setConviteMsg('Cadastre o e-mail do vendedor primeiro.'); return }
+    setConvidando(true)
+    setConviteMsg('')
+    const res = await fetch('/api/admin/convidar-vendedor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vendedor_id: vendedor.id, email: vendedor.email }),
+    })
+    const json = await res.json()
+    setConvidando(false)
+    setConviteMsg(res.ok ? 'Convite enviado com sucesso!' : (json.error ?? 'Erro ao enviar convite.'))
+  }
 
   const fmt = (v: number) =>
     v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -189,6 +212,51 @@ export default function FichaVendedor({ vendedor, vendas, comissoes }: Props) {
               <Campo label="Bairro"             value={vendedor.endereco_bairro} />
               <Campo label="Cidade"             value={vendedor.endereco_cidade} />
               <Campo label="Estado"             value={vendedor.endereco_estado} />
+            </div>
+
+            {/* Status de acesso */}
+            <div className="mt-6 pt-4" style={{ borderTop: '1px solid #e8e4dd' }}>
+              <p className="text-xs font-semibold mb-2" style={{ color: '#9a918a' }}>Acesso ao Sistema</p>
+              <div className="flex items-center gap-3 flex-wrap">
+                {usuarioVinculado ? (
+                  <span
+                    className="text-xs font-medium px-2.5 py-1 rounded-full"
+                    style={{ backgroundColor: '#dcfce7', color: '#15803d' }}
+                  >
+                    Ativo
+                  </span>
+                ) : (
+                  <>
+                    <span
+                      className="text-xs font-medium px-2.5 py-1 rounded-full"
+                      style={{ backgroundColor: '#f0ece6', color: '#9a918a' }}
+                    >
+                      Sem acesso
+                    </span>
+                    <button
+                      onClick={handleConvidar}
+                      disabled={convidando || !vendedor.email}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-xl text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                      style={{ backgroundColor: '#2d1f4e' }}
+                    >
+                      {convidando ? 'Enviando...' : 'Convidar por E-mail'}
+                    </button>
+                    {!vendedor.email && (
+                      <span className="text-xs" style={{ color: '#dc2626' }}>
+                        Cadastre o e-mail do vendedor primeiro
+                      </span>
+                    )}
+                  </>
+                )}
+                {conviteMsg && (
+                  <span
+                    className="text-xs"
+                    style={{ color: conviteMsg.includes('sucesso') ? '#15803d' : '#dc2626' }}
+                  >
+                    {conviteMsg}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
