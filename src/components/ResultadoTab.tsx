@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { Printer } from 'lucide-react'
 import { Comissao, Conta, DespesaFixa, Venda } from '@/lib/types'
 
 interface Props {
@@ -144,6 +145,30 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas, vendas 
       .sort((a, b) => b.lucroProj - a.lucroProj)
   }, [pendentesMes, recebidosMes, vendaMap])
 
+  // Tabela por operadora
+  const porOperadora = useMemo(() => {
+    const map = new Map<string, { bruto: number; lucroProj: number; lucroReal: number }>()
+
+    for (const c of pendentesMes) {
+      const nome = vendaMap.get(c.venda_id)?.operadora ?? '—'
+      const prev = map.get(nome) ?? { bruto: 0, lucroProj: 0, lucroReal: 0 }
+      prev.bruto += c.valor_bruto
+      prev.lucroProj += c.valor_empresa ?? 0
+      map.set(nome, prev)
+    }
+
+    for (const c of recebidosMes) {
+      const nome = vendaMap.get(c.venda_id)?.operadora ?? '—'
+      const prev = map.get(nome) ?? { bruto: 0, lucroProj: 0, lucroReal: 0 }
+      prev.lucroReal += c.valor_empresa ?? 0
+      map.set(nome, prev)
+    }
+
+    return Array.from(map.entries())
+      .map(([nome, vals]) => ({ nome, ...vals }))
+      .sort((a, b) => b.lucroProj - a.lucroProj)
+  }, [pendentesMes, recebidosMes, vendaMap])
+
   // Despesas e contas do mês
   const despesasFixasTotal = useMemo(() =>
     despesasFixas.filter(d => d.ativo).reduce((s, d) => s + d.valor, 0) * numMeses,
@@ -170,8 +195,14 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas, vendas 
   return (
     <div className="space-y-5">
 
+      {/* Título visível só na impressão */}
+      <div className="hidden print:block mb-4">
+        <h2 className="text-xl font-bold" style={{ color: '#2d1f4e' }}>Resultado — A2 Prime Corretora de Seguros</h2>
+        {labelMes && <p className="text-sm capitalize mt-0.5" style={{ color: '#9a918a' }}>{labelMes}</p>}
+      </div>
+
       {/* Filtro de período */}
-      <div className="bg-white rounded-2xl p-5" style={{ border: '1px solid #e8e4dd' }}>
+      <div className="print:hidden bg-white rounded-2xl p-5" style={{ border: '1px solid #e8e4dd' }}>
         <div className="flex flex-wrap items-center gap-3">
 
           {/* Toggle Mês / Período */}
@@ -216,6 +247,18 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas, vendas 
 
       {hasRange && (
         <>
+          {/* Botão imprimir */}
+          <div className="print:hidden flex justify-end">
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors"
+              style={{ backgroundColor: '#2d1f4e', color: '#fff' }}
+            >
+              <Printer size={15} />
+              Imprimir / Salvar PDF
+            </button>
+          </div>
+
           {/* Cards resumo */}
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-white rounded-2xl p-4" style={{ border: '1px solid #e8e4dd' }}>
@@ -266,6 +309,33 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas, vendas 
             </div>
           )}
 
+          {/* Tabela por operadora */}
+          {porOperadora.length > 0 && (
+            <div className="bg-white rounded-2xl overflow-hidden" style={{ border: '1px solid #e8e4dd' }}>
+              <div className="px-5 pt-5 pb-3">
+                <p className="text-xs font-bold uppercase tracking-wide" style={{ color: '#9a918a' }}>
+                  Por Operadora — {labelMes}
+                </p>
+              </div>
+              <table className="w-full">
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #f0ece6', borderTop: '1px solid #f0ece6' }}>
+                    <th className="text-left px-5 py-2.5 text-xs font-semibold" style={{ color: '#9a918a' }}>Operadora</th>
+                    <th className="text-right px-5 py-2.5 text-xs font-semibold" style={{ color: '#9a918a' }}>Bruto Previsto</th>
+                    <th className="text-right px-5 py-2.5 text-xs font-semibold" style={{ color: '#9a918a' }}>Lucro Previsto</th>
+                    <th className="text-right px-5 py-2.5 text-xs font-semibold" style={{ color: '#9a918a' }}>Lucro Realizado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {porOperadora.map((v, i) => (
+                    <TRow key={i} label={v.nome} bruto={v.bruto} lucroProj={v.lucroProj} lucroReal={v.lucroReal} />
+                  ))}
+                  <TRow label="Total" bruto={brutoTotal} lucroProj={lucroProjecaoTotal} lucroReal={lucroRealizadoTotal} bold />
+                </tbody>
+              </table>
+            </div>
+          )}
+
           {/* Resultado final (com despesas e contas) */}
           {temExtras && (
             <div className="bg-white rounded-2xl p-5" style={{ border: '1px solid #e8e4dd' }}>
@@ -307,7 +377,7 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas, vendas 
             </div>
           )}
 
-          <p className="text-xs text-center" style={{ color: '#9a918a' }}>
+          <p className="print:hidden text-xs text-center" style={{ color: '#9a918a' }}>
             Bruto: total da operadora. Lucro previsto: sua parte (após repasse), comissões com data prevista no período.
             Realizado: parcelas marcadas como recebidas.
           </p>

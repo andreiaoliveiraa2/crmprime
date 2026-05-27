@@ -82,7 +82,7 @@ export default function Sidebar({ perfil, nome }: Props) {
       )}
 
       <aside
-        className={`fixed top-0 left-0 h-full w-64 z-40 flex flex-col transition-transform duration-200 ${aberto ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}
+        className={`print:hidden fixed top-0 left-0 h-full w-64 z-40 flex flex-col transition-transform duration-200 ${aberto ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}
         style={{ backgroundColor: '#2d1f4e' }}
       >
         <div className="px-6 py-5 flex items-center" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>

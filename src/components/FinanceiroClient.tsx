@@ -51,7 +51,7 @@ export default function FinanceiroClient({ vendas, comissoes, contas, regras, cn
       </div>
 
       {/* Tab Bar */}
-      <div className="overflow-x-auto mb-6">
+      <div className="print:hidden overflow-x-auto mb-6">
         <div className="flex border-b border-gray-200 min-w-max">
           {ABAS.map((item) => {
             const active = aba === item.id
