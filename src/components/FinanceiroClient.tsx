@@ -7,8 +7,9 @@ import ProducaoTab from './ProducaoTab'
 import ComissoesTab from './ComissoesTab'
 import ContasTab from './ContasTab'
 import RelatoriosTab from './RelatoriosTab'
+import ResultadoTab from './ResultadoTab'
 
-type Aba = 'producao' | 'comissoes' | 'contas' | 'relatorios'
+type Aba = 'producao' | 'comissoes' | 'contas' | 'relatorios' | 'resultado'
 
 interface Props {
   vendas: Venda[]
@@ -26,6 +27,7 @@ const ABAS: { id: Aba; label: string }[] = [
   { id: 'comissoes', label: 'Comissões' },
   { id: 'contas', label: 'Contas' },
   { id: 'relatorios', label: 'Relatórios' },
+  { id: 'resultado', label: 'Resultado' },
 ]
 
 export default function FinanceiroClient({ vendas, comissoes, contas, regras, cnpjs, operadoras, despesasFixas, categorias }: Props) {
@@ -97,6 +99,9 @@ export default function FinanceiroClient({ vendas, comissoes, contas, regras, cn
       )}
       {aba === 'relatorios' && (
         <RelatoriosTab vendas={vendas} comissoes={comissoes} contas={contas} cnpjs={cnpjs} operadoras={operadoras} />
+      )}
+      {aba === 'resultado' && (
+        <ResultadoTab comissoes={comissoes} contas={contas} despesasFixas={despesasFixas} />
       )}
 
     </div>
