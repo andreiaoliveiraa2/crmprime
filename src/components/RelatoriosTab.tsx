@@ -354,7 +354,7 @@ export default function RelatoriosTab({ vendas, comissoes, contas, cnpjs, operad
         r.vendedor,
         formatBRL(r.recebido),
         formatBRL(r.pendente),
-        `${r.percentual.toFixed(1)}%`,
+        formatBRL(r.recebido + r.pendente),
       ]),
     [comissaoPorVendedor]
   )
@@ -440,7 +440,7 @@ export default function RelatoriosTab({ vendas, comissoes, contas, cnpjs, operad
       Vendedor: r.vendedor,
       'Valor Recebido': r.recebido,
       'Valor Pendente': r.pendente,
-      '% sobre Produção': `${r.percentual.toFixed(1)}%`,
+      Total: r.recebido + r.pendente,
     }))
     exportExcel(`comissao_vendedor_${periodoLabel()}`, rows)
   }
@@ -448,7 +448,7 @@ export default function RelatoriosTab({ vendas, comissoes, contas, cnpjs, operad
     exportPDF(
       `Comissão por Vendedor — ${periodoLabel()}`,
       `comissao_vendedor_${periodoLabel()}`,
-      ['Vendedor', 'Valor Recebido', 'Valor Pendente', '% sobre Produção'],
+      ['Vendedor', 'Valor Recebido', 'Valor Pendente', 'Total'],
       comissaoTableRows
     )
   }
@@ -457,16 +457,16 @@ export default function RelatoriosTab({ vendas, comissoes, contas, cnpjs, operad
   function exportRetencaoExcel() {
     const rows = retencaoPorOperadora.map((r) => ({
       Operadora: r.operadora,
-      'Valor Retido': r.total,
+      'Valor Recebido': r.total,
       '% sobre Total': `${r.percentual.toFixed(1)}%`,
     }))
-    exportExcel(`retencao_empresa_${periodoLabel()}`, rows)
+    exportExcel(`comissoes_corretora_${periodoLabel()}`, rows)
   }
   function exportRetencaoPDF() {
     exportPDF(
-      `Retenção da Empresa — ${periodoLabel()}`,
-      `retencao_empresa_${periodoLabel()}`,
-      ['Operadora', 'Valor Retido', '% sobre Total'],
+      `Comissões Recebidas da Corretora — ${periodoLabel()}`,
+      `comissoes_corretora_${periodoLabel()}`,
+      ['Operadora', 'Valor Recebido', '% sobre Total'],
       retencaoTableRows
     )
   }
@@ -670,28 +670,28 @@ export default function RelatoriosTab({ vendas, comissoes, contas, cnpjs, operad
         onPDF={exportComissaoPDF}
       >
         <DataTable
-          headers={['Vendedor', 'Valor Recebido', 'Valor Pendente', '% sobre Produção']}
+          headers={['Vendedor', 'Valor Recebido', 'Valor Pendente', 'Total']}
           rows={comissaoTableRows}
         />
       </ReportCard>
 
-      {/* Report 3: Retenção da Empresa */}
+      {/* Report 3: Comissões Recebidas da Corretora */}
       <ReportCard
-        title="Retenção da Empresa"
-        description="Valores retidos pela empresa agrupados por operadora (comissões recebidas no período)."
+        title="Comissões Recebidas da Corretora"
+        description="Valores recebidos pela corretora por operadora (parcelas marcadas como recebidas no período)."
         onExcel={exportRetencaoExcel}
         onPDF={exportRetencaoPDF}
       >
         {retencaoPorOperadora.length > 0 && (
           <div className="mb-4">
-            <span className="text-xs" style={{ color: '#9ca3af' }}>Total retido no período</span>
+            <span className="text-xs" style={{ color: '#9ca3af' }}>Total recebido no período</span>
             <p className="text-lg font-bold" style={{ color: '#2d1f4e' }}>
               {formatBRL(totalComissoesEmpresa)}
             </p>
           </div>
         )}
         <DataTable
-          headers={['Operadora', 'Valor Retido', '% sobre Total']}
+          headers={['Operadora', 'Valor Recebido', '% sobre Total']}
           rows={retencaoTableRows}
         />
       </ReportCard>
@@ -725,46 +725,31 @@ export default function RelatoriosTab({ vendas, comissoes, contas, cnpjs, operad
         />
       </ReportCard>
 
-      {/* Report 5: Pendências Financeiras */}
-      <div
-        className="bg-white rounded-xl p-6"
-        style={{ border: '1px solid #e8e4dd' }}
+      {/* Report 5a: Comissões Pendentes */}
+      <ReportCard
+        title="Comissões Pendentes no Período"
+        description="Parcelas com recebimento previsto no período ainda não baixadas."
+        onExcel={exportPendComissoesExcel}
+        onPDF={exportPendComissoesPDF}
       >
-        <h2 className="text-base font-semibold mb-1" style={{ color: '#2d1f4e' }}>
-          Pendências Financeiras
-        </h2>
-        <p className="text-xs mb-5" style={{ color: '#9ca3af' }}>
-          Comissões pendentes no período e contas vencidas em aberto.
-        </p>
+        <DataTable
+          headers={['Cliente', 'Operadora', 'Tipo', 'Valor Corretora', 'Valor Vendedor', 'Data Prevista']}
+          rows={pendComissoesRows}
+        />
+      </ReportCard>
 
-        {/* Sub-section: Comissões Pendentes */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between gap-4 mb-3">
-            <h3 className="text-sm font-semibold" style={{ color: '#2d1f4e' }}>
-              Comissões Pendentes
-            </h3>
-            <ExportButtons onExcel={exportPendComissoesExcel} onPDF={exportPendComissoesPDF} />
-          </div>
-          <DataTable
-            headers={['Cliente', 'Operadora', 'Tipo', 'Valor Empresa', 'Valor Vendedor', 'Data Prevista']}
-            rows={pendComissoesRows}
-          />
-        </div>
-
-        {/* Sub-section: Contas Vencidas */}
-        <div>
-          <div className="flex items-center justify-between gap-4 mb-3">
-            <h3 className="text-sm font-semibold" style={{ color: '#2d1f4e' }}>
-              Contas Vencidas
-            </h3>
-            <ExportButtons onExcel={exportContasVencidasExcel} onPDF={exportContasVencidasPDF} />
-          </div>
-          <DataTable
-            headers={['Descrição', 'Valor', 'Tipo', 'Vencimento']}
-            rows={contasVencidasRows}
-          />
-        </div>
-      </div>
+      {/* Report 5b: Contas Vencidas */}
+      <ReportCard
+        title="Contas Vencidas"
+        description="Contas a receber e a pagar com vencimento passado ainda em aberto (independente do período selecionado)."
+        onExcel={exportContasVencidasExcel}
+        onPDF={exportContasVencidasPDF}
+      >
+        <DataTable
+          headers={['Descrição', 'Valor', 'Tipo', 'Vencimento']}
+          rows={contasVencidasRows}
+        />
+      </ReportCard>
     </div>
   )
 }
