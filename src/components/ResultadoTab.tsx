@@ -54,10 +54,9 @@ function TRow({ label, bruto, lucroProj, lucroReal, bold }: {
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 function monthsBetween(start: string, end: string): number {
-  const ms = new Date(start).getTime()
-  const me = new Date(end).getTime()
-  const days = Math.round((me - ms) / 86400000) + 1
-  return days / 30.44
+  const [sy, sm] = start.split('-').map(Number)
+  const [ey, em] = end.split('-').map(Number)
+  return Math.max(1, (ey - sy) * 12 + (em - sm) + 1)
 }
 
 export default function ResultadoTab({ comissoes, contas, despesasFixas, vendas }: Props) {
@@ -184,15 +183,22 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas, vendas 
 
   const contasPagarMes = useMemo(() => {
     if (!hasRange) return 0
-    // Exclude contas geradas a partir de despesasFixas (despesa_fixa_id != null) to avoid double-counting
-    return contas.filter(c => c.tipo === 'pagar' && c.status === 'Pendente' && c.despesa_fixa_id == null && inRange(c.vencimento, start, end))
+    return contas.filter(c => c.tipo === 'pagar' && c.status === 'Pendente' && inRange(c.vencimento, start, end))
       .reduce((s, c) => s + c.valor, 0)
   }, [contas, start, end, hasRange])
 
-  const resultadoFinal = lucroProjecaoTotal + lucroRealizadoTotal + contasReceberMes - despesasFixasTotal - contasPagarMes
+  // despesasFixasTotal só entra no resultado quando não há contas geradas para o período
+  // (evita dupla contagem no mês corrente e preserva projeção para meses futuros)
+  const temContasFixasNoPeriodo = useMemo(() =>
+    hasRange && contas.some(c => c.despesa_fixa_id != null && inRange(c.vencimento, start, end)),
+    [contas, start, end, hasRange]
+  )
+  const despesasProjetadas = temContasFixasNoPeriodo ? 0 : despesasFixasTotal
+
+  const resultadoFinal = lucroProjecaoTotal + lucroRealizadoTotal + contasReceberMes - contasPagarMes - despesasProjetadas
   const positivo = resultadoFinal >= 0
 
-  const temExtras = despesasFixasTotal > 0 || contasPagarMes > 0 || contasReceberMes > 0
+  const temExtras = despesasProjetadas > 0 || contasPagarMes > 0 || contasReceberMes > 0
 
   return (
     <div className="space-y-5">
@@ -367,12 +373,12 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas, vendas 
                     <span className="font-semibold" style={{ color: '#b91c1c' }}>− {formatBRL(contasPagarMes)}</span>
                   </div>
                 )}
-                {despesasFixasTotal > 0 && (
+                {despesasProjetadas > 0 && (
                   <div className="flex items-center justify-between text-sm">
                     <span style={{ color: '#5a4e3c' }}>
-                      Despesas fixas{numMeses > 1 ? ` (${numMeses.toFixed(1)} meses)` : ''}
+                      Despesas fixas projetadas{numMeses > 1 ? ` (${numMeses} meses)` : ''}
                     </span>
-                    <span className="font-semibold" style={{ color: '#b91c1c' }}>− {formatBRL(despesasFixasTotal)}</span>
+                    <span className="font-semibold" style={{ color: '#b91c1c' }}>− {formatBRL(despesasProjetadas)}</span>
                   </div>
                 )}
                 <div className="flex items-center justify-between pt-3" style={{ borderTop: '2px solid #e8e4dd' }}>

@@ -132,18 +132,31 @@ export default function ImportarVitalicioClient() {
     setSalvando(true)
     setErro('')
 
-    // Busca contratos já existentes para não duplicar
+    // Busca contratos e CPFs já existentes para não duplicar
     const contratos = clientes.map(c => c.numero_contrato).filter(Boolean) as string[]
-    const { data: jaExistem } = contratos.length > 0
-      ? await supabase.from('clientes').select('numero_contrato').in('numero_contrato', contratos)
-      : { data: [] }
-    const contratosDuplicados = new Set((jaExistem ?? []).map((c: { numero_contrato: string }) => c.numero_contrato))
+    const cpfsSemContrato = clientes.filter(c => !c.numero_contrato && c.cpf).map(c => c.cpf!)
 
-    const paraInserir = clientes.filter(c => !c.numero_contrato || !contratosDuplicados.has(c.numero_contrato))
+    const [{ data: jaExistemContrato }, { data: jaExistemCpf }] = await Promise.all([
+      contratos.length > 0
+        ? supabase.from('clientes').select('numero_contrato').in('numero_contrato', contratos)
+        : { data: [] },
+      cpfsSemContrato.length > 0
+        ? supabase.from('clientes').select('cpf').in('cpf', cpfsSemContrato)
+        : { data: [] },
+    ])
+    const contratosDuplicados = new Set((jaExistemContrato ?? []).map((c: { numero_contrato: string }) => c.numero_contrato))
+    const cpfsDuplicados = new Set((jaExistemCpf ?? []).map((c: { cpf: string }) => c.cpf))
+
+    const paraInserir = clientes.filter(c => {
+      if (c.numero_contrato) return !contratosDuplicados.has(c.numero_contrato)
+      if (c.cpf) return !cpfsDuplicados.has(c.cpf)
+      return true // sem identificador único — inserido sem verificação de duplicata
+    })
     const pulados = clientes.length - paraInserir.length
+    const semIdentificador = paraInserir.filter(c => !c.numero_contrato && !c.cpf).length
 
     if (paraInserir.length === 0) {
-      setErro(`Todos os ${clientes.length} clientes já existem no sistema (verificado pelo número de contrato).`)
+      setErro(`Todos os ${clientes.length} clientes já existem no sistema (verificado por contrato e CPF).`)
       setSalvando(false)
       return
     }
@@ -178,7 +191,10 @@ export default function ImportarVitalicioClient() {
     if (error) { setErro('Erro ao importar: ' + error.message); setSalvando(false); return }
 
     setImportados(paraInserir.length)
-    if (pulados > 0) setErro(`${pulados} cliente(s) já existiam e foram pulados.`)
+    const avisos: string[] = []
+    if (pulados > 0) avisos.push(`${pulados} cliente(s) já existiam e foram pulados.`)
+    if (semIdentificador > 0) avisos.push(`${semIdentificador} cliente(s) sem contrato nem CPF foram importados sem verificação de duplicata.`)
+    if (avisos.length > 0) setErro(avisos.join(' '))
     setEtapa(3)
     setSalvando(false)
   }

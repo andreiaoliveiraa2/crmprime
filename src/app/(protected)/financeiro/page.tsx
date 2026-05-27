@@ -19,8 +19,8 @@ export default async function FinanceiroPage() {
     { data: despesasFixasRaw },
     { data: categoriasRaw },
   ] = await Promise.all([
-    supabase.from('vendas').select('*').or('origem.eq.manual,cliente_id.not.is.null').order('criado_em', { ascending: false }),
-    supabase.from('comissoes').select('*').order('criado_em', { ascending: false }),
+    supabase.from('vendas').select('*').or('origem.eq.manual,cliente_id.not.is.null').order('criado_em', { ascending: false }).limit(5000),
+    supabase.from('comissoes').select('*').order('criado_em', { ascending: false }).limit(5000),
     supabase.from('regras_comissao').select('*'),
     supabase.from('cnpjs_recebimento').select('*').order('nome'),
     supabase.from('operadoras').select('id, nome').order('nome'),
@@ -117,7 +117,12 @@ export default async function FinanceiroPage() {
       parcela_numero: null,
       total_parcelas: null,
     }))
-    await supabase.from('contas').insert(novasContasVitalicio)
+    // ON CONFLICT: unique index idx_contas_vitalicio_mes_unico garante idempotência
+    // em caso de requisições simultâneas (race condition)
+    const { error: insertErr } = await supabase.from('contas').insert(novasContasVitalicio)
+    if (insertErr && !insertErr.code?.includes('23505')) {
+      console.error('Erro ao gerar contas vitalício:', insertErr)
+    }
   }
 
   // ── Busca contas (inclui as recém-geradas) ───────────────────────────────
