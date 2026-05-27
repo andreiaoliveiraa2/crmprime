@@ -96,26 +96,28 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas }: Props
   const numMeses = useMemo(() => hasRange ? monthsBetween(start, end) : 1, [start, end, hasRange])
 
   // ── Entradas ────────────────────────────────────────────────────────────────
+  // Projeção: todos os pendentes (sem filtro de data — comissões futuras já existem)
+  // Realizado: apenas o que foi recebido/pago no período selecionado
 
   const comissoesCorretora = useMemo(() => {
-    if (!hasRange) return 0
     if (visao === 'projecao') {
       return comissoes
-        .filter(c => c.status_empresa === 'Pendente' && inRange(c.data_prevista, start, end))
+        .filter(c => c.status_empresa === 'Pendente')
         .reduce((s, c) => s + (c.valor_empresa ?? 0), 0)
     }
+    if (!hasRange) return 0
     return comissoes
       .filter(c => c.status_empresa === 'Recebido' && inRange(c.data_recebida_empresa, start, end))
       .reduce((s, c) => s + (c.valor_empresa ?? 0), 0)
   }, [comissoes, start, end, hasRange, visao])
 
   const contasReceber = useMemo(() => {
-    if (!hasRange) return 0
     if (visao === 'projecao') {
       return contas
-        .filter(c => c.tipo === 'receber' && c.status === 'Pendente' && inRange(c.vencimento, start, end))
+        .filter(c => c.tipo === 'receber' && c.status === 'Pendente')
         .reduce((s, c) => s + c.valor, 0)
     }
+    if (!hasRange) return 0
     return contas
       .filter(c => c.tipo === 'receber' && c.status === 'Pago' && inRange(c.vencimento, start, end))
       .reduce((s, c) => s + c.valor, 0)
@@ -126,24 +128,24 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas }: Props
   // ── Saídas ──────────────────────────────────────────────────────────────────
 
   const comissoesVendedores = useMemo(() => {
-    if (!hasRange) return 0
     if (visao === 'projecao') {
       return comissoes
-        .filter(c => c.status_vendedor === 'Pendente' && c.status_empresa !== 'Direto' && inRange(c.data_prevista, start, end))
+        .filter(c => c.status_vendedor === 'Pendente' && c.status_empresa !== 'Direto')
         .reduce((s, c) => s + (c.valor_vendedor ?? 0), 0)
     }
+    if (!hasRange) return 0
     return comissoes
       .filter(c => c.status_vendedor === 'Recebido' && inRange(c.data_recebida_vendedor, start, end))
       .reduce((s, c) => s + (c.valor_vendedor ?? 0), 0)
   }, [comissoes, start, end, hasRange, visao])
 
   const contasPagar = useMemo(() => {
-    if (!hasRange) return 0
     if (visao === 'projecao') {
       return contas
-        .filter(c => c.tipo === 'pagar' && c.status === 'Pendente' && inRange(c.vencimento, start, end))
+        .filter(c => c.tipo === 'pagar' && c.status === 'Pendente')
         .reduce((s, c) => s + c.valor, 0)
     }
+    if (!hasRange) return 0
     return contas
       .filter(c => c.tipo === 'pagar' && c.status === 'Pago' && inRange(c.vencimento, start, end))
       .reduce((s, c) => s + c.valor, 0)
@@ -165,6 +167,9 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas }: Props
     ? new Date(anoMes + '-15').toLocaleString('pt-BR', { month: 'long', year: 'numeric' })
     : start && end ? `${start.split('-').reverse().join('/')} – ${end.split('-').reverse().join('/')}` : '—'
 
+  // Projeção sempre mostra; Realizado só se tiver período selecionado
+  const podeExibir = visao === 'projecao' || hasRange
+
   return (
     <div className="space-y-5">
 
@@ -172,35 +177,39 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas }: Props
       <div className="bg-white rounded-2xl p-5" style={{ border: '1px solid #e8e4dd' }}>
         <div className="flex flex-wrap items-center gap-3">
 
-          {/* Modo */}
-          <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid #e8e4dd' }}>
-            {(['mes', 'periodo'] as const).map(m => (
-              <button key={m} onClick={() => setModo(m)}
-                className="px-4 py-2 text-sm font-medium transition-colors"
-                style={{ backgroundColor: modo === m ? '#2d1f4e' : '#fff', color: modo === m ? '#fff' : '#9a918a' }}>
-                {m === 'mes' ? 'Mês' : 'Período'}
-              </button>
-            ))}
-          </div>
+          {/* Modo — só relevante para Realizado */}
+          {visao === 'realizado' && (
+            <>
+              <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid #e8e4dd' }}>
+                {(['mes', 'periodo'] as const).map(m => (
+                  <button key={m} onClick={() => setModo(m)}
+                    className="px-4 py-2 text-sm font-medium transition-colors"
+                    style={{ backgroundColor: modo === m ? '#2d1f4e' : '#fff', color: modo === m ? '#fff' : '#9a918a' }}>
+                    {m === 'mes' ? 'Mês' : 'Período'}
+                  </button>
+                ))}
+              </div>
 
-          {modo === 'mes' ? (
-            <input type="month" value={anoMes} onChange={e => setAnoMes(e.target.value)}
-              className="border rounded-xl px-3 py-2 text-sm focus:outline-none"
-              style={{ borderColor: '#e8e4dd', color: '#2d1f4e' }} />
-          ) : (
-            <div className="flex items-center gap-2 flex-wrap">
-              <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)}
-                className="border rounded-xl px-3 py-2 text-sm focus:outline-none"
-                style={{ borderColor: '#e8e4dd', color: '#2d1f4e' }} />
-              <span className="text-sm" style={{ color: '#9a918a' }}>até</span>
-              <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)}
-                className="border rounded-xl px-3 py-2 text-sm focus:outline-none"
-                style={{ borderColor: '#e8e4dd', color: '#2d1f4e' }} />
-            </div>
+              {modo === 'mes' ? (
+                <input type="month" value={anoMes} onChange={e => setAnoMes(e.target.value)}
+                  className="border rounded-xl px-3 py-2 text-sm focus:outline-none"
+                  style={{ borderColor: '#e8e4dd', color: '#2d1f4e' }} />
+              ) : (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)}
+                    className="border rounded-xl px-3 py-2 text-sm focus:outline-none"
+                    style={{ borderColor: '#e8e4dd', color: '#2d1f4e' }} />
+                  <span className="text-sm" style={{ color: '#9a918a' }}>até</span>
+                  <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)}
+                    className="border rounded-xl px-3 py-2 text-sm focus:outline-none"
+                    style={{ borderColor: '#e8e4dd', color: '#2d1f4e' }} />
+                </div>
+              )}
+            </>
           )}
 
           {/* Visão */}
-          <div className="flex rounded-xl overflow-hidden ml-auto" style={{ border: '1px solid #e8e4dd' }}>
+          <div className={`flex rounded-xl overflow-hidden ${visao === 'projecao' ? '' : 'ml-auto'}`} style={{ border: '1px solid #e8e4dd' }}>
             {([['projecao', 'Projeção'], ['realizado', 'Realizado']] as const).map(([v, label]) => (
               <button key={v} onClick={() => setVisao(v)}
                 className="px-4 py-2 text-sm font-medium transition-colors"
@@ -212,7 +221,7 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas }: Props
         </div>
       </div>
 
-      {!hasRange ? (
+      {!podeExibir ? (
         <p className="text-sm text-center py-8" style={{ color: '#9a918a' }}>Selecione um período para ver o resultado.</p>
       ) : (
         <>
@@ -224,7 +233,9 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas }: Props
                 <p className="text-xs font-semibold" style={{ color: '#9a918a' }}>Entradas</p>
               </div>
               <p className="text-xl font-bold" style={{ color: '#15803d' }}>{formatBRL(totalEntradas)}</p>
-              <p className="text-xs mt-0.5" style={{ color: '#9a918a' }}>{labelPeriodo}</p>
+              <p className="text-xs mt-0.5" style={{ color: '#9a918a' }}>
+                {visao === 'projecao' ? 'Total pendente' : labelPeriodo}
+              </p>
             </div>
 
             <div className="bg-white rounded-2xl p-4" style={{ border: '1px solid #e8e4dd' }}>
@@ -233,7 +244,9 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas }: Props
                 <p className="text-xs font-semibold" style={{ color: '#9a918a' }}>Saídas</p>
               </div>
               <p className="text-xl font-bold" style={{ color: '#b91c1c' }}>{formatBRL(totalSaidas)}</p>
-              <p className="text-xs mt-0.5" style={{ color: '#9a918a' }}>{labelPeriodo}</p>
+              <p className="text-xs mt-0.5" style={{ color: '#9a918a' }}>
+                {visao === 'projecao' ? 'Total pendente' : labelPeriodo}
+              </p>
             </div>
 
             <div className="rounded-2xl p-4" style={{
@@ -281,12 +294,12 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas }: Props
 
           {visao === 'projecao' && (
             <p className="text-xs text-center" style={{ color: '#9a918a' }}>
-              Projeção: inclui valores pendentes previstos para o período. Despesas fixas calculadas como estimativa mensal.
+              Projeção: todos os valores pendentes (comissões e contas a receber/pagar) + despesas fixas mensais.
             </p>
           )}
           {visao === 'realizado' && (
             <p className="text-xs text-center" style={{ color: '#9a918a' }}>
-              Realizado: apenas valores confirmados como recebidos/pagos no período. Despesas fixas são estimativa mensal (não têm status de pagamento).
+              Realizado: apenas valores confirmados como recebidos/pagos no período. Despesas fixas são estimativa mensal.
             </p>
           )}
         </>
