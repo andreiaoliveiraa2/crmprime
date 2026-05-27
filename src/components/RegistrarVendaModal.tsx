@@ -202,21 +202,10 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
           nivelVendedor = vd?.nivel ?? null
         }
 
-        let totalRepasse = 0
-        if (nivelVendedor) {
-          const { data: rp } = await supabase
-            .from('repasse_grupo_vendedor')
-            .select('percentual')
-            .eq('regra_id', regra.id)
-            .eq('nivel', nivelVendedor)
-            .maybeSingle()
-          totalRepasse = rp?.percentual ?? 0
-        }
-
-        // Split empresa/pool por parcela
+        // Split empresa/vendedor por parcela
         const { data: parcelas } = await supabase
           .from('parcelas_regra')
-          .select('numero_parcela, percentual_empresa')
+          .select('numero_parcela, percentual_empresa, percentual_vendedor')
           .eq('regra_id', regra.id)
           .order('numero_parcela')
         const parcelasArr = parcelas ?? []
@@ -252,10 +241,11 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
 
         const baseDate = dataVencimento || dataVenda
 
-        // Gerar parcelas com distribuição de repasse por nível
+        // Gerar parcelas
         for (let i = 1; i <= regra.num_parcelas; i++) {
           const valorBruto = valorNum * (regra.percentual_total / 100) / regra.num_parcelas
-          const repasseDestaParcela = Math.max(0, Math.min(100, totalRepasse - (i - 1) * 100))
+          const parcelaRegra = parcelasArr.find(p => p.numero_parcela === i)
+          const pctVendedor = parcelaRegra?.percentual_vendedor ?? 50
 
           let valorEmpresa: number
           let statusEmpresa: 'Pendente' | 'Direto'
@@ -266,14 +256,13 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
             statusEmpresa = 'Direto'
             dataPrevista = baseDate
           } else if (regra.adesao_direta) {
-            valorEmpresa = valorBruto * (1 - repasseDestaParcela / 100)
+            valorEmpresa = valorBruto * (1 - pctVendedor / 100)
             statusEmpresa = 'Pendente'
             const [y, m] = baseDate.split('-').map(Number)
             const mesParc = new Date(y, m - 1 + (i - 1), 1)
             const mesStr = `${mesParc.getFullYear()}-${String(mesParc.getMonth() + 1).padStart(2, '0')}-01`
             dataPrevista = quintoDialUtilMesSeguinte(mesStr)
           } else {
-            const parcelaRegra = parcelasArr.find(p => p.numero_parcela === i)
             const pctEmpresa = parcelaRegra?.percentual_empresa ?? 50
             valorEmpresa = valorBruto * (pctEmpresa / 100)
             statusEmpresa = 'Pendente'
@@ -282,7 +271,7 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
             dataPrevista = dataPrev.toISOString().split('T')[0]
           }
 
-          let valorVendedorParcela = valorBruto * (repasseDestaParcela / 100)
+          let valorVendedorParcela = valorBruto * (pctVendedor / 100)
           if (regra.desconta_imposto && regra.percentual_imposto > 0 && valorVendedorParcela > 0) {
             valorVendedorParcela = valorVendedorParcela * (1 - regra.percentual_imposto / 100)
           }

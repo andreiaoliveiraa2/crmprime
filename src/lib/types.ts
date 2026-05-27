@@ -91,7 +91,7 @@ export interface RegraComCnpj {
   percentual_imposto: number
   adesao_direta: boolean
   ativo: boolean
-  repasse: { nivel: string; percentual: number }[]
+  parcelas_regra: { numero_parcela: number; percentual_empresa: number; percentual_vendedor: number }[]
 }
 
 export interface Vendedor {

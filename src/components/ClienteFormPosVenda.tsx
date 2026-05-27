@@ -102,35 +102,13 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
 
     if (!regra) return
 
-    // Buscar split empresa/pool por parcela
+    // Buscar split empresa/vendedor por parcela
     const { data: parcelas } = await supabase
       .from('parcelas_regra')
-      .select('numero_parcela, percentual_empresa')
+      .select('numero_parcela, percentual_empresa, percentual_vendedor')
       .eq('regra_id', regra.id)
       .order('numero_parcela')
     const parcelasArr = parcelas ?? []
-
-    // Descobrir o nível do vendedor e o % de repasse total configurado
-    let nivelVendedor: string | null = null
-    if (payloadLocal.vendedor) {
-      const { data: vd } = await supabase
-        .from('vendedores')
-        .select('nivel')
-        .eq('nome', payloadLocal.vendedor)
-        .maybeSingle()
-      nivelVendedor = vd?.nivel ?? null
-    }
-
-    let totalRepasse = 0
-    if (nivelVendedor && regra) {
-      const { data: rp } = await supabase
-        .from('repasse_grupo_vendedor')
-        .select('percentual')
-        .eq('regra_id', regra.id)
-        .eq('nivel', nivelVendedor)
-        .maybeSingle()
-      totalRepasse = Number(rp?.percentual ?? 0)
-    }
 
     const comissoes: object[] = []
 
@@ -138,7 +116,8 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
 
     for (let i = 1; i <= regra.num_parcelas; i++) {
       const valorBruto = payloadLocal.valor_plano * (regra.percentual_total / 100) / regra.num_parcelas
-      const repasseDestaParcela = Math.max(0, Math.min(100, totalRepasse - (i - 1) * 100))
+      const parcelaRegra = parcelasArr.find(p => p.numero_parcela === i)
+      const pctVendedor = parcelaRegra?.percentual_vendedor ?? 50
 
       let valorEmpresa: number
       let statusEmpresa: 'Pendente' | 'Direto'
@@ -151,7 +130,7 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
         dataPrevista = baseDate
       } else if (regra.adesao_direta) {
         // Parcelas 2+ odonto: empresa recebe o que o vendedor não pega; data = 5º dia útil do mês seguinte
-        valorEmpresa = valorBruto * (1 - repasseDestaParcela / 100)
+        valorEmpresa = valorBruto * (1 - pctVendedor / 100)
         statusEmpresa = 'Pendente'
         const [y, m] = baseDate.split('-').map(Number)
         const mesParc = new Date(y, m - 1 + (i - 1), 1)
@@ -159,7 +138,6 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
         dataPrevista = quintoDialUtilMesSeguinte(mesStr)
       } else {
         // Regra normal
-        const parcelaRegra = parcelasArr.find(p => p.numero_parcela === i)
         const pctEmpresa = parcelaRegra?.percentual_empresa ?? 50
         valorEmpresa = valorBruto * (pctEmpresa / 100)
         statusEmpresa = 'Pendente'
@@ -168,7 +146,7 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
         dataPrevista = d.toISOString().split('T')[0]
       }
 
-      let valorVendedor = valorBruto * (repasseDestaParcela / 100)
+      let valorVendedor = valorBruto * (pctVendedor / 100)
       if (regra.desconta_imposto && regra.percentual_imposto > 0 && valorVendedor > 0) {
         valorVendedor = valorVendedor * (1 - regra.percentual_imposto / 100)
       }

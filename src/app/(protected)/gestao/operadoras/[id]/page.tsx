@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import OperadoraForm from '@/components/OperadoraForm'
 import Link from 'next/link'
-import { CnpjRecebimento, RegraComCnpj, NivelVendedor } from '@/lib/types'
+import { CnpjRecebimento, RegraComCnpj } from '@/lib/types'
 
 export default async function EditarOperadoraPage({
   params,
@@ -29,13 +29,12 @@ export default async function EditarOperadoraPage({
 
   const regraIds = (regrasRaw ?? []).map((r: { id: string }) => r.id)
 
-  // Carregar repassos de todas essas regras em paralelo com cnpjs disponíveis
-  const [{ data: repasseTodos }, { data: cnpjsRaw }, { data: niveisRaw }] = await Promise.all([
+  // Carregar parcelas e cnpjs disponíveis
+  const [{ data: parcelasTodasRaw }, { data: cnpjsRaw }] = await Promise.all([
     regraIds.length > 0
-      ? supabase.from('repasse_grupo_vendedor').select('*').in('regra_id', regraIds)
+      ? supabase.from('parcelas_regra').select('*').in('regra_id', regraIds).order('numero_parcela')
       : Promise.resolve({ data: [] }),
     supabase.from('cnpjs_recebimento').select('*').eq('status', 'Ativo').order('nome'),
-    supabase.from('niveis_vendedor').select('*').eq('ativo', true).order('nome'),
   ])
 
   const cnpjsDisponiveis = (cnpjsRaw ?? []) as CnpjRecebimento[]
@@ -51,9 +50,9 @@ export default async function EditarOperadoraPage({
     percentual_imposto: (r.percentual_imposto as number) ?? 0,
     adesao_direta: (r.adesao_direta as boolean) ?? false,
     ativo: (r.ativo as boolean) ?? true,
-    repasse: ((repasseTodos ?? []) as Array<{ regra_id: string; nivel: string; percentual: number }>)
-      .filter(rp => rp.regra_id === r.id)
-      .map(rp => ({ nivel: rp.nivel, percentual: rp.percentual })),
+    parcelas_regra: ((parcelasTodasRaw ?? []) as Array<{ regra_id: string; numero_parcela: number; percentual_empresa: number; percentual_vendedor: number }>)
+      .filter(p => p.regra_id === r.id)
+      .map(p => ({ numero_parcela: p.numero_parcela, percentual_empresa: p.percentual_empresa, percentual_vendedor: p.percentual_vendedor })),
   }))
 
   return (
@@ -72,7 +71,6 @@ export default async function EditarOperadoraPage({
         operadora={operadora}
         cnpjsDisponiveis={cnpjsDisponiveis}
         regrasExistentes={regrasExistentes}
-        niveis={(niveisRaw ?? []) as NivelVendedor[]}
       />
     </div>
   )

@@ -87,19 +87,19 @@ export default function ComissoesTab({ comissoes, vendas, regras, onAtualizar, c
     return [...vendedorSet].sort()
   }, [comissoes, vendaMap])
 
-  // Summary cards
+  // Summary cards — respeitam o filtro de data aplicado na tabela
   const aReceberCorretora = useMemo(() =>
-    comissoes
-      .filter(c => c.status_empresa === 'Pendente')
+    comissoesComVenda
+      .filter(c => c.status_empresa === 'Pendente' && c.data_prevista >= dataInicio && c.data_prevista <= dataFim)
       .reduce((sum, c) => sum + (c.valor_empresa ?? 0), 0),
-    [comissoes]
+    [comissoesComVenda, dataInicio, dataFim]
   )
 
   const aPagarVendedores = useMemo(() =>
-    comissoes
-      .filter(c => c.status_vendedor === 'Pendente')
+    comissoesComVenda
+      .filter(c => c.status_vendedor === 'Pendente' && c.data_prevista >= dataInicio && c.data_prevista <= dataFim)
       .reduce((sum, c) => sum + (c.valor_vendedor ?? 0), 0),
-    [comissoes]
+    [comissoesComVenda, dataInicio, dataFim]
   )
 
   // Filtered commissions

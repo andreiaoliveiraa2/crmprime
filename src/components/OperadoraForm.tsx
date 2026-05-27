@@ -5,7 +5,12 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { Operadora, CnpjRecebimento, RegraComCnpj, NivelVendedor } from '@/lib/types'
+import { Operadora, CnpjRecebimento, RegraComCnpj } from '@/lib/types'
+
+interface ParcelaTab {
+  percentual_empresa: string
+  percentual_vendedor: string
+}
 
 interface CnpjTab {
   key: string
@@ -19,14 +24,17 @@ interface CnpjTab {
   adesaoDireta: boolean
   temVitalicio: boolean
   percentualVitalicio: string
-  repassePorNivel: Record<string, string>
+  parcelas: ParcelaTab[]
+}
+
+function buildParcelas(n: number, existing: ParcelaTab[]): ParcelaTab[] {
+  return Array.from({ length: n }, (_, i) => existing[i] ?? { percentual_empresa: '50', percentual_vendedor: '50' })
 }
 
 interface Props {
   operadora?: Operadora
   cnpjsDisponiveis: CnpjRecebimento[]
   regrasExistentes?: RegraComCnpj[]
-  niveis: NivelVendedor[]
 }
 
 const inputCls = 'w-full border rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 transition-shadow'
@@ -37,6 +45,10 @@ const sectionTitleCls = 'text-sm font-bold mb-4 pb-2 border-b'
 const sectionTitleStyle = { color: '#2d1f4e', borderColor: '#e8e4dd' }
 
 function regraParaTab(r: RegraComCnpj): CnpjTab {
+  const n = r.num_parcelas ?? 1
+  const existingParcelas = (r.parcelas_regra ?? [])
+    .sort((a, b) => a.numero_parcela - b.numero_parcela)
+    .map(p => ({ percentual_empresa: String(p.percentual_empresa), percentual_vendedor: String(p.percentual_vendedor) }))
   return {
     key: r.cnpjId,
     cnpjId: r.cnpjId,
@@ -49,13 +61,11 @@ function regraParaTab(r: RegraComCnpj): CnpjTab {
     adesaoDireta: r.adesao_direta ?? false,
     temVitalicio: (r.percentual_vitalicio ?? 0) > 0,
     percentualVitalicio: r.percentual_vitalicio?.toString() ?? '',
-    repassePorNivel: Object.fromEntries(
-      r.repasse.map(rp => [rp.nivel, rp.percentual?.toString() ?? ''])
-    ),
+    parcelas: buildParcelas(n, existingParcelas),
   }
 }
 
-export default function OperadoraForm({ operadora, cnpjsDisponiveis, regrasExistentes = [], niveis }: Props) {
+export default function OperadoraForm({ operadora, cnpjsDisponiveis, regrasExistentes = [] }: Props) {
   const router = useRouter()
   const supabase = createClient()
   const editando = !!operadora
@@ -84,7 +94,17 @@ export default function OperadoraForm({ operadora, cnpjsDisponiveis, regrasExist
   )
 
   function updateTab(index: number, partial: Partial<CnpjTab>) {
-    setTabs(prev => prev.map((t, i) => i === index ? { ...t, ...partial } : t))
+    setTabs(prev => prev.map((t, i) => {
+      if (i !== index) return t
+      const updated = { ...t, ...partial }
+      if (partial.numParcelas !== undefined) {
+        const n = parseInt(partial.numParcelas, 10)
+        if (!isNaN(n) && n >= 1 && n <= 60) {
+          updated.parcelas = buildParcelas(n, t.parcelas)
+        }
+      }
+      return updated
+    }))
   }
 
   async function handleRemoveTab(index: number) {
@@ -116,13 +136,13 @@ export default function OperadoraForm({ operadora, cnpjsDisponiveis, regrasExist
       cnpjNome: cnpj.nome,
       regraId: undefined,
       percentualTotal: '',
-      numParcelas: '12',
+      numParcelas: '3',
       descontaImposto: false,
       percentualImposto: '',
       adesaoDireta: false,
       temVitalicio: false,
       percentualVitalicio: '',
-      repassePorNivel: {},
+      parcelas: buildParcelas(3, []),
     }
     setTabs(prev => [...prev, novaTab])
     setAbaAtiva(tabs.length)
@@ -211,14 +231,15 @@ export default function OperadoraForm({ operadora, cnpjsDisponiveis, regrasExist
         regraId = rd.id
       }
 
-      // Salvar repasse por nível
+      // Salvar distribuição por parcela
       if (regraId) {
-        await supabase.from('repasse_grupo_vendedor').delete().eq('regra_id', regraId)
-        await supabase.from('repasse_grupo_vendedor').insert(
-          niveis.map(n => ({
+        await supabase.from('parcelas_regra').delete().eq('regra_id', regraId)
+        await supabase.from('parcelas_regra').insert(
+          tab.parcelas.map((p, i) => ({
             regra_id: regraId,
-            nivel: n.nome,
-            percentual: parseFloat(tab.repassePorNivel[n.nome] ?? '0') || 0,
+            numero_parcela: i + 1,
+            percentual_empresa: parseFloat(p.percentual_empresa) || 0,
+            percentual_vendedor: parseFloat(p.percentual_vendedor) || 0,
           }))
         )
       }
@@ -226,7 +247,7 @@ export default function OperadoraForm({ operadora, cnpjsDisponiveis, regrasExist
 
     // 3. Deletar regras removidas
     for (const regraId of removedRegraIds) {
-      await supabase.from('repasse_grupo_vendedor').delete().eq('regra_id', regraId)
+      await supabase.from('parcelas_regra').delete().eq('regra_id', regraId)
       await supabase.from('regras_comissao').delete().eq('id', regraId)
     }
 
@@ -381,33 +402,71 @@ export default function OperadoraForm({ operadora, cnpjsDisponiveis, regrasExist
                 </div>
 
                 <div className="pt-4 border-t" style={{ borderColor: '#e8e4dd' }}>
-                  <p className="text-xs font-semibold mb-3" style={{ color: '#2d1f4e' }}>Repasse por Nível do Vendedor</p>
+                  <p className="text-xs font-semibold mb-1" style={{ color: '#2d1f4e' }}>Distribuição por Parcela</p>
                   <p className="text-xs mb-3" style={{ color: '#9a918a' }}>
-                    % do total pago pela operadora que vai para o vendedor. Máximo: % total pago pela operadora. A corretora fica com o restante.
+                    Como cada parcela é dividida entre empresa e vendedor. A soma deve ser 100%.
                   </p>
-                  <div className="grid grid-cols-3 gap-4">
-                    {niveis.filter(n => n.ativo).map(n => (
-                      <div key={n.id}>
-                        <label className={labelCls} style={labelStyle}>{n.nome}</label>
-                        <div className="relative">
-                          <input type="number" step="0.01" min="0" max={tab.percentualTotal || undefined}
-                            value={tab.repassePorNivel[n.nome] ?? ''}
-                            onChange={e => updateTab(abaAtiva, {
-                              repassePorNivel: { ...tab.repassePorNivel, [n.nome]: e.target.value }
-                            })}
-                            placeholder="0" className={inputCls} style={{ ...inputStyle, paddingRight: '2rem' }} />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none"
-                            style={{ color: '#9a918a' }}>%</span>
-                        </div>
-                      </div>
-                    ))}
+                  <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #e8e4dd' }}>
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr style={{ backgroundColor: '#f4f1ec' }}>
+                          <th className="text-left px-3 py-2 text-xs font-semibold" style={{ color: '#5a4e3c' }}>Parcela</th>
+                          <th className="text-left px-3 py-2 text-xs font-semibold" style={{ color: '#5a4e3c' }}>% Empresa</th>
+                          <th className="text-left px-3 py-2 text-xs font-semibold" style={{ color: '#5a4e3c' }}>% Vendedor</th>
+                          <th className="px-3 py-2 text-xs font-semibold" style={{ color: '#5a4e3c' }}></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {tab.parcelas.map((p, i) => {
+                          const emp = parseFloat(p.percentual_empresa) || 0
+                          const vend = parseFloat(p.percentual_vendedor) || 0
+                          const warn = Math.abs(emp + vend - 100) > 0.01
+                          return (
+                            <tr key={i} className="border-t" style={{ borderColor: '#f0ece6' }}>
+                              <td className="px-3 py-2 font-medium" style={{ color: '#2d1f4e' }}>
+                                {i === 0 ? 'Adesão' : `Parcela ${i + 1}`}
+                              </td>
+                              <td className="px-3 py-2">
+                                <input
+                                  type="number" step="0.01" min="0" max="100"
+                                  value={p.percentual_empresa}
+                                  onChange={e => {
+                                    const newP = [...tab.parcelas]
+                                    newP[i] = { ...p, percentual_empresa: e.target.value }
+                                    updateTab(abaAtiva, { parcelas: newP })
+                                  }}
+                                  className="border rounded-lg px-2 py-1 text-sm w-20 focus:outline-none"
+                                  style={{ borderColor: warn ? '#fbbf24' : '#e8e4dd' }}
+                                />
+                              </td>
+                              <td className="px-3 py-2">
+                                <input
+                                  type="number" step="0.01" min="0" max="100"
+                                  value={p.percentual_vendedor}
+                                  onChange={e => {
+                                    const newP = [...tab.parcelas]
+                                    newP[i] = { ...p, percentual_vendedor: e.target.value }
+                                    updateTab(abaAtiva, { parcelas: newP })
+                                  }}
+                                  className="border rounded-lg px-2 py-1 text-sm w-20 focus:outline-none"
+                                  style={{ borderColor: warn ? '#fbbf24' : '#e8e4dd' }}
+                                />
+                              </td>
+                              <td className="px-3 py-2 text-xs" style={{ color: warn ? '#92400e' : '#9ca3af' }}>
+                                {warn ? '≠ 100%' : '= 100%'}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
 
                 <div className="pt-4 border-t grid grid-cols-1 md:grid-cols-2 gap-4" style={{ borderColor: '#e8e4dd' }}>
                   <div>
-                    <label className={labelCls} style={labelStyle}>Desconta Imposto da Corretora?</label>
-                    <p className="text-xs mb-2" style={{ color: '#9a918a' }}>Incide só sobre o repasse da corretora, não do vendedor.</p>
+                    <label className={labelCls} style={labelStyle}>Desconta Imposto do Vendedor?</label>
+                    <p className="text-xs mb-2" style={{ color: '#9a918a' }}>Desconta o imposto do valor repassado ao vendedor.</p>
                     {toggleBtn(tab.descontaImposto, v => updateTab(abaAtiva, { descontaImposto: v }))}
                   </div>
                   {tab.descontaImposto && (
@@ -416,7 +475,7 @@ export default function OperadoraForm({ operadora, cnpjsDisponiveis, regrasExist
                       <input type="number" step="0.01" min="0" max="100"
                         value={tab.percentualImposto}
                         onChange={e => updateTab(abaAtiva, { percentualImposto: e.target.value })}
-                        placeholder="Ex: 13.5" className={inputCls} style={inputStyle} />
+                        placeholder="Ex: 11" className={inputCls} style={inputStyle} />
                     </div>
                   )}
                 </div>

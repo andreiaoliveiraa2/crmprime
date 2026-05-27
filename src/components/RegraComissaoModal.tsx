@@ -40,6 +40,8 @@ export default function RegraComissaoModal({ onClose, onSalvo, regraEditando }: 
   const [numParcelas, setNumParcelas] = useState(regraEditando ? String(regraEditando.num_parcelas) : '12')
   const [percentualVitalicio, setPercentualVitalicio] = useState(regraEditando ? String(regraEditando.percentual_vitalicio) : '')
   const [ativo, setAtivo] = useState(regraEditando?.ativo ?? true)
+  const [descontaImposto, setDescontaImposto] = useState(regraEditando?.desconta_imposto ?? false)
+  const [percentualImposto, setPercentualImposto] = useState(regraEditando ? String(regraEditando.percentual_imposto ?? '') : '')
   const [parcelas, setParcelas] = useState<ParcelaForm[]>(() => {
     const n = regraEditando?.num_parcelas ?? 12
     return buildParcelaForms(n, regraEditando?.parcelas ?? [])
@@ -96,6 +98,8 @@ export default function RegraComissaoModal({ onClose, onSalvo, regraEditando }: 
             num_parcelas: nParcelas,
             percentual_vitalicio: pctVit,
             ativo,
+            desconta_imposto: descontaImposto,
+            percentual_imposto: descontaImposto ? (parseFloat(percentualImposto) || 0) : 0,
           })
           .eq('id', regraEditando.id)
 
@@ -115,6 +119,8 @@ export default function RegraComissaoModal({ onClose, onSalvo, regraEditando }: 
             num_parcelas: nParcelas,
             percentual_vitalicio: pctVit,
             ativo,
+            desconta_imposto: descontaImposto,
+            percentual_imposto: descontaImposto ? (parseFloat(percentualImposto) || 0) : 0,
           })
           .select()
           .single()
@@ -312,6 +318,39 @@ export default function RegraComissaoModal({ onClose, onSalvo, regraEditando }: 
               style={inputStyle}
             />
             <p className="text-xs mt-1" style={{ color: '#9a918a' }}>Percentual mensal do valor do plano após as parcelas.</p>
+          </div>
+
+          {/* Desconto de Imposto */}
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <input
+                type="checkbox"
+                id="desconta-imposto-check"
+                checked={descontaImposto}
+                onChange={e => setDescontaImposto(e.target.checked)}
+                className="w-4 h-4 rounded"
+                style={{ accentColor: '#2d1f4e' }}
+              />
+              <label htmlFor="desconta-imposto-check" className="text-sm font-medium" style={{ color: '#5a4e3c' }}>
+                Descontar imposto do vendedor
+              </label>
+            </div>
+            {descontaImposto && (
+              <div>
+                <label className={labelCls} style={labelStyle}>% Imposto</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  placeholder="Ex: 11"
+                  value={percentualImposto}
+                  onChange={e => setPercentualImposto(e.target.value)}
+                  className={inputCls}
+                  style={inputStyle}
+                />
+              </div>
+            )}
           </div>
 
           {/* Ativo */}

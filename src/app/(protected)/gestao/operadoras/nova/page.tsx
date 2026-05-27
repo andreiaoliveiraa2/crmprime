@@ -1,14 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import OperadoraForm from '@/components/OperadoraForm'
 import Link from 'next/link'
-import { CnpjRecebimento, NivelVendedor } from '@/lib/types'
+import { CnpjRecebimento } from '@/lib/types'
 
 export default async function NovaOperadoraPage() {
   const supabase = await createClient()
-  const [{ data: cnpjsRaw }, { data: niveisRaw }] = await Promise.all([
-    supabase.from('cnpjs_recebimento').select('*').eq('status', 'Ativo').order('nome'),
-    supabase.from('niveis_vendedor').select('*').eq('ativo', true).order('nome'),
-  ])
+  const { data: cnpjsRaw } = await supabase.from('cnpjs_recebimento').select('*').eq('status', 'Ativo').order('nome')
 
   return (
     <div className="p-6 md:p-8">
@@ -22,7 +19,6 @@ export default async function NovaOperadoraPage() {
       </div>
       <OperadoraForm
         cnpjsDisponiveis={(cnpjsRaw ?? []) as CnpjRecebimento[]}
-        niveis={(niveisRaw ?? []) as NivelVendedor[]}
       />
     </div>
   )
