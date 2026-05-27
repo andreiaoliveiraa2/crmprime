@@ -251,24 +251,22 @@ export default function RelatoriosTab({ vendas, comissoes, contas, cnpjs, operad
   }, [comissoes, vendasMap, rangeStart, rangeEnd, hasRange, filtroEmpresa, filtroOperadora])
 
   const comissaoPorVendedor = useMemo(() => {
-    const map = new Map<string, { recebido: number; pendente: number; producao: number }>()
+    const map = new Map<string, { recebido: number; pendente: number }>()
     for (const c of comissoesPeriodo) {
       const venda = vendasMap.get(c.venda_id)
       const vendedor = venda?.vendedor ?? 'Desconhecido'
-      const cur = map.get(vendedor) ?? { recebido: 0, pendente: 0, producao: 0 }
+      const cur = map.get(vendedor) ?? { recebido: 0, pendente: 0 }
       map.set(vendedor, {
         recebido: cur.recebido + (c.status_vendedor === 'Recebido' ? c.valor_vendedor : 0),
         pendente: cur.pendente + (c.status_vendedor === 'Pendente' ? c.valor_vendedor : 0),
-        producao: cur.producao + (venda?.valor_plano ?? 0),
       })
     }
     return Array.from(map.entries()).map(([vendedor, data]) => ({
       vendedor,
       recebido: data.recebido,
       pendente: data.pendente,
-      percentual: totalVendasValor > 0 ? ((data.recebido + data.pendente) / totalVendasValor) * 100 : 0,
     }))
-  }, [comissoesPeriodo, vendasMap, totalVendasValor])
+  }, [comissoesPeriodo, vendasMap])
 
   // ── Report 3: Retenção da Empresa ──────────────────────────────────────────
   const comissoesEmpresaPeriodo = useMemo(() => {
@@ -501,7 +499,7 @@ export default function RelatoriosTab({ vendas, comissoes, contas, cnpjs, operad
         Cliente: venda?.cliente_nome ?? '—',
         Operadora: venda?.operadora ?? '—',
         Tipo: c.tipo === 'parcela' ? `Parcela ${c.numero_parcela ?? ''}` : 'Vitalício',
-        'Valor Empresa': c.valor_empresa,
+        'Valor Corretora': c.valor_empresa,
         'Valor Vendedor': c.valor_vendedor,
         'Data Prevista': c.data_prevista,
       }
@@ -512,7 +510,7 @@ export default function RelatoriosTab({ vendas, comissoes, contas, cnpjs, operad
     exportPDF(
       `Comissões Pendentes — ${periodoLabel()}`,
       `pendencias_comissoes_${periodoLabel()}`,
-      ['Cliente', 'Operadora', 'Tipo', 'Valor Empresa', 'Valor Vendedor', 'Data Prevista'],
+      ['Cliente', 'Operadora', 'Tipo', 'Valor Corretora', 'Valor Vendedor', 'Data Prevista'],
       pendComissoesRows
     )
   }

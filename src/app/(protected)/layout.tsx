@@ -27,7 +27,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
   return (
     <div className="flex min-h-screen" style={{ backgroundColor: '#f4f1ec' }}>
       <Sidebar perfil={perfil} nome={nome} />
-      <main className="flex-1 md:ml-64">{children}</main>
+      <main className="flex-1 md:ml-64 print:ml-0">{children}</main>
     </div>
   )
 }

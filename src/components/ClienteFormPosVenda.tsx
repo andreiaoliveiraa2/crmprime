@@ -88,8 +88,8 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
     return `${nextYear}-${String(nextMonth).padStart(2, '0')}-${String(dia).padStart(2, '0')}`
   }
 
-  async function gerarComissoes(vendaId: string, dataVendaFinal: string, payloadLocal: ClienteInsert, empresa: string | null) {
-    if (!payloadLocal.operadora || !payloadLocal.valor_plano) return
+  async function gerarComissoes(vendaId: string, dataVendaFinal: string, payloadLocal: ClienteInsert, empresa: string | null): Promise<string | null> {
+    if (!payloadLocal.operadora || !payloadLocal.valor_plano) return null
 
     const { data: regra } = await supabase
       .from('regras_comissao')
@@ -100,7 +100,7 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
       .limit(1)
       .maybeSingle()
 
-    if (!regra) return
+    if (!regra) return null
 
     // Buscar split empresa/vendedor por parcela
     const { data: parcelas } = await supabase
@@ -109,6 +109,10 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
       .eq('regra_id', regra.id)
       .order('numero_parcela')
     const parcelasArr = parcelas ?? []
+
+    if (parcelasArr.length === 0) {
+      return `A operadora "${payloadLocal.operadora}" não tem distribuição de parcelas configurada. Abra a operadora em Gestão → Operadoras e salve novamente.`
+    }
 
     const comissoes: object[] = []
 
@@ -146,7 +150,10 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
         dataPrevista = d.toISOString().split('T')[0]
       }
 
-      let valorVendedor = valorBruto * (pctVendedor / 100)
+      // Adesão direta P1: operadora paga 100% ao vendedor, nada passa pela corretora
+      let valorVendedor = (regra.adesao_direta && i === 1)
+        ? valorBruto
+        : valorBruto * (pctVendedor / 100)
       if (regra.desconta_imposto && regra.percentual_imposto > 0 && valorVendedor > 0) {
         valorVendedor = valorVendedor * (1 - regra.percentual_imposto / 100)
       }
@@ -192,6 +199,7 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
 
     await supabase.from('comissoes').delete().eq('venda_id', vendaId)
     if (comissoes.length > 0) await supabase.from('comissoes').insert(comissoes)
+    return null
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -291,7 +299,8 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
         }
         if (vendaId) {
           const dvFinal = payload.data_venda ?? new Date().toISOString().split('T')[0]
-          await gerarComissoes(vendaId, dvFinal, payload, empresa)
+          const erroComissao = await gerarComissoes(vendaId, dvFinal, payload, empresa)
+          if (erroComissao) { setErro(erroComissao); setLoading(false); return }
         }
       }
     } else {
@@ -321,7 +330,8 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
         }
         if (novaVenda) {
           const dvFinal = payload.data_venda ?? new Date().toISOString().split('T')[0]
-          await gerarComissoes(novaVenda.id, dvFinal, payload, empresa)
+          const erroComissao = await gerarComissoes(novaVenda.id, dvFinal, payload, empresa)
+          if (erroComissao) { setErro(erroComissao); setLoading(false); return }
         }
       }
 

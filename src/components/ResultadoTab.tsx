@@ -54,9 +54,10 @@ function TRow({ label, bruto, lucroProj, lucroReal, bold }: {
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 function monthsBetween(start: string, end: string): number {
-  const [sy, sm] = start.split('-').map(Number)
-  const [ey, em] = end.split('-').map(Number)
-  return Math.max(1, (ey - sy) * 12 + (em - sm) + 1)
+  const ms = new Date(start).getTime()
+  const me = new Date(end).getTime()
+  const days = Math.round((me - ms) / 86400000) + 1
+  return days / 30.44
 }
 
 export default function ResultadoTab({ comissoes, contas, despesasFixas, vendas }: Props) {
@@ -183,11 +184,12 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas, vendas 
 
   const contasPagarMes = useMemo(() => {
     if (!hasRange) return 0
-    return contas.filter(c => c.tipo === 'pagar' && c.status === 'Pendente' && inRange(c.vencimento, start, end))
+    // Exclude contas geradas a partir de despesasFixas (despesa_fixa_id != null) to avoid double-counting
+    return contas.filter(c => c.tipo === 'pagar' && c.status === 'Pendente' && c.despesa_fixa_id == null && inRange(c.vencimento, start, end))
       .reduce((s, c) => s + c.valor, 0)
   }, [contas, start, end, hasRange])
 
-  const resultadoFinal = lucroProjecaoTotal + contasReceberMes - despesasFixasTotal - contasPagarMes
+  const resultadoFinal = lucroProjecaoTotal + lucroRealizadoTotal + contasReceberMes - despesasFixasTotal - contasPagarMes
   const positivo = resultadoFinal >= 0
 
   const temExtras = despesasFixasTotal > 0 || contasPagarMes > 0 || contasReceberMes > 0
@@ -347,6 +349,12 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas, vendas 
                   <span style={{ color: '#5a4e3c' }}>Lucro previsto (comissões)</span>
                   <span className="font-semibold" style={{ color: '#15803d' }}>+ {formatBRL(lucroProjecaoTotal)}</span>
                 </div>
+                {lucroRealizadoTotal > 0 && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span style={{ color: '#5a4e3c' }}>Lucro realizado (comissões recebidas)</span>
+                    <span className="font-semibold" style={{ color: '#b89a6a' }}>+ {formatBRL(lucroRealizadoTotal)}</span>
+                  </div>
+                )}
                 {contasReceberMes > 0 && (
                   <div className="flex items-center justify-between text-sm">
                     <span style={{ color: '#5a4e3c' }}>Contas a receber no período</span>
@@ -362,7 +370,7 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas, vendas 
                 {despesasFixasTotal > 0 && (
                   <div className="flex items-center justify-between text-sm">
                     <span style={{ color: '#5a4e3c' }}>
-                      Despesas fixas{numMeses > 1 ? ` (${numMeses} meses)` : ''}
+                      Despesas fixas{numMeses > 1 ? ` (${numMeses.toFixed(1)} meses)` : ''}
                     </span>
                     <span className="font-semibold" style={{ color: '#b91c1c' }}>− {formatBRL(despesasFixasTotal)}</span>
                   </div>

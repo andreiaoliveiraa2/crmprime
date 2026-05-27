@@ -191,17 +191,6 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
         .maybeSingle()
 
       if (regra) {
-        // 3. Buscar nível do vendedor e repasse configurado
-        let nivelVendedor: string | null = null
-        if (vendedor) {
-          const { data: vd } = await supabase
-            .from('vendedores')
-            .select('nivel')
-            .eq('nome', vendedor)
-            .maybeSingle()
-          nivelVendedor = vd?.nivel ?? null
-        }
-
         // Split empresa/vendedor por parcela
         const { data: parcelas } = await supabase
           .from('parcelas_regra')
@@ -210,6 +199,12 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
           .order('numero_parcela')
         const parcelasArr = parcelas ?? []
 
+        if (parcelasArr.length === 0) {
+          setErro(`A operadora "${operadora}" não tem distribuição de parcelas configurada. Abra a operadora em Gestão → Operadoras e salve novamente.`)
+          setSalvando(false)
+          return
+        }
+
         const comissoesParaInserir: {
           venda_id: string
           tipo: 'parcela' | 'vitalicio'
@@ -217,7 +212,7 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
           valor_bruto: number
           valor_empresa: number
           valor_vendedor: number
-          status_empresa: 'Pendente'
+          status_empresa: 'Pendente' | 'Direto'
           status_vendedor: 'Pendente'
           data_prevista: string
           data_recebida_empresa: null
@@ -271,7 +266,10 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
             dataPrevista = dataPrev.toISOString().split('T')[0]
           }
 
-          let valorVendedorParcela = valorBruto * (pctVendedor / 100)
+          // Adesão direta P1: operadora paga 100% ao vendedor, nada passa pela corretora
+          let valorVendedorParcela = (regra.adesao_direta && i === 1)
+            ? valorBruto
+            : valorBruto * (pctVendedor / 100)
           if (regra.desconta_imposto && regra.percentual_imposto > 0 && valorVendedorParcela > 0) {
             valorVendedorParcela = valorVendedorParcela * (1 - regra.percentual_imposto / 100)
           }

@@ -19,8 +19,8 @@ export default async function FinanceiroPage() {
     { data: despesasFixasRaw },
     { data: categoriasRaw },
   ] = await Promise.all([
-    supabase.from('vendas').select('*').or('origem.eq.manual,cliente_id.not.is.null').order('criado_em', { ascending: false }).limit(100),
-    supabase.from('comissoes').select('*').order('criado_em', { ascending: false }).limit(200),
+    supabase.from('vendas').select('*').or('origem.eq.manual,cliente_id.not.is.null').order('criado_em', { ascending: false }),
+    supabase.from('comissoes').select('*').order('criado_em', { ascending: false }),
     supabase.from('regras_comissao').select('*'),
     supabase.from('cnpjs_recebimento').select('*').order('nome'),
     supabase.from('operadoras').select('id, nome').order('nome'),

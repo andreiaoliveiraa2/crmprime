@@ -198,6 +198,17 @@ export default function OperadoraForm({ operadora, cnpjsDisponiveis, regrasExist
       const pctImposto   = parseFloat(tab.percentualImposto) || 0
       const pctVitalicio = tab.temVitalicio ? (parseFloat(tab.percentualVitalicio) || 0) : 0
 
+      if (!nParcelas || nParcelas < 1) {
+        setErro(`Número de parcelas inválido em "${tab.cnpjNome}".`)
+        setLoading(false)
+        return
+      }
+      if (nParcelas !== tab.parcelas.length) {
+        setErro(`O número de parcelas (${nParcelas}) não confere com as parcelas configuradas (${tab.parcelas.length}) em "${tab.cnpjNome}". Ajuste o número de parcelas ou reconfigure a distribuição.`)
+        setLoading(false)
+        return
+      }
+
       let regraId = tab.regraId
 
       if (regraId) {
@@ -381,7 +392,7 @@ export default function OperadoraForm({ operadora, cnpjsDisponiveis, regrasExist
                   </div>
                   <div>
                     <label className={labelCls} style={labelStyle}>Número de Parcelas</label>
-                    <input type="number" step="1" min="1" max="60"
+                    <input type="number" step="1" min="1" max="60" required
                       value={tab.numParcelas}
                       onChange={e => updateTab(abaAtiva, { numParcelas: e.target.value })}
                       className={inputCls} style={inputStyle} />
