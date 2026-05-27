@@ -101,7 +101,7 @@ export default function FinanceiroClient({ vendas, comissoes, contas, regras, cn
         <RelatoriosTab vendas={vendas} comissoes={comissoes} contas={contas} cnpjs={cnpjs} operadoras={operadoras} />
       )}
       {aba === 'resultado' && (
-        <ResultadoTab comissoes={comissoes} contas={contas} despesasFixas={despesasFixas} />
+        <ResultadoTab comissoes={comissoes} contas={contas} despesasFixas={despesasFixas} vendas={vendas} />
       )}
 
     </div>
