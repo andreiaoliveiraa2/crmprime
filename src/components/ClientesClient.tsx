@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Cliente, STATUS_CLIENTE } from '@/lib/types'
 import { useOperadoras } from '@/lib/useOperadoras'
 import ClienteExportModal from './ClienteExportModal'
-import { Plus, Download, Search, Eye, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Download, Search, Eye, Pencil, Trash2, Upload } from 'lucide-react'
 
 interface Props {
   clientes: Cliente[]
@@ -95,6 +95,14 @@ export default function ClientesClient({ clientes }: Props) {
             <Download size={15} />
             Exportar
           </button>
+          <Link
+            href="/clientes/importar"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
+            style={{ backgroundColor: '#b89a6a', color: '#ffffff' }}
+          >
+            <Upload size={15} />
+            Importar Carteira
+          </Link>
           <Link
             href="/clientes/novo"
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
