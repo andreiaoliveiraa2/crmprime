@@ -126,18 +126,9 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas }: Props
   const totalEntradas = comissoesCorretora + contasReceber
 
   // ── Saídas ──────────────────────────────────────────────────────────────────
-
-  const comissoesVendedores = useMemo(() => {
-    if (visao === 'projecao') {
-      return comissoes
-        .filter(c => c.status_vendedor === 'Pendente' && c.status_empresa !== 'Direto')
-        .reduce((s, c) => s + (c.valor_vendedor ?? 0), 0)
-    }
-    if (!hasRange) return 0
-    return comissoes
-      .filter(c => c.status_vendedor === 'Recebido' && inRange(c.data_recebida_vendedor, start, end))
-      .reduce((s, c) => s + (c.valor_vendedor ?? 0), 0)
-  }, [comissoes, start, end, hasRange, visao])
+  // NOTA: comissões dos vendedores NÃO entram aqui.
+  // valor_empresa já é o valor líquido da corretora (o que sobra depois de separar a parte do vendedor).
+  // Incluir valor_vendedor como saída seria subtrair duas vezes.
 
   const contasPagar = useMemo(() => {
     if (visao === 'projecao') {
@@ -156,7 +147,7 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas }: Props
     [despesasFixas, numMeses]
   )
 
-  const totalSaidas = comissoesVendedores + contasPagar + despesasFixasTotal
+  const totalSaidas = contasPagar + despesasFixasTotal
 
   // ── Resultado ────────────────────────────────────────────────────────────────
 
@@ -280,7 +271,6 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas }: Props
             <Bloco
               titulo="Saídas"
               itens={[
-                { label: 'Comissões pagas a vendedores', valor: comissoesVendedores },
                 { label: 'Contas a pagar', valor: contasPagar },
                 {
                   label: `Despesas fixas${numMeses > 1 ? ` (${numMeses}×)` : ''}`,
