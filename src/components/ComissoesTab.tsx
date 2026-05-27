@@ -87,19 +87,19 @@ export default function ComissoesTab({ comissoes, vendas, regras, onAtualizar, c
     return [...vendedorSet].sort()
   }, [comissoes, vendaMap])
 
-  // Summary cards — respeitam o filtro de data aplicado na tabela
+  // Summary cards — total pendente (todos os meses)
   const aReceberCorretora = useMemo(() =>
     comissoesComVenda
-      .filter(c => c.status_empresa === 'Pendente' && c.data_prevista >= dataInicio && c.data_prevista <= dataFim)
+      .filter(c => c.status_empresa === 'Pendente')
       .reduce((sum, c) => sum + (c.valor_empresa ?? 0), 0),
-    [comissoesComVenda, dataInicio, dataFim]
+    [comissoesComVenda]
   )
 
   const aPagarVendedores = useMemo(() =>
     comissoesComVenda
-      .filter(c => c.status_vendedor === 'Pendente' && c.data_prevista >= dataInicio && c.data_prevista <= dataFim)
+      .filter(c => c.status_vendedor === 'Pendente')
       .reduce((sum, c) => sum + (c.valor_vendedor ?? 0), 0),
-    [comissoesComVenda, dataInicio, dataFim]
+    [comissoesComVenda]
   )
 
   // Filtered commissions
@@ -180,8 +180,9 @@ export default function ComissoesTab({ comissoes, vendas, regras, onAtualizar, c
             <CheckCircle size={20} style={{ color: '#2d1f4e' }} />
           </div>
           <div>
-            <p className="text-sm text-gray-500">A receber (Corretora)</p>
+            <p className="text-sm text-gray-500">A receber — Corretora</p>
             <p className="text-2xl font-bold mt-1" style={{ color: '#2d1f4e' }}>{formatBRL(aReceberCorretora)}</p>
+            <p className="text-xs mt-0.5" style={{ color: '#9a918a' }}>Total pendente</p>
           </div>
         </div>
 
@@ -191,8 +192,9 @@ export default function ComissoesTab({ comissoes, vendas, regras, onAtualizar, c
             <Clock size={20} style={{ color: '#b89a6a' }} />
           </div>
           <div>
-            <p className="text-sm text-gray-500">A pagar (Vendedores)</p>
+            <p className="text-sm text-gray-500">A pagar — Vendedores</p>
             <p className="text-2xl font-bold mt-1" style={{ color: '#2d1f4e' }}>{formatBRL(aPagarVendedores)}</p>
+            <p className="text-xs mt-0.5" style={{ color: '#9a918a' }}>Total pendente</p>
           </div>
         </div>
       </div>
