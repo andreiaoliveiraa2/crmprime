@@ -83,6 +83,10 @@ export default function ConversaoModal({ lead, onClose, onCancelar, onReverteFec
       percentual_comissao_vendedor:    null,
       tem_vitalicio:                   null,
       percentual_vitalicio:            null,
+      fase_cliente:                    'ativo',
+      vitalicio_valor_estimado:        null,
+      vitalicio_dia_previsto:          null,
+      vitalicio_inicio:                null,
     }
 
     const { data: novoCliente, error } = await supabase.from('clientes').insert(payload).select().single()

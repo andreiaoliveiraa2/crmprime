@@ -196,6 +196,7 @@ function ContaModal({ tipo, editando, cnpjs, categorias, onClose, onSalvo }: Con
         categoria: categoriaId || null,
         observacoes: observacoes.trim() || null,
         despesa_fixa_id: null,
+        cliente_vitalicio_id: null,
         tipo_lancamento: 'parcelada',
         grupo_id: grupoId,
         parcela_numero: i + 1,
@@ -410,6 +411,7 @@ function ContasSubTab({ tipo, contas, cnpjs, categorias, onAtualizar }: ContasSu
   }, [contas, filtroStatus, filtroCategoria, filtroEmpresa, dataInicio, dataFim, today])
 
   const totalPendente = contas.filter(c => c.status === 'Pendente').reduce((s, c) => s + c.valor, 0)
+  const totalRecebido = contas.filter(c => c.status === 'Recebido' || c.status === 'Pago').reduce((s, c) => s + c.valor, 0)
   const categoriasUnicas = useMemo(() => [...new Set(contas.map(c => c.categoria).filter(Boolean) as string[])].sort(), [contas])
   const empresasUnicas = useMemo(() => [...new Set(contas.map(c => c.empresa).filter(Boolean) as string[])].sort(), [contas])
 
@@ -481,9 +483,16 @@ function ContasSubTab({ tipo, contas, cnpjs, categorias, onAtualizar }: ContasSu
     <>
       <div className="px-5 py-4 flex items-center justify-between flex-wrap gap-3"
         style={{ borderBottom: '1px solid #f0ece6' }}>
-        <p className="text-xs" style={{ color: '#b89a6a' }}>
-          Total pendente: <span className="font-semibold">{formatBRL(totalPendente)}</span>
-        </p>
+        <div className="flex items-center gap-4">
+          <p className="text-xs" style={{ color: '#b89a6a' }}>
+            Total pendente: <span className="font-semibold">{formatBRL(totalPendente)}</span>
+          </p>
+          {totalRecebido > 0 && (
+            <p className="text-xs" style={{ color: '#15803d' }}>
+              Total recebido: <span className="font-semibold">{formatBRL(totalRecebido)}</span>
+            </p>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           <button onClick={exportarExcel}
             className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium"

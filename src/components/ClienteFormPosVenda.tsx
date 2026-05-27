@@ -49,6 +49,10 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
   const [vendedor, setVendedor]                     = useState(cliente?.vendedor ?? vendedorAtual?.nome ?? leadPrefill?.vendedor ?? '')
   const [corretoraResponsavel, setCorretoraResponsavel] = useState(cliente?.corretora_responsavel ?? '')
   const [observacoes, setObservacoes]               = useState(cliente?.observacoes ?? leadPrefill?.observacoes ?? '')
+  // Carteira vitalícia
+  const [faseCliente, setFaseCliente]                 = useState<'ativo' | 'vitalicio'>(cliente?.fase_cliente ?? 'ativo')
+  const [vitalicioValor, setVitalicioValor]           = useState(cliente?.vitalicio_valor_estimado?.toString() ?? '')
+  const [vitaliicioDia, setVitaliicioDia]             = useState(cliente?.vitalicio_dia_previsto?.toString() ?? '')
 
   const operadorasLista = useOperadoras()
   const [vendedoresLista, setVendedoresLista] = useState<{ id: string; nome: string }[]>([])
@@ -89,6 +93,7 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
   }
 
   async function gerarComissoes(vendaId: string, dataVendaFinal: string, payloadLocal: ClienteInsert, empresa: string | null): Promise<string | null> {
+    if (payloadLocal.fase_cliente === 'vitalicio') return null
     if (!payloadLocal.operadora || !payloadLocal.valor_plano) return null
 
     const { data: regra } = await supabase
@@ -245,6 +250,10 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
       percentual_comissao_vendedor:  null,
       tem_vitalicio:                 null,
       percentual_vitalicio:          null,
+      fase_cliente:                  faseCliente,
+      vitalicio_valor_estimado:      faseCliente === 'vitalicio' ? (parseFloat(vitalicioValor) || null) : null,
+      vitalicio_dia_previsto:        faseCliente === 'vitalicio' ? (parseInt(vitaliicioDia) || null) : null,
+      vitalicio_inicio:              faseCliente === 'vitalicio' && !(cliente?.vitalicio_inicio) ? new Date().toISOString().split('T')[0] : (cliente?.vitalicio_inicio ?? null),
     }
 
     if (editando) {
@@ -259,7 +268,7 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
           .update({ status: 'Cancelado' })
           .eq('cliente_id', cliente.id)
           .eq('origem', 'cliente')
-      } else if (status === 'Ativo' && payload.valor_plano && payload.operadora) {
+      } else if (status === 'Ativo' && payload.valor_plano && payload.operadora && faseCliente !== 'vitalicio') {
         const { data: vendaExistente } = await supabase
           .from('vendas')
           .select('id')
@@ -309,7 +318,7 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
 
       const empresa = corretoraResponsavel.trim() || null
 
-      if (novoCliente && status === 'Ativo' && payload.valor_plano && payload.operadora) {
+      if (novoCliente && status === 'Ativo' && payload.valor_plano && payload.operadora && faseCliente !== 'vitalicio') {
         const { data: novaVenda, error: vendaErr } = await supabase.from('vendas').insert({
           cliente_id: novoCliente.id,
           cliente_nome: payload.nome,
@@ -572,6 +581,39 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
               <option value="MEI Alessandro">MEI Alessandro</option>
             </select>
           </div>
+
+          {/* Fase do cliente */}
+          <div className="md:col-span-2">
+            <label className={labelCls} style={labelStyle}>Fase do Cliente</label>
+            <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid #e8e4dd', width: 'fit-content' }}>
+              {(['ativo', 'vitalicio'] as const).map(f => (
+                <button key={f} type="button" onClick={() => setFaseCliente(f)}
+                  className="px-5 py-2 text-sm font-medium transition-colors"
+                  style={{ backgroundColor: faseCliente === f ? '#2d1f4e' : '#fff', color: faseCliente === f ? '#fff' : '#9a918a' }}>
+                  {f === 'ativo' ? 'Ativo com parcelas' : 'Vitalício'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {faseCliente === 'vitalicio' && (
+            <>
+              <div>
+                <label className={labelCls} style={labelStyle}>Valor Estimado Mensal (R$)</label>
+                <input type="number" step="0.01" min="0" value={vitalicioValor}
+                  onChange={e => setVitalicioValor(e.target.value)}
+                  placeholder="Ex: 350.00" className={inputCls} style={inputStyle} />
+                <p className="text-xs mt-1" style={{ color: '#9a918a' }}>Valor aproximado que entra todo mês</p>
+              </div>
+              <div>
+                <label className={labelCls} style={labelStyle}>Dia Previsto de Recebimento</label>
+                <input type="number" step="1" min="1" max="31" value={vitaliicioDia}
+                  onChange={e => setVitaliicioDia(e.target.value)}
+                  placeholder="Ex: 10" className={inputCls} style={inputStyle} />
+                <p className="text-xs mt-1" style={{ color: '#9a918a' }}>Dia do mês em que costuma entrar</p>
+              </div>
+            </>
+          )}
 
           <div className="md:col-span-2">
             <label htmlFor="cf-observacoes" className={labelCls} style={labelStyle}>Observações</label>

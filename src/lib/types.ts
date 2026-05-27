@@ -189,6 +189,11 @@ export interface Cliente {
   percentual_comissao_vendedor: number | null
   tem_vitalicio: boolean | null
   percentual_vitalicio: number | null
+  // Carteira vitalícia
+  fase_cliente: 'ativo' | 'vitalicio'
+  vitalicio_valor_estimado: number | null
+  vitalicio_dia_previsto: number | null
+  vitalicio_inicio: string | null
 }
 
 export type ClienteInsert = Omit<Cliente, 'id' | 'criado_em'>
@@ -310,6 +315,7 @@ export interface Conta {
   empresa: string | null
   categoria: string | null
   despesa_fixa_id: string | null
+  cliente_vitalicio_id: string | null
   tipo_lancamento: 'unica' | 'parcelada' | 'recorrente'
   grupo_id: string | null
   parcela_numero: number | null

@@ -63,12 +63,61 @@ export default async function FinanceiroPage() {
       empresa: d.empresa,
       categoria: d.categoria,
       despesa_fixa_id: d.id,
+      cliente_vitalicio_id: null,
       tipo_lancamento: 'recorrente' as const,
       grupo_id: null,
       parcela_numero: null,
       total_parcelas: null,
     }))
     await supabase.from('contas').insert(novasContas)
+  }
+
+  // ── Gera contas a receber do mês atual para clientes vitalícios ──────────
+  const { data: clientesVitaliciosRaw } = await supabase
+    .from('clientes')
+    .select('id, nome, operadora, vitalicio_valor_estimado, vitalicio_dia_previsto')
+    .eq('fase_cliente', 'vitalicio')
+    .eq('status', 'Ativo')
+    .not('vitalicio_valor_estimado', 'is', null)
+
+  const { data: contasVitalicioMes } = await supabase
+    .from('contas')
+    .select('cliente_vitalicio_id')
+    .eq('tipo', 'receber')
+    .gte('vencimento', `${prefixoMes}-01`)
+    .lte('vencimento', `${prefixoMes}-31`)
+    .not('cliente_vitalicio_id', 'is', null)
+
+  const vitaliciosComContaNoMes = new Set(
+    (contasVitalicioMes ?? []).map(c => c.cliente_vitalicio_id).filter(Boolean)
+  )
+
+  const vitaliciosParaGerar = (clientesVitaliciosRaw ?? []).filter(
+    (c: { id: string }) => !vitaliciosComContaNoMes.has(c.id)
+  )
+
+  if (vitaliciosParaGerar.length > 0) {
+    const ultimoDia = new Date(anoAtual, mesAtual + 1, 0).getDate()
+    const novasContasVitalicio = vitaliciosParaGerar.map((c: {
+      id: string; nome: string; operadora: string | null
+      vitalicio_valor_estimado: number; vitalicio_dia_previsto: number | null
+    }) => ({
+      tipo: 'receber' as const,
+      descricao: `Vitalício — ${c.nome}${c.operadora ? ` (${c.operadora})` : ''}`,
+      valor: c.vitalicio_valor_estimado,
+      vencimento: `${prefixoMes}-${String(Math.min(c.vitalicio_dia_previsto ?? 10, ultimoDia)).padStart(2, '0')}`,
+      status: 'Pendente' as const,
+      observacoes: null,
+      empresa: null,
+      categoria: 'Vitalício',
+      despesa_fixa_id: null,
+      cliente_vitalicio_id: c.id,
+      tipo_lancamento: 'recorrente' as const,
+      grupo_id: null,
+      parcela_numero: null,
+      total_parcelas: null,
+    }))
+    await supabase.from('contas').insert(novasContasVitalicio)
   }
 
   // ── Busca contas (inclui as recém-geradas) ───────────────────────────────
