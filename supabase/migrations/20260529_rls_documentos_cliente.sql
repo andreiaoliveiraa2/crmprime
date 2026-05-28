@@ -6,11 +6,13 @@
 -- ── Tabela documentos_cliente ──
 alter table documentos_cliente enable row level security;
 
+drop policy if exists "documentos_admin_tudo" on documentos_cliente;
 create policy "documentos_admin_tudo" on documentos_cliente
   for all
   using (meu_perfil() = 'admin')
   with check (meu_perfil() = 'admin');
 
+drop policy if exists "documentos_vendedor_proprios" on documentos_cliente;
 create policy "documentos_vendedor_proprios" on documentos_cliente
   for select
   using (
@@ -22,6 +24,7 @@ create policy "documentos_vendedor_proprios" on documentos_cliente
     )
   );
 
+drop policy if exists "documentos_vendedor_insert" on documentos_cliente;
 create policy "documentos_vendedor_insert" on documentos_cliente
   for insert
   with check (
@@ -33,6 +36,7 @@ create policy "documentos_vendedor_insert" on documentos_cliente
     )
   );
 
+drop policy if exists "documentos_vendedor_delete" on documentos_cliente;
 create policy "documentos_vendedor_delete" on documentos_cliente
   for delete
   using (
@@ -48,6 +52,7 @@ create policy "documentos_vendedor_delete" on documentos_cliente
 -- Arquivos são armazenados no caminho: {cliente_id}/{nome_arquivo}
 -- Admin: acesso total ao bucket
 
+drop policy if exists "storage_documentos_admin_select" on storage.objects;
 create policy "storage_documentos_admin_select" on storage.objects
   for select
   to authenticated
@@ -56,6 +61,7 @@ create policy "storage_documentos_admin_select" on storage.objects
     and meu_perfil() = 'admin'
   );
 
+drop policy if exists "storage_documentos_admin_insert" on storage.objects;
 create policy "storage_documentos_admin_insert" on storage.objects
   for insert
   to authenticated
@@ -64,6 +70,7 @@ create policy "storage_documentos_admin_insert" on storage.objects
     and meu_perfil() = 'admin'
   );
 
+drop policy if exists "storage_documentos_admin_update" on storage.objects;
 create policy "storage_documentos_admin_update" on storage.objects
   for update
   to authenticated
@@ -76,6 +83,7 @@ create policy "storage_documentos_admin_update" on storage.objects
     and meu_perfil() = 'admin'
   );
 
+drop policy if exists "storage_documentos_admin_delete" on storage.objects;
 create policy "storage_documentos_admin_delete" on storage.objects
   for delete
   to authenticated
@@ -87,6 +95,7 @@ create policy "storage_documentos_admin_delete" on storage.objects
 -- Vendedor: acessa apenas arquivos do próprio cliente
 -- O caminho é {cliente_id}/{arquivo}, então split_part(name,'/',1) = cliente_id
 
+drop policy if exists "storage_documentos_vendedor_select" on storage.objects;
 create policy "storage_documentos_vendedor_select" on storage.objects
   for select
   to authenticated
@@ -100,6 +109,7 @@ create policy "storage_documentos_vendedor_select" on storage.objects
     )
   );
 
+drop policy if exists "storage_documentos_vendedor_insert" on storage.objects;
 create policy "storage_documentos_vendedor_insert" on storage.objects
   for insert
   to authenticated
@@ -113,6 +123,7 @@ create policy "storage_documentos_vendedor_insert" on storage.objects
     )
   );
 
+drop policy if exists "storage_documentos_vendedor_update" on storage.objects;
 create policy "storage_documentos_vendedor_update" on storage.objects
   for update
   to authenticated
@@ -135,6 +146,7 @@ create policy "storage_documentos_vendedor_update" on storage.objects
     )
   );
 
+drop policy if exists "storage_documentos_vendedor_delete" on storage.objects;
 create policy "storage_documentos_vendedor_delete" on storage.objects
   for delete
   to authenticated

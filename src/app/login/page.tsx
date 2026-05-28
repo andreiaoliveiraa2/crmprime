@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -13,6 +13,14 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const erroParam = params.get('erro')
+    if (erroParam === 'conta-sem-perfil') setErro('Sua conta não está configurada. Entre em contato com o administrador.')
+    if (erroParam === 'confirmacao') setErro('Erro na confirmação do email. Tente novamente.')
+    if (erroParam === 'convite-invalido') setErro('Convite inválido ou expirado. Solicite um novo convite.')
+  }, [])
 
   async function handleEsqueciSenha() {
     if (!email) {
