@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Cliente, ClienteInsert, Lead, TIPOS_PLANO, STATUS_CLIENTE } from '@/lib/types'
+import { addMonth } from '@/lib/dateUtils'
 import { useOperadoras } from '@/lib/useOperadoras'
 import DocumentosCliente from './DocumentosCliente'
 
@@ -150,9 +151,7 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
         const pctEmpresa = parcelaRegra?.percentual_empresa ?? 50
         valorEmpresa = valorBruto * (pctEmpresa / 100)
         statusEmpresa = 'Pendente'
-        const d = new Date(baseDate)
-        d.setMonth(d.getMonth() + (i - 1))
-        dataPrevista = d.toISOString().split('T')[0]
+        dataPrevista = addMonth(baseDate, i - 1)
       }
 
       // Adesão direta P1: operadora paga 100% ao vendedor, nada passa pela corretora
@@ -186,9 +185,7 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
         const mesStr = `${mesVit.getFullYear()}-${String(mesVit.getMonth() + 1).padStart(2, '0')}-01`
         dataPrevistaVit = quintoDialUtilMesSeguinte(mesStr)
       } else {
-        const d = new Date(baseDate)
-        d.setMonth(d.getMonth() + regra.num_parcelas)
-        dataPrevistaVit = d.toISOString().split('T')[0]
+        dataPrevistaVit = addMonth(baseDate, regra.num_parcelas)
       }
       comissoes.push({
         venda_id: vendaId, tipo: 'vitalicio', numero_parcela: null,

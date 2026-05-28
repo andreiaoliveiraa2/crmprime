@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { X, Search } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useOperadoras } from '@/lib/useOperadoras'
+import { addMonth } from '@/lib/dateUtils'
 
 interface Props {
   onClose: () => void
@@ -261,9 +262,7 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
             const pctEmpresa = parcelaRegra?.percentual_empresa ?? 50
             valorEmpresa = valorBruto * (pctEmpresa / 100)
             statusEmpresa = 'Pendente'
-            const dataPrev = new Date(baseDate)
-            dataPrev.setMonth(dataPrev.getMonth() + (i - 1))
-            dataPrevista = dataPrev.toISOString().split('T')[0]
+            dataPrevista = addMonth(baseDate, i - 1)
           }
 
           // Adesão direta P1: operadora paga 100% ao vendedor, nada passa pela corretora

@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { Pencil, Trash2, Plus, X, FileSpreadsheet, FileText, RefreshCw } from 'lucide-react'
 import { Conta, ContaInsert, CnpjRecebimento, CategoriaDespesa, DespesaFixaInsert } from '@/lib/types'
+import { addMonth } from '@/lib/dateUtils'
 import { createClient } from '@/lib/supabase/client'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -33,11 +34,6 @@ function isOverdue(vencimento: string, status: string) {
   return status === 'Pendente' && vencimento.split('T')[0] < todayStr()
 }
 
-function addMonths(dateStr: string, months: number): string {
-  const [y, m, d] = dateStr.split('-').map(Number)
-  const date = new Date(y, m - 1 + months, d)
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-}
 
 async function exportExcel(filename: string, rows: Record<string, string | number>[]) {
   const xlsx = await import('xlsx')
@@ -190,7 +186,7 @@ function ContaModal({ tipo, editando, cnpjs, categorias, onClose, onSalvo }: Con
         tipo,
         descricao: `${descricao.trim()} — ${i + 1}/${n}`,
         valor: Number(valor),
-        vencimento: addMonths(vencimento, i),
+        vencimento: addMonth(vencimento, i),
         status: 'Pendente',
         empresa: empresa || null,
         categoria: categoriaId || null,
@@ -292,7 +288,7 @@ function ContaModal({ tipo, editando, cnpjs, categorias, onClose, onSalvo }: Con
                 style={{ borderColor: '#bfdbfe' }} />
               {Number(numParcelas) >= 2 && vencimento && (
                 <p className="text-xs text-blue-600 mt-1.5">
-                  Cria {numParcelas} lançamentos: {formatDate(vencimento)} até {formatDate(addMonths(vencimento, Number(numParcelas) - 1))}
+                  Cria {numParcelas} lançamentos: {formatDate(vencimento)} até {formatDate(addMonth(vencimento, Number(numParcelas) - 1))}
                 </p>
               )}
             </div>
