@@ -15,14 +15,13 @@ export default async function ProtectedLayout({ children }: { children: React.Re
     .single()
 
   if (!usuario) {
-    // Só redireciona para completar-perfil se for vendedor convidado
     const vendedorId = user.user_metadata?.vendedor_id
     if (vendedorId) redirect('/completar-perfil')
-    // Admin sem registro em usuarios → usa defaults (não entra em loop)
+    redirect('/login?erro=conta-sem-perfil')
   }
 
-  const perfil = usuario?.perfil ?? 'admin'
-  const nome   = usuario?.nome ?? user.email ?? 'Usuário'
+  const perfil = usuario.perfil
+  const nome   = usuario.nome
 
   return (
     <div className="flex min-h-screen" style={{ backgroundColor: '#f4f1ec' }}>
