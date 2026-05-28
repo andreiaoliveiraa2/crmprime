@@ -331,6 +331,9 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
 
         if (comErr) {
           console.error('Erro ao inserir comissões:', comErr.message)
+          setErro('Venda salva, mas erro ao registrar comissões: ' + comErr.message)
+          setSalvando(false)
+          return
         }
       }
 
