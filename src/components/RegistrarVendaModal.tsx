@@ -300,9 +300,12 @@ export default function RegistrarVendaModal({ onClose, onSalvo, vendedores }: Pr
             const mesStr = `${mesVit.getFullYear()}-${String(mesVit.getMonth() + 1).padStart(2, '0')}-01`
             dataPrevistaVit = quintoDialUtilMesSeguinte(mesStr)
           } else {
-            const dataVit = new Date(baseDate)
-            dataVit.setMonth(dataVit.getMonth() + regra.num_parcelas)
-            dataPrevistaVit = dataVit.toISOString().split('T')[0]
+            const [bY, bM, bD] = baseDate.split('-').map(Number)
+            const totalM = (bM - 1) + regra.num_parcelas
+            const tY = bY + Math.floor(totalM / 12)
+            const tM = ((totalM % 12) + 12) % 12
+            const lastD = new Date(tY, tM + 1, 0).getDate()
+            dataPrevistaVit = `${tY}-${String(tM + 1).padStart(2, '0')}-${String(Math.min(bD, lastD)).padStart(2, '0')}`
           }
 
           comissoesParaInserir.push({
