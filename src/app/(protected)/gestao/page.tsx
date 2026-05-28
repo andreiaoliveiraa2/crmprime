@@ -7,7 +7,7 @@ import { NivelVendedor } from '@/lib/types'
 
 export default async function GestaoPage() {
   const usuario = await getUsuarioAtual()
-  if (usuario !== null && usuario.perfil !== 'admin') redirect('/dashboard')
+  if (!usuario || usuario.perfil !== 'admin') redirect('/dashboard')
 
   const supabase = await createClient()
   const [{ data: vendedores }, { data: niveisRaw }] = await Promise.all([

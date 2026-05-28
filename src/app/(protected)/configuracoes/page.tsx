@@ -9,7 +9,7 @@ import { CnpjRecebimento, CategoriaDespesa, NivelVendedor } from '@/lib/types'
 
 export default async function ConfiguracoesPage() {
   const usuario = await getUsuarioAtual()
-  if (usuario !== null && usuario.perfil !== 'admin') redirect('/dashboard')
+  if (!usuario || usuario.perfil !== 'admin') redirect('/dashboard')
 
   const supabase = await createClient()
   const [
