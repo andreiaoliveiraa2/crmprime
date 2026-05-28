@@ -22,6 +22,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'vendedor_id e email são obrigatórios' }, { status: 400 })
   }
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(String(email))) {
+    return NextResponse.json({ error: 'Formato de email inválido' }, { status: 400 })
+  }
+
   const origin = request.nextUrl.origin
   const adminClient = createAdminClient()
   const { error } = await adminClient.auth.admin.inviteUserByEmail(email, {
