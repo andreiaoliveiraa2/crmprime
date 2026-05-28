@@ -277,17 +277,17 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas, vendas 
 
           {/* Cards resumo */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="bg-white rounded-2xl p-4" style={{ border: '1px solid #e8e4dd' }}>
+            <div className="bg-white rounded-2xl p-4" style={{ border: '2px solid #d4af7a' }}>
               <p className="text-xs font-bold mb-2 uppercase tracking-wide" style={{ color: '#9a918a' }}>Bruto Previsto</p>
               <p className="text-xl font-bold" style={{ color: '#2d1f4e' }}>{formatBRL(brutoTotal)}</p>
               <p className="text-xs mt-1" style={{ color: '#9a918a' }}>Total da operadora (antes de repassar)</p>
             </div>
-            <div className="bg-white rounded-2xl p-4" style={{ border: '1px solid #e8e4dd' }}>
+            <div className="bg-white rounded-2xl p-4" style={{ border: '2px solid #d4af7a' }}>
               <p className="text-xs font-bold mb-2 uppercase tracking-wide" style={{ color: '#9a918a' }}>Lucro Previsto</p>
               <p className="text-xl font-bold" style={{ color: '#15803d' }}>{formatBRL(lucroProjecaoTotal)}</p>
               <p className="text-xs mt-1" style={{ color: '#9a918a' }}>Sua parte após repasse ao vendedor</p>
             </div>
-            <div className="bg-white rounded-2xl p-4" style={{ border: '1px solid #e8e4dd' }}>
+            <div className="bg-white rounded-2xl p-4" style={{ border: '2px solid #d4af7a' }}>
               <p className="text-xs font-bold mb-2 uppercase tracking-wide" style={{ color: '#9a918a' }}>Lucro Realizado</p>
               <p className="text-xl font-bold" style={{ color: '#b89a6a' }}>{formatBRL(lucroRealizadoTotal)}</p>
               <p className="text-xs mt-1" style={{ color: '#9a918a' }}>Parcelas efetivamente recebidas</p>
