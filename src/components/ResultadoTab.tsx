@@ -89,9 +89,9 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas, vendas 
   // Join com vendas para obter nome do vendedor
   const vendaMap = useMemo(() => new Map(vendas.map(v => [v.id, v])), [vendas])
 
-  // Comissões ativas (excluindo Direto — não passam pelo caixa da corretora)
+  // Comissões ativas (excluindo Direto — não passam pelo caixa da corretora; e vitalicio — já contabilizado em contas a receber)
   const comissoesAtivas = useMemo(() =>
-    comissoes.filter(c => c.status_empresa !== 'Direto'),
+    comissoes.filter(c => c.status_empresa !== 'Direto' && c.tipo !== 'vitalicio'),
     [comissoes]
   )
 
