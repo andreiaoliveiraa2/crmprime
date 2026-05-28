@@ -175,9 +175,17 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas, vendas 
     [despesasFixas, numMeses]
   )
 
+  const vitalicoMes = useMemo(() => {
+    if (!hasRange) return 0
+    return contas
+      .filter(c => c.cliente_vitalicio_id != null && c.tipo === 'receber' && c.status === 'Pendente' && inRange(c.vencimento, start, end))
+      .reduce((s, c) => s + c.valor, 0)
+  }, [contas, start, end, hasRange])
+
   const contasReceberMes = useMemo(() => {
     if (!hasRange) return 0
-    return contas.filter(c => c.tipo === 'receber' && c.status === 'Pendente' && inRange(c.vencimento, start, end))
+    return contas
+      .filter(c => c.cliente_vitalicio_id == null && c.tipo === 'receber' && c.status === 'Pendente' && inRange(c.vencimento, start, end))
       .reduce((s, c) => s + c.valor, 0)
   }, [contas, start, end, hasRange])
 
@@ -195,10 +203,10 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas, vendas 
   )
   const despesasProjetadas = temContasFixasNoPeriodo ? 0 : despesasFixasTotal
 
-  const resultadoFinal = lucroProjecaoTotal + lucroRealizadoTotal + contasReceberMes - contasPagarMes - despesasProjetadas
+  const resultadoFinal = lucroProjecaoTotal + lucroRealizadoTotal + vitalicoMes + contasReceberMes - contasPagarMes - despesasProjetadas
   const positivo = resultadoFinal >= 0
 
-  const temExtras = despesasProjetadas > 0 || contasPagarMes > 0 || contasReceberMes > 0
+  const temExtras = despesasProjetadas > 0 || contasPagarMes > 0 || contasReceberMes > 0 || vitalicoMes > 0
 
   return (
     <div className="space-y-5">
@@ -268,7 +276,7 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas, vendas 
           </div>
 
           {/* Cards resumo */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="bg-white rounded-2xl p-4" style={{ border: '1px solid #e8e4dd' }}>
               <p className="text-xs font-bold mb-2 uppercase tracking-wide" style={{ color: '#9a918a' }}>Bruto Previsto</p>
               <p className="text-xl font-bold" style={{ color: '#2d1f4e' }}>{formatBRL(brutoTotal)}</p>
@@ -283,6 +291,11 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas, vendas 
               <p className="text-xs font-bold mb-2 uppercase tracking-wide" style={{ color: '#9a918a' }}>Lucro Realizado</p>
               <p className="text-xl font-bold" style={{ color: '#b89a6a' }}>{formatBRL(lucroRealizadoTotal)}</p>
               <p className="text-xs mt-1" style={{ color: '#9a918a' }}>Parcelas efetivamente recebidas</p>
+            </div>
+            <div className="bg-white rounded-2xl p-4" style={{ border: '2px solid #d4af7a' }}>
+              <p className="text-xs font-bold mb-2 uppercase tracking-wide" style={{ color: '#b89a6a' }}>Carteira Vitalícia</p>
+              <p className="text-xl font-bold" style={{ color: '#2d1f4e' }}>{formatBRL(vitalicoMes)}</p>
+              <p className="text-xs mt-1" style={{ color: '#9a918a' }}>Recorrente da carteira consolidada</p>
             </div>
           </div>
 
@@ -359,6 +372,12 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas, vendas 
                   <div className="flex items-center justify-between text-sm">
                     <span style={{ color: '#5a4e3c' }}>Lucro realizado (comissões recebidas)</span>
                     <span className="font-semibold" style={{ color: '#b89a6a' }}>+ {formatBRL(lucroRealizadoTotal)}</span>
+                  </div>
+                )}
+                {vitalicoMes > 0 && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span style={{ color: '#5a4e3c' }}>Carteira vitalícia (recorrente)</span>
+                    <span className="font-semibold" style={{ color: '#b89a6a' }}>+ {formatBRL(vitalicoMes)}</span>
                   </div>
                 )}
                 {contasReceberMes > 0 && (
