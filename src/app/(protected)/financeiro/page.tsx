@@ -34,13 +34,15 @@ export default async function FinanceiroPage() {
   const mesAtual = now.getMonth()
   const mesStr = String(mesAtual + 1).padStart(2, '0')
   const prefixoMes = `${anoAtual}-${mesStr}`
+  const ultimoDiaMes = String(new Date(anoAtual, mesAtual + 1, 0).getDate()).padStart(2, '0')
+  const fimMes = `${prefixoMes}-${ultimoDiaMes}`
 
   const { data: contasMesAtual } = await supabase
     .from('contas')
     .select('despesa_fixa_id')
     .eq('tipo', 'pagar')
     .gte('vencimento', `${prefixoMes}-01`)
-    .lte('vencimento', `${prefixoMes}-31`)
+    .lte('vencimento', fimMes)
     .not('despesa_fixa_id', 'is', null)
 
   const despesasComContaNoMes = new Set(
@@ -52,7 +54,7 @@ export default async function FinanceiroPage() {
   )
 
   if (despesasParaGerar.length > 0) {
-    const ultimoDia = new Date(anoAtual, mesAtual + 1, 0).getDate()
+    const ultimoDia = parseInt(ultimoDiaMes)
     const novasContas = despesasParaGerar.map((d: DespesaFixa) => ({
       tipo: 'pagar' as const,
       descricao: d.nome,
@@ -69,7 +71,10 @@ export default async function FinanceiroPage() {
       parcela_numero: null,
       total_parcelas: null,
     }))
-    await supabase.from('contas').insert(novasContas)
+    const { error: insertErrDespesas } = await supabase.from('contas').insert(novasContas)
+    if (insertErrDespesas && !insertErrDespesas.code?.includes('23505')) {
+      console.error('Erro ao gerar contas de despesas fixas:', insertErrDespesas)
+    }
   }
 
   // ── Gera contas a receber do mês atual para clientes vitalícios ──────────
@@ -85,7 +90,7 @@ export default async function FinanceiroPage() {
     .select('cliente_vitalicio_id')
     .eq('tipo', 'receber')
     .gte('vencimento', `${prefixoMes}-01`)
-    .lte('vencimento', `${prefixoMes}-31`)
+    .lte('vencimento', fimMes)
     .not('cliente_vitalicio_id', 'is', null)
 
   const vitaliciosComContaNoMes = new Set(
@@ -97,7 +102,7 @@ export default async function FinanceiroPage() {
   )
 
   if (vitaliciosParaGerar.length > 0) {
-    const ultimoDia = new Date(anoAtual, mesAtual + 1, 0).getDate()
+    const ultimoDia = parseInt(ultimoDiaMes)
     const novasContasVitalicio = vitaliciosParaGerar.map((c: {
       id: string; nome: string; operadora: string | null
       vitalicio_valor_estimado: number; vitalicio_dia_previsto: number | null

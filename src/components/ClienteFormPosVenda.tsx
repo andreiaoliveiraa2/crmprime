@@ -263,11 +263,42 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
       const empresa = corretoraResponsavel.trim() || null
 
       if (status === 'Cancelado') {
+        // Cancela vendas e comissões pendentes do cliente
+        const { data: vendasCliente } = await supabase
+          .from('vendas')
+          .select('id')
+          .eq('cliente_id', cliente.id)
+          .eq('origem', 'cliente')
         await supabase
           .from('vendas')
           .update({ status: 'Cancelado' })
           .eq('cliente_id', cliente.id)
           .eq('origem', 'cliente')
+        if (vendasCliente && vendasCliente.length > 0) {
+          const vendaIds = vendasCliente.map((v: { id: string }) => v.id)
+          await supabase
+            .from('comissoes')
+            .update({ status_empresa: 'Cancelado', status_vendedor: 'Cancelado' })
+            .in('venda_id', vendaIds)
+            .eq('status_empresa', 'Pendente')
+        }
+      } else if (faseCliente === 'vitalicio' && cliente.fase_cliente !== 'vitalicio') {
+        // Transitou de ativo para vitalício: cancela venda e comissões pendentes
+        const { data: vendasAtivas } = await supabase
+          .from('vendas')
+          .select('id')
+          .eq('cliente_id', cliente.id)
+          .eq('status', 'Ativo')
+          .eq('origem', 'cliente')
+        if (vendasAtivas && vendasAtivas.length > 0) {
+          const vendaIds = vendasAtivas.map((v: { id: string }) => v.id)
+          await supabase.from('vendas').update({ status: 'Cancelado' }).in('id', vendaIds)
+          await supabase
+            .from('comissoes')
+            .update({ status_empresa: 'Cancelado', status_vendedor: 'Cancelado' })
+            .in('venda_id', vendaIds)
+            .eq('status_empresa', 'Pendente')
+        }
       } else if (status === 'Ativo' && payload.valor_plano && payload.operadora && faseCliente !== 'vitalicio') {
         const { data: vendaExistente } = await supabase
           .from('vendas')

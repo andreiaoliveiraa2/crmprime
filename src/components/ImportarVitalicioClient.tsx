@@ -30,6 +30,18 @@ function parseBRL(val: string): number | null {
   return isNaN(num) ? null : num
 }
 
+// Converte DD/MM/YYYY ou DD-MM-YYYY para YYYY-MM-DD (ISO). Retorna null se inválido.
+function normalizarData(val: string | null): string | null {
+  if (!val) return null
+  const v = val.trim()
+  // já está em ISO
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v
+  // DD/MM/YYYY ou DD-MM-YYYY
+  const m = v.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/)
+  if (m) return `${m[3]}-${m[2]}-${m[1]}`
+  return null
+}
+
 function extrairNomeCpf(segurado: string): { nome: string; cpf: string | null } {
   const parts = segurado.trim().split(/\s+/)
   const ultimo = parts[parts.length - 1]
@@ -168,7 +180,7 @@ export default function ImportarVitalicioClient() {
       tipo_plano:                c.tipo_plano,
       valor_plano:               c.valor_plano,
       operadora:                 c.operadora,
-      data_inicio_plano:         c.data_inicio_plano,
+      data_inicio_plano:         normalizarData(c.data_inicio_plano),
       fase_cliente:              'vitalicio' as const,
       vitalicio_valor_estimado:  c.vitalicio_valor_estimado,
       vitalicio_dia_previsto:    null,
