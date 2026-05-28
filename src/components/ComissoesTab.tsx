@@ -151,15 +151,6 @@ export default function ComissoesTab({ comissoes, vendas, regras, onAtualizar, c
     onAtualizar()
   }
 
-  async function toggleStatusVendedor(comissao: Comissao) {
-    const novoStatus = comissao.status_vendedor === 'Pendente' ? 'Recebido' : 'Pendente'
-    const update: Record<string, string | null> = {
-      status_vendedor: novoStatus,
-      data_recebida_vendedor: novoStatus === 'Recebido' ? new Date().toISOString().split('T')[0] : null,
-    }
-    await supabase.from('comissoes').update(update).eq('id', comissao.id)
-    onAtualizar()
-  }
 
   function tipoLabel(c: ComissaoComVenda): string {
     if (c.tipo === 'vitalicio') return 'Vitalício'
@@ -355,24 +346,13 @@ export default function ComissoesTab({ comissoes, vendas, regras, onAtualizar, c
                   <td className="px-4 py-3">
                     {c.tipo === 'vitalicio' ? (
                       <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: '#ede9f8', color: '#2d1f4e' }}>—</span>
-                    ) : c.status_vendedor === 'Recebido' ? (
-                      <button
-                        onClick={() => toggleStatusVendedor(c)}
-                        className="px-3 py-1 rounded-lg text-xs font-semibold hover:opacity-80 transition-opacity"
-                        style={{ backgroundColor: '#dcfce7', color: '#15803d' }}
-                        title="Clique para desfazer"
-                      >
-                        ✓ Pago
-                      </button>
                     ) : (
-                      <button
-                        onClick={() => toggleStatusVendedor(c)}
-                        className="px-3 py-1 rounded-lg text-xs font-semibold hover:opacity-90 transition-opacity"
-                        style={{ backgroundColor: '#2d1f4e', color: '#ffffff' }}
-                        title="Marcar como pago ao vendedor"
+                      <span
+                        className="text-xs px-2 py-0.5 rounded-full font-medium"
+                        style={c.status_vendedor === 'Recebido' ? { backgroundColor: '#dcfce7', color: '#15803d' } : { backgroundColor: '#fef3c7', color: '#92400e' }}
                       >
-                        Pagar Vendedor
-                      </button>
+                        {c.status_vendedor === 'Recebido' ? '✓ Pago' : 'Pendente'}
+                      </span>
                     )}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap" style={{ color: '#5a4e3c' }}>{formatDate(c.data_prevista)}</td>

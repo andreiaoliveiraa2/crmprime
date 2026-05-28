@@ -441,8 +441,8 @@ export default function ContasTab({ contas, comissoes, vendas, onAtualizar, cnpj
   return (
     <div className="space-y-6">
       <SummaryCards contas={contas} comissoes={comissoes} />
-      <ComissoesVendedoresSection comissoes={comissoes} vendas={vendas} onAtualizar={onAtualizar} />
       <ComissoesAReceberSection comissoes={comissoes} vendas={vendas} onAtualizar={onAtualizar} />
+      <ComissoesVendedoresSection comissoes={comissoes} vendas={vendas} onAtualizar={onAtualizar} />
       <ContasUnificadasSection contas={contas} cnpjs={cnpjs} categorias={categorias} onAtualizar={onAtualizar} />
     </div>
   )
