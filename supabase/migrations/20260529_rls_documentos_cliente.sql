@@ -70,6 +70,10 @@ create policy "storage_documentos_admin_update" on storage.objects
   using (
     bucket_id = 'clientes-documentos'
     and meu_perfil() = 'admin'
+  )
+  with check (
+    bucket_id = 'clientes-documentos'
+    and meu_perfil() = 'admin'
   );
 
 create policy "storage_documentos_admin_delete" on storage.objects
@@ -99,6 +103,28 @@ create policy "storage_documentos_vendedor_select" on storage.objects
 create policy "storage_documentos_vendedor_insert" on storage.objects
   for insert
   to authenticated
+  with check (
+    bucket_id = 'clientes-documentos'
+    and meu_perfil() = 'vendedor'
+    and exists (
+      select 1 from clientes c
+      where c.id::text = split_part(name, '/', 1)
+        and c.vendedor_id = meu_vendedor_id()
+    )
+  );
+
+create policy "storage_documentos_vendedor_update" on storage.objects
+  for update
+  to authenticated
+  using (
+    bucket_id = 'clientes-documentos'
+    and meu_perfil() = 'vendedor'
+    and exists (
+      select 1 from clientes c
+      where c.id::text = split_part(name, '/', 1)
+        and c.vendedor_id = meu_vendedor_id()
+    )
+  )
   with check (
     bucket_id = 'clientes-documentos'
     and meu_perfil() = 'vendedor'
