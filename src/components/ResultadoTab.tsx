@@ -175,14 +175,18 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas, vendas 
     [despesasFixas, numMeses]
   )
 
-  // Inclui todos os status (Pendente + Pago) — vitalício é recorrente previsível,
-  // não deve sumir do card ao ser baixado como recebido no mês
+  // Vitalício = carteira antiga (contas mensais) + comissões vitalícias de vendas novas
+  // Inclui todos os status — vitalício é recorrente previsível, não some ao ser baixado
   const vitalicoMes = useMemo(() => {
     if (!hasRange) return 0
-    return contas
+    const carteira = contas
       .filter(c => c.cliente_vitalicio_id != null && c.tipo === 'receber' && inRange(c.vencimento, start, end))
       .reduce((s, c) => s + c.valor, 0)
-  }, [contas, start, end, hasRange])
+    const novasVendas = comissoes
+      .filter(c => c.tipo === 'vitalicio' && c.status_empresa !== 'Direto' && inRange(c.data_prevista, start, end))
+      .reduce((s, c) => s + (c.valor_empresa ?? 0), 0)
+    return carteira + novasVendas
+  }, [contas, comissoes, start, end, hasRange])
 
   const contasReceberMes = useMemo(() => {
     if (!hasRange) return 0
