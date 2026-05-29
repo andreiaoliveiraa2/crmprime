@@ -15,6 +15,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "A2 Prime | Corretora de Seguros",
   description: "Sistema de gestão da A2 Prime Corretora de Seguros",
+  icons: {
+    icon: "/logo-a2prime.png",
+    apple: "/logo-a2prime.png",
+  },
 };
 
 export default function RootLayout({
