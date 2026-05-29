@@ -292,15 +292,25 @@ function ComissoesAReceberSection({ comissoes, vendas, onAtualizar }: {
   const temFiltro = dataInicio !== mv.inicio || dataFim !== mv.fim
   function limpar() { setDataInicio(mv.inicio); setDataFim(mv.fim) }
 
+  // Quantos meses completos estão no período selecionado
+  const numMeses = useMemo(() => {
+    if (!dataInicio || !dataFim) return 1
+    const [sy, sm] = dataInicio.split('-').map(Number)
+    const [ey, em] = dataFim.split('-').map(Number)
+    return Math.max(1, (ey - sy) * 12 + (em - sm) + 1)
+  }, [dataInicio, dataFim])
+
   const pendentes = useMemo(() =>
     comissoes
       .filter(c => {
-        if (c.status_empresa !== 'Pendente') return false
         if (!c.data_prevista) return false
-        // Vitalício é recorrente: aparece em qualquer mês a partir de data_prevista
-        if (c.tipo === 'vitalicio') return c.data_prevista <= dataFim
-        // Parcelas: só no mês exato
-        return c.data_prevista >= dataInicio && c.data_prevista <= dataFim
+        // Vitalício: recorrente — aparece em qualquer período a partir de data_prevista,
+        // independente de status (já foi recebido este mês mas volta no próximo)
+        if (c.tipo === 'vitalicio') {
+          return c.status_empresa !== 'Cancelado' && c.data_prevista <= dataFim
+        }
+        // Parcelas: só quando Pendente e no mês exato
+        return c.status_empresa === 'Pendente' && c.data_prevista >= dataInicio && c.data_prevista <= dataFim
       })
       .sort((a, b) => {
         if (a.venda_id !== b.venda_id) return a.venda_id.localeCompare(b.venda_id)
@@ -311,7 +321,11 @@ function ComissoesAReceberSection({ comissoes, vendas, onAtualizar }: {
     [comissoes, dataInicio, dataFim]
   )
 
-  const total = pendentes.reduce((s, c) => s + (c.valor_bruto ?? 0), 0)
+  // Vitalício multiplica pelo número de meses do período
+  const total = pendentes.reduce((s, c) => {
+    const valor = c.valor_bruto ?? 0
+    return s + (c.tipo === 'vitalicio' ? valor * numMeses : valor)
+  }, 0)
 
   async function marcarRecebido(c: Comissao) {
     await supabase.from('comissoes').update({
@@ -408,15 +422,21 @@ function ComissoesAReceberSection({ comissoes, vendas, onAtualizar }: {
                       {c.numero_parcela ?? '—'}
                     </td>
                     <td className="px-4 py-3 font-semibold" style={{ color: '#15803d' }}>
-                      {formatBRL(c.valor_bruto ?? 0)}
+                      {c.tipo === 'vitalicio' && numMeses > 1
+                        ? <>{formatBRL(c.valor_bruto ?? 0)} <span className="text-xs font-normal" style={{ color: '#9a918a' }}>× {numMeses} meses = {formatBRL((c.valor_bruto ?? 0) * numMeses)}</span></>
+                        : formatBRL(c.valor_bruto ?? 0)
+                      }
                     </td>
                     <td className="px-4 py-3">
-                      <span className={overdue ? 'text-red-600 font-medium' : 'text-gray-700'}>
-                        {formatDate(c.data_prevista)}
-                      </span>
-                      {overdue && (
-                        <span className="ml-1.5 px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">Vencido</span>
-                      )}
+                      {c.tipo === 'vitalicio'
+                        ? <span className="text-xs font-medium" style={{ color: '#b89a6a' }}>Recorrente mensal</span>
+                        : <>
+                            <span className={overdue ? 'text-red-600 font-medium' : 'text-gray-700'}>
+                              {formatDate(c.data_prevista)}
+                            </span>
+                            {overdue && <span className="ml-1.5 px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">Vencido</span>}
+                          </>
+                      }
                     </td>
                     <td className="px-4 py-3">
                       <button
