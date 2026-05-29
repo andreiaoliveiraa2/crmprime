@@ -295,8 +295,8 @@ export interface Comissao {
   valor_bruto: number
   valor_empresa: number
   valor_vendedor: number
-  status_empresa: 'Pendente' | 'Recebido' | 'Direto'
-  status_vendedor: 'Pendente' | 'Recebido'
+  status_empresa: 'Pendente' | 'Recebido' | 'Direto' | 'Cancelado'
+  status_vendedor: 'Pendente' | 'Recebido' | 'Cancelado'
   data_prevista: string
   data_recebida_empresa: string | null
   data_recebida_vendedor: string | null

@@ -304,10 +304,10 @@ function ComissoesAReceberSection({ comissoes, vendas, onAtualizar }: {
     comissoes
       .filter(c => {
         if (!c.data_prevista) return false
-        // Vitalício: recorrente — aparece em qualquer período a partir de data_prevista,
+        // Vitalício: recorrente — aparece sempre (não depende do período selecionado),
         // independente de status (já foi recebido este mês mas volta no próximo)
         if (c.tipo === 'vitalicio') {
-          return c.status_empresa !== 'Cancelado' && c.data_prevista <= dataFim
+          return c.status_empresa !== 'Cancelado'
         }
         // Parcelas: só quando Pendente e no mês exato
         return c.status_empresa === 'Pendente' && c.data_prevista >= dataInicio && c.data_prevista <= dataFim
