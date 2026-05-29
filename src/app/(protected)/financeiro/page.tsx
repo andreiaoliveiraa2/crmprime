@@ -77,7 +77,7 @@ export default async function FinanceiroPage() {
     }
   }
 
-  // ── Gera contas a receber do mês atual para clientes vitalícios ──────────
+  // ── Gera contas a receber dos próximos 12 meses para clientes vitalícios ─
   const { data: clientesVitaliciosRaw } = await supabase
     .from('clientes')
     .select('id, nome, operadora, vitalicio_valor_estimado, vitalicio_dia_previsto')
@@ -85,48 +85,67 @@ export default async function FinanceiroPage() {
     .eq('status', 'Ativo')
     .not('vitalicio_valor_estimado', 'is', null)
 
-  const { data: contasVitalicioMes } = await supabase
+  // Horizonte de 12 meses: mês atual + próximos 11
+  const horizonte = 12
+  const fimHorizonte = (() => {
+    const d = new Date(anoAtual, mesAtual + horizonte, 0)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  })()
+
+  const { data: contasVitalicioHorizonte } = await supabase
     .from('contas')
-    .select('cliente_vitalicio_id')
+    .select('cliente_vitalicio_id, vencimento')
     .eq('tipo', 'receber')
     .gte('vencimento', `${prefixoMes}-01`)
-    .lte('vencimento', fimMes)
+    .lte('vencimento', fimHorizonte)
     .not('cliente_vitalicio_id', 'is', null)
 
-  const vitaliciosComContaNoMes = new Set(
-    (contasVitalicioMes ?? []).map(c => c.cliente_vitalicio_id).filter(Boolean)
+  // Chave: "clienteId-yyyy-mm" → já existe
+  const vitaliciosComConta = new Set(
+    (contasVitalicioHorizonte ?? []).map(c => {
+      const mes = (c.vencimento as string).substring(0, 7)
+      return `${c.cliente_vitalicio_id}-${mes}`
+    })
   )
 
-  const vitaliciosParaGerar = (clientesVitaliciosRaw ?? []).filter(
-    (c: { id: string }) => !vitaliciosComContaNoMes.has(c.id)
-  )
+  if ((clientesVitaliciosRaw ?? []).length > 0) {
+    type ClienteVit = { id: string; nome: string; operadora: string | null; vitalicio_valor_estimado: number; vitalicio_dia_previsto: number | null }
+    const novasContasVitalicio: object[] = []
 
-  if (vitaliciosParaGerar.length > 0) {
-    const ultimoDia = parseInt(ultimoDiaMes)
-    const novasContasVitalicio = vitaliciosParaGerar.map((c: {
-      id: string; nome: string; operadora: string | null
-      vitalicio_valor_estimado: number; vitalicio_dia_previsto: number | null
-    }) => ({
-      tipo: 'receber' as const,
-      descricao: `Vitalício — ${c.nome}${c.operadora ? ` (${c.operadora})` : ''}`,
-      valor: c.vitalicio_valor_estimado,
-      vencimento: `${prefixoMes}-${String(Math.min(c.vitalicio_dia_previsto ?? 10, ultimoDia)).padStart(2, '0')}`,
-      status: 'Pendente' as const,
-      observacoes: null,
-      empresa: null,
-      categoria: 'Vitalício',
-      despesa_fixa_id: null,
-      cliente_vitalicio_id: c.id,
-      tipo_lancamento: 'recorrente' as const,
-      grupo_id: null,
-      parcela_numero: null,
-      total_parcelas: null,
-    }))
-    // ON CONFLICT: unique index idx_contas_vitalicio_mes_unico garante idempotência
-    // em caso de requisições simultâneas (race condition)
-    const { error: insertErr } = await supabase.from('contas').insert(novasContasVitalicio)
-    if (insertErr && !insertErr.code?.includes('23505')) {
-      console.error('Erro ao gerar contas vitalício:', insertErr)
+    for (let i = 0; i < horizonte; i++) {
+      const d = new Date(anoAtual, mesAtual + i, 1)
+      const ano = d.getFullYear()
+      const mes = String(d.getMonth() + 1).padStart(2, '0')
+      const prefixo = `${ano}-${mes}`
+      const ultimoDia = new Date(ano, d.getMonth() + 1, 0).getDate()
+
+      for (const c of clientesVitaliciosRaw as ClienteVit[]) {
+        const chave = `${c.id}-${prefixo}`
+        if (vitaliciosComConta.has(chave)) continue
+        novasContasVitalicio.push({
+          tipo: 'receber',
+          descricao: `Vitalício — ${c.nome}${c.operadora ? ` (${c.operadora})` : ''}`,
+          valor: c.vitalicio_valor_estimado,
+          vencimento: `${prefixo}-${String(Math.min(c.vitalicio_dia_previsto ?? 10, ultimoDia)).padStart(2, '0')}`,
+          status: 'Pendente',
+          observacoes: null,
+          empresa: null,
+          categoria: 'Vitalício',
+          despesa_fixa_id: null,
+          cliente_vitalicio_id: c.id,
+          tipo_lancamento: 'recorrente',
+          grupo_id: null,
+          parcela_numero: null,
+          total_parcelas: null,
+        })
+      }
+    }
+
+    if (novasContasVitalicio.length > 0) {
+      const { error: insertErr } = await supabase.from('contas').insert(novasContasVitalicio)
+      if (insertErr && !insertErr.code?.includes('23505')) {
+        console.error('Erro ao gerar contas vitalício:', insertErr)
+      }
     }
   }
 
