@@ -51,11 +51,11 @@ export default async function MinhasComissoesPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-6">
-        <div className="bg-white rounded-2xl p-4" style={{ border: '1px solid #e8e4dd' }}>
+        <div className="bg-white rounded-2xl p-4" style={{ border: '2px solid #d4af7a' }}>
           <p className="text-xs font-semibold mb-1" style={{ color: '#9a918a' }}>A Receber</p>
           <p className="text-xl font-bold" style={{ color: '#2d1f4e' }}>{fmtMoeda(totalPendente)}</p>
         </div>
-        <div className="bg-white rounded-2xl p-4" style={{ border: '1px solid #e8e4dd' }}>
+        <div className="bg-white rounded-2xl p-4" style={{ border: '2px solid #d4af7a' }}>
           <p className="text-xs font-semibold mb-1" style={{ color: '#9a918a' }}>Já Recebido</p>
           <p className="text-xl font-bold" style={{ color: '#15803d' }}>{fmtMoeda(totalRecebido)}</p>
         </div>

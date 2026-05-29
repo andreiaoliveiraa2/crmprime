@@ -20,7 +20,7 @@ export default function DashboardCard({
   return (
     <div
       className="bg-white p-4 hover:shadow-md transition-shadow duration-200"
-      style={{ border: '1px solid #e8e4dd', borderRadius: '12px' }}
+      style={{ border: '2px solid #d4af7a', borderRadius: '12px' }}
     >
       <div className="flex items-start justify-between mb-2">
         <p className="text-xs font-medium leading-snug pr-2" style={{ color: '#7a7065' }}>{title}</p>

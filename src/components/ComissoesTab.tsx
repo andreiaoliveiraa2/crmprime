@@ -166,7 +166,7 @@ export default function ComissoesTab({ comissoes, vendas, regras, onAtualizar, c
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Card 1 — A receber (Corretora) */}
-        <div className="bg-white rounded-xl shadow-sm p-6 flex items-start gap-4" style={{ border: '1px solid #e8e4dd' }}>
+        <div className="bg-white rounded-xl shadow-sm p-6 flex items-start gap-4" style={{ border: '2px solid #d4af7a' }}>
           <div className="p-2 rounded-xl" style={{ backgroundColor: '#ede9f8' }}>
             <CheckCircle size={20} style={{ color: '#2d1f4e' }} />
           </div>
@@ -178,7 +178,7 @@ export default function ComissoesTab({ comissoes, vendas, regras, onAtualizar, c
         </div>
 
         {/* Card 2 — A pagar (Vendedores) */}
-        <div className="bg-white rounded-xl shadow-sm p-6 flex items-start gap-4" style={{ border: '1px solid #e8e4dd' }}>
+        <div className="bg-white rounded-xl shadow-sm p-6 flex items-start gap-4" style={{ border: '2px solid #d4af7a' }}>
           <div className="p-2 rounded-xl" style={{ backgroundColor: '#fef9e7' }}>
             <Clock size={20} style={{ color: '#b89a6a' }} />
           </div>

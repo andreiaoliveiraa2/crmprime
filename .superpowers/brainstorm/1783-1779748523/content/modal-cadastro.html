@@ -1,0 +1,110 @@
+<h2>Como quer o formulário de nova conta?</h2>
+<p class="subtitle">Ao clicar em "Adicionar", o que aparece no formulário para escolher entre única, parcelada ou recorrente?</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">Nova Conta a Pagar</div>
+        <div class="mockup-body" style="padding:12px;font-size:11px;">
+          <div style="display:flex;gap:8px;margin-bottom:10px;">
+            <div style="flex:1;padding:8px 10px;border:2px solid #2d1f4e;border-radius:8px;text-align:center;background:#f4f1ff;">
+              <div style="font-size:10px;font-weight:700;color:#2d1f4e;">📄 Única</div>
+              <div style="font-size:9px;color:#6b7280;margin-top:2px;">Uma só vez</div>
+            </div>
+            <div style="flex:1;padding:8px 10px;border:1px solid #e8e4dd;border-radius:8px;text-align:center;">
+              <div style="font-size:10px;font-weight:600;color:#4b5563;">📋 Parcelada</div>
+              <div style="font-size:9px;color:#6b7280;margin-top:2px;">N parcelas</div>
+            </div>
+            <div style="flex:1;padding:8px 10px;border:1px solid #e8e4dd;border-radius:8px;text-align:center;">
+              <div style="font-size:10px;font-weight:600;color:#4b5563;">🔁 Recorrente</div>
+              <div style="font-size:9px;color:#6b7280;margin-top:2px;">Todo mês</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div style="grid-column:1/-1;">
+              <div style="font-size:9px;color:#6b7280;margin-bottom:3px;">Descrição *</div>
+              <div style="border:1px solid #e8e4dd;border-radius:6px;padding:5px 8px;color:#9ca3af;font-size:10px;">Ex: Aluguel escritório</div>
+            </div>
+            <div>
+              <div style="font-size:9px;color:#6b7280;margin-bottom:3px;">Valor (R$) *</div>
+              <div style="border:1px solid #e8e4dd;border-radius:6px;padding:5px 8px;color:#9ca3af;font-size:10px;">0,00</div>
+            </div>
+            <div>
+              <div style="font-size:9px;color:#6b7280;margin-bottom:3px;">Vencimento *</div>
+              <div style="border:1px solid #e8e4dd;border-radius:6px;padding:5px 8px;color:#9ca3af;font-size:10px;">01/06/2026</div>
+            </div>
+            <div>
+              <div style="font-size:9px;color:#6b7280;margin-bottom:3px;">Categoria</div>
+              <div style="border:1px solid #e8e4dd;border-radius:6px;padding:5px 8px;color:#9ca3af;font-size:10px;">Selecionar...</div>
+            </div>
+            <div>
+              <div style="font-size:9px;color:#6b7280;margin-bottom:3px;">Empresa</div>
+              <div style="border:1px solid #e8e4dd;border-radius:6px;padding:5px 8px;color:#9ca3af;font-size:10px;">Selecionar...</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:10px;">
+            <div style="flex:1;border:1px solid #e8e4dd;border-radius:8px;padding:6px;text-align:center;font-size:10px;color:#6b7280;">Cancelar</div>
+            <div style="flex:1;background:#2d1f4e;border-radius:8px;padding:6px;text-align:center;font-size:10px;color:white;font-weight:600;">Salvar</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — 3 botões no topo</h3>
+      <p>Ao abrir o formulário, escolhe primeiro o tipo: <strong>Única / Parcelada / Recorrente</strong>. O formulário muda de acordo com o tipo escolhido.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">Nova Conta a Pagar</div>
+        <div class="mockup-body" style="padding:12px;font-size:11px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div style="grid-column:1/-1;">
+              <div style="font-size:9px;color:#6b7280;margin-bottom:3px;">Descrição *</div>
+              <div style="border:1px solid #e8e4dd;border-radius:6px;padding:5px 8px;color:#9ca3af;font-size:10px;">Ex: Aluguel escritório</div>
+            </div>
+            <div>
+              <div style="font-size:9px;color:#6b7280;margin-bottom:3px;">Valor (R$) *</div>
+              <div style="border:1px solid #e8e4dd;border-radius:6px;padding:5px 8px;color:#9ca3af;font-size:10px;">0,00</div>
+            </div>
+            <div>
+              <div style="font-size:9px;color:#6b7280;margin-bottom:3px;">Vencimento *</div>
+              <div style="border:1px solid #e8e4dd;border-radius:6px;padding:5px 8px;color:#9ca3af;font-size:10px;">01/06/2026</div>
+            </div>
+            <div>
+              <div style="font-size:9px;color:#6b7280;margin-bottom:3px;">Categoria</div>
+              <div style="border:1px solid #e8e4dd;border-radius:6px;padding:5px 8px;color:#9ca3af;font-size:10px;">Selecionar...</div>
+            </div>
+            <div>
+              <div style="font-size:9px;color:#6b7280;margin-bottom:3px;">Tipo</div>
+              <select style="width:100%;border:1px solid #e8e4dd;border-radius:6px;padding:5px 8px;font-size:10px;background:white;">
+                <option>Conta única</option>
+                <option>Parcelada</option>
+                <option>Recorrente</option>
+              </select>
+            </div>
+            <!-- Campo extra que aparece só pra parcelada -->
+            <div style="grid-column:1/-1;background:#f9f8f6;border-radius:8px;padding:8px;border:1px solid #f0ece6;">
+              <div style="font-size:9px;color:#6b7280;margin-bottom:3px;">Nº de parcelas</div>
+              <div style="border:1px solid #e8e4dd;border-radius:6px;padding:5px 8px;color:#9ca3af;font-size:10px;background:white;">3</div>
+              <div style="font-size:9px;color:#9ca3af;margin-top:4px;">Cria 3 lançamentos: Jun, Jul e Ago/2026</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:10px;">
+            <div style="flex:1;border:1px solid #e8e4dd;border-radius:8px;padding:6px;text-align:center;font-size:10px;color:#6b7280;">Cancelar</div>
+            <div style="flex:1;background:#2d1f4e;border-radius:8px;padding:6px;text-align:center;font-size:10px;color:white;font-weight:600;">Salvar</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Campo "Tipo" no formulário</h3>
+      <p>O tipo fica como um campo select normal dentro do formulário. Ao escolher "Parcelada", aparece o campo de nº de parcelas. Ao escolher "Recorrente", não precisa informar fim.</p>
+    </div>
+  </div>
+
+</div>

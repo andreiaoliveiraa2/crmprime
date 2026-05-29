@@ -1,0 +1,109 @@
+<h2>Gestão de Categorias — onde fica?</h2>
+<p class="subtitle">Você quer editar as categorias (nome + única ou recorrente). Onde faz mais sentido isso estar?</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">Contas — aba A Pagar</div>
+        <div class="mockup-body" style="padding:0;font-size:11px;">
+          <!-- Sub-abas da seção Contas -->
+          <div style="display:flex;border-bottom:1px solid #e8e4dd;padding:0 12px;background:#fdfcfb;">
+            <div style="padding:8px 12px;font-size:10px;color:#9ca3af;">A Pagar</div>
+            <div style="padding:8px 12px;font-size:10px;color:#9ca3af;">A Receber</div>
+            <div style="padding:8px 12px;font-size:10px;font-weight:700;color:#2d1f4e;border-bottom:2px solid #2d1f4e;margin-bottom:-1px;">⚙ Categorias</div>
+          </div>
+          <!-- Conteúdo categorias -->
+          <div style="padding:10px 12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <span style="font-size:10px;font-weight:600;color:#2d1f4e;">Categorias de Contas</span>
+              <span style="background:#b89a6a;color:white;padding:3px 8px;border-radius:6px;font-size:9px;font-weight:600;">+ Nova</span>
+            </div>
+            <table style="width:100%;border-collapse:collapse;font-size:10px;">
+              <thead>
+                <tr style="background:#f9f8f6;font-size:9px;color:#6b7280;text-transform:uppercase;">
+                  <th style="padding:5px 8px;text-align:left;">Nome</th>
+                  <th style="padding:5px 8px;text-align:left;">Tipo padrão</th>
+                  <th style="padding:5px 8px;text-align:left;">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom:1px solid #f3f4f6;">
+                  <td style="padding:5px 8px;font-weight:500;">Aluguel</td>
+                  <td style="padding:5px 8px;"><span style="background:#dbeafe;color:#1d4ed8;padding:2px 6px;border-radius:4px;font-size:9px;">🔁 Recorrente</span></td>
+                  <td style="padding:5px 8px;color:#9ca3af;">✏ 🗑</td>
+                </tr>
+                <tr style="background:#fafaf9;border-bottom:1px solid #f3f4f6;">
+                  <td style="padding:5px 8px;font-weight:500;">Contador</td>
+                  <td style="padding:5px 8px;"><span style="background:#dbeafe;color:#1d4ed8;padding:2px 6px;border-radius:4px;font-size:9px;">🔁 Recorrente</span></td>
+                  <td style="padding:5px 8px;color:#9ca3af;">✏ 🗑</td>
+                </tr>
+                <tr style="border-bottom:1px solid #f3f4f6;">
+                  <td style="padding:5px 8px;font-weight:500;">Material</td>
+                  <td style="padding:5px 8px;"><span style="background:#f3f4f6;color:#6b7280;padding:2px 6px;border-radius:4px;font-size:9px;">📄 Única</span></td>
+                  <td style="padding:5px 8px;color:#9ca3af;">✏ 🗑</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — 3ª aba dentro de Contas</h3>
+      <p>A gestão de categorias fica como uma aba extra dentro da seção Contas, ao lado de "A Pagar" e "A Receber". Acesso rápido, sem sair da tela.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">⚙ Configurações do Sistema</div>
+        <div class="mockup-body" style="padding:10px 12px;font-size:11px;">
+          <div style="display:flex;gap:8px;margin-bottom:10px;">
+            <div style="padding:5px 10px;border-radius:6px;background:#f4f1ff;font-size:9px;font-weight:600;color:#2d1f4e;">Usuários</div>
+            <div style="padding:5px 10px;border-radius:6px;background:#f4f1ff;font-size:9px;font-weight:600;color:#2d1f4e;">Operadoras</div>
+            <div style="padding:5px 10px;border-radius:6px;background:#2d1f4e;font-size:9px;font-weight:600;color:white;">Categorias</div>
+            <div style="padding:5px 10px;border-radius:6px;background:#f4f1ff;font-size:9px;font-weight:600;color:#2d1f4e;">CNPJs</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font-size:10px;font-weight:600;color:#2d1f4e;">Categorias de Contas</span>
+            <span style="background:#b89a6a;color:white;padding:3px 8px;border-radius:6px;font-size:9px;font-weight:600;">+ Nova</span>
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:10px;">
+            <thead>
+              <tr style="background:#f9f8f6;font-size:9px;color:#6b7280;text-transform:uppercase;">
+                <th style="padding:5px 8px;text-align:left;">Nome</th>
+                <th style="padding:5px 8px;text-align:left;">Tipo padrão</th>
+                <th style="padding:5px 8px;text-align:left;">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom:1px solid #f3f4f6;">
+                <td style="padding:5px 8px;font-weight:500;">Aluguel</td>
+                <td style="padding:5px 8px;"><span style="background:#dbeafe;color:#1d4ed8;padding:2px 6px;border-radius:4px;font-size:9px;">🔁 Recorrente</span></td>
+                <td style="padding:5px 8px;color:#9ca3af;">✏ 🗑</td>
+              </tr>
+              <tr style="background:#fafaf9;border-bottom:1px solid #f3f4f6;">
+                <td style="padding:5px 8px;font-weight:500;">Contador</td>
+                <td style="padding:5px 8px;"><span style="background:#dbeafe;color:#1d4ed8;padding:2px 6px;border-radius:4px;font-size:9px;">🔁 Recorrente</span></td>
+                <td style="padding:5px 8px;color:#9ca3af;">✏ 🗑</td>
+              </tr>
+              <tr style="border-bottom:1px solid #f3f4f6;">
+                <td style="padding:5px 8px;font-weight:500;">Material</td>
+                <td style="padding:5px 8px;"><span style="background:#f3f4f6;color:#6b7280;padding:2px 6px;border-radius:4px;font-size:9px;">📄 Única</span></td>
+                <td style="padding:5px 8px;color:#9ca3af;">✏ 🗑</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Nas Configurações do sistema</h3>
+      <p>Categorias ficam em <strong>Configurações</strong>, junto com Usuários, Operadoras e CNPJs. Mais organizado para uma função que você edita raramente.</p>
+    </div>
+  </div>
+
+</div>

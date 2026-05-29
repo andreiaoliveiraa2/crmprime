@@ -185,7 +185,7 @@ export default function ProducaoTab({ vendas, comissoes, contas, cnpjs }: Props)
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
         {/* Card 1 — Produção do Mês */}
-        <div className="bg-white rounded-xl shadow-sm p-6 flex items-start gap-4" style={{ border: '1px solid #e8e4dd' }}>
+        <div className="bg-white rounded-xl shadow-sm p-6 flex items-start gap-4" style={{ border: '2px solid #d4af7a' }}>
           <div className="p-2 rounded-xl" style={{ backgroundColor: '#ede9f8' }}>
             <DollarSign size={20} style={{ color: '#2d1f4e' }} />
           </div>
@@ -196,7 +196,7 @@ export default function ProducaoTab({ vendas, comissoes, contas, cnpjs }: Props)
         </div>
 
         {/* Card 2 — Total a Receber (bruto da operadora) */}
-        <div className="bg-white rounded-xl shadow-sm p-6 flex items-start gap-4" style={{ border: '1px solid #e8e4dd' }}>
+        <div className="bg-white rounded-xl shadow-sm p-6 flex items-start gap-4" style={{ border: '2px solid #d4af7a' }}>
           <div className="p-2 rounded-xl" style={{ backgroundColor: '#fef9e7' }}>
             <TrendingUp size={20} style={{ color: '#b89a6a' }} />
           </div>
@@ -208,7 +208,7 @@ export default function ProducaoTab({ vendas, comissoes, contas, cnpjs }: Props)
         </div>
 
         {/* Card 3 — Comissão a Pagar (vendedores) */}
-        <div className="bg-white rounded-xl shadow-sm p-6 flex items-start gap-4" style={{ border: '1px solid #e8e4dd' }}>
+        <div className="bg-white rounded-xl shadow-sm p-6 flex items-start gap-4" style={{ border: '2px solid #d4af7a' }}>
           <div className="p-2 rounded-xl" style={{ backgroundColor: '#fce7f3' }}>
             <ArrowDownCircle size={20} style={{ color: '#be185d' }} />
           </div>
@@ -220,7 +220,7 @@ export default function ProducaoTab({ vendas, comissoes, contas, cnpjs }: Props)
         </div>
 
         {/* Card 4 — Vitalícios Ativos */}
-        <div className="bg-white rounded-xl shadow-sm p-6 flex items-start gap-4" style={{ border: '1px solid #e8e4dd' }}>
+        <div className="bg-white rounded-xl shadow-sm p-6 flex items-start gap-4" style={{ border: '2px solid #d4af7a' }}>
           <div className="p-2 rounded-xl" style={{ backgroundColor: '#dcfce7' }}>
             <Repeat size={20} style={{ color: '#15803d' }} />
           </div>
@@ -232,7 +232,7 @@ export default function ProducaoTab({ vendas, comissoes, contas, cnpjs }: Props)
         </div>
 
         {/* Card 5 — Contas a Pagar */}
-        <div className="bg-white rounded-xl shadow-sm p-6 flex items-start gap-4" style={{ border: '1px solid #e8e4dd' }}>
+        <div className="bg-white rounded-xl shadow-sm p-6 flex items-start gap-4" style={{ border: '2px solid #d4af7a' }}>
           <div className="p-2 rounded-xl" style={{ backgroundColor: '#fee2e2' }}>
             <CreditCard size={20} style={{ color: '#b91c1c' }} />
           </div>

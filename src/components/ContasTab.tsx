@@ -99,7 +99,7 @@ function SummaryCards({ contas, comissoes }: { contas: Conta[]; comissoes: Comis
     <div className="space-y-2">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map(({ label, value, icon: Icon, cor, bg }) => (
-          <div key={label} className="bg-white rounded-xl p-4" style={{ border: '1px solid #e8e4dd' }}>
+          <div key={label} className="bg-white rounded-xl p-4" style={{ border: '2px solid #d4af7a' }}>
             <div className="flex items-center gap-2 mb-2">
               <div className="rounded-lg p-1.5" style={{ backgroundColor: bg }}>
                 <Icon size={16} style={{ color: cor }} />

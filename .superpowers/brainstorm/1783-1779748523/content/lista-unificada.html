@@ -1,0 +1,145 @@
+<h2>Como quer ver a lista de Contas?</h2>
+<p class="subtitle">As contas a pagar e a receber aparecem juntas numa lista só — como quer organizá-las?</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">Contas — Lista Unificada</div>
+        <div class="mockup-body" style="padding:12px 0; font-size:11px;">
+          <!-- Filtros -->
+          <div style="display:flex;gap:8px;padding:6px 12px 10px;background:#fdfcfb;border-bottom:1px solid #f0ece6;flex-wrap:wrap;">
+            <div style="display:flex;flex-direction:column;gap:2px;">
+              <span style="font-size:9px;color:#9ca3af;text-transform:uppercase;">Tipo</span>
+              <select style="font-size:10px;border:1px solid #e8e4dd;border-radius:6px;padding:3px 6px;background:white;">
+                <option>Todos</option>
+              </select>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:2px;">
+              <span style="font-size:9px;color:#9ca3af;text-transform:uppercase;">Status</span>
+              <select style="font-size:10px;border:1px solid #e8e4dd;border-radius:6px;padding:3px 6px;background:white;">
+                <option>Todos</option>
+              </select>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:2px;">
+              <span style="font-size:9px;color:#9ca3af;text-transform:uppercase;">Categoria</span>
+              <select style="font-size:10px;border:1px solid #e8e4dd;border-radius:6px;padding:3px 6px;background:white;">
+                <option>Todas</option>
+              </select>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:2px;">
+              <span style="font-size:9px;color:#9ca3af;text-transform:uppercase;">De</span>
+              <input type="date" style="font-size:10px;border:1px solid #e8e4dd;border-radius:6px;padding:3px 6px;" />
+            </div>
+            <div style="display:flex;flex-direction:column;gap:2px;">
+              <span style="font-size:9px;color:#9ca3af;text-transform:uppercase;">Até</span>
+              <input type="date" style="font-size:10px;border:1px solid #e8e4dd;border-radius:6px;padding:3px 6px;" />
+            </div>
+          </div>
+          <!-- Tabela -->
+          <table style="width:100%;border-collapse:collapse;">
+            <thead>
+              <tr style="background:#f9f8f6;font-size:9px;color:#6b7280;text-transform:uppercase;">
+                <th style="padding:6px 10px;text-align:left;">Tipo</th>
+                <th style="padding:6px 10px;text-align:left;">Descrição</th>
+                <th style="padding:6px 10px;text-align:left;">Categoria</th>
+                <th style="padding:6px 10px;text-align:left;">Valor</th>
+                <th style="padding:6px 10px;text-align:left;">Vencimento</th>
+                <th style="padding:6px 10px;text-align:left;">Status</th>
+                <th style="padding:6px 10px;text-align:left;">Ações</th>
+              </tr>
+            </thead>
+            <tbody style="font-size:10px;">
+              <tr style="border-bottom:1px solid #f3f4f6;">
+                <td style="padding:6px 10px;"><span style="background:#fee2e2;color:#b91c1c;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:600;">PAGAR</span></td>
+                <td style="padding:6px 10px;font-weight:500;">Aluguel</td>
+                <td style="padding:6px 10px;color:#6b7280;">Aluguel</td>
+                <td style="padding:6px 10px;color:#b91c1c;font-weight:600;">R$ 2.500,00</td>
+                <td style="padding:6px 10px;">01/06/2026</td>
+                <td style="padding:6px 10px;"><span style="background:#fef9c3;color:#a16207;padding:2px 6px;border-radius:4px;font-size:9px;">Pendente</span></td>
+                <td style="padding:6px 10px;color:#9ca3af;">✏ 🗑</td>
+              </tr>
+              <tr style="border-bottom:1px solid #f3f4f6;background:#fafaf9;">
+                <td style="padding:6px 10px;"><span style="background:#dcfce7;color:#15803d;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:600;">RECEBER</span></td>
+                <td style="padding:6px 10px;font-weight:500;">Mensalidade João Silva</td>
+                <td style="padding:6px 10px;color:#6b7280;">—</td>
+                <td style="padding:6px 10px;color:#15803d;font-weight:600;">R$ 350,00</td>
+                <td style="padding:6px 10px;">05/06/2026</td>
+                <td style="padding:6px 10px;"><span style="background:#fef9c3;color:#a16207;padding:2px 6px;border-radius:4px;font-size:9px;">Pendente</span></td>
+                <td style="padding:6px 10px;color:#9ca3af;">✏ 🗑</td>
+              </tr>
+              <tr style="border-bottom:1px solid #f3f4f6;">
+                <td style="padding:6px 10px;"><span style="background:#fee2e2;color:#b91c1c;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:600;">PAGAR</span></td>
+                <td style="padding:6px 10px;font-weight:500;">Internet</td>
+                <td style="padding:6px 10px;color:#6b7280;">Internet</td>
+                <td style="padding:6px 10px;color:#b91c1c;font-weight:600;">R$ 299,00</td>
+                <td style="padding:6px 10px;">10/06/2026</td>
+                <td style="padding:6px 10px;"><span style="background:#dcfce7;color:#15803d;padding:2px 6px;border-radius:4px;font-size:9px;">Pago</span></td>
+                <td style="padding:6px 10px;color:#9ca3af;">✏ 🗑</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Lista única com coluna "Tipo"</h3>
+      <p>Tudo numa tabela só. Coluna Tipo mostra <strong>PAGAR</strong> (vermelho) ou <strong>RECEBER</strong> (verde). Filtra por tipo se quiser ver só um deles.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">Contas</div>
+        <div class="mockup-body" style="padding:8px 0;font-size:11px;">
+          <!-- Abas internas -->
+          <div style="display:flex;gap:0;border-bottom:2px solid #e8e4dd;padding:0 12px;">
+            <div style="padding:6px 14px;font-size:11px;font-weight:600;color:#2d1f4e;border-bottom:2px solid #2d1f4e;margin-bottom:-2px;">A Pagar</div>
+            <div style="padding:6px 14px;font-size:11px;color:#9ca3af;">A Receber</div>
+          </div>
+          <!-- Filtros simplificados -->
+          <div style="display:flex;gap:6px;padding:6px 12px;background:#fdfcfb;border-bottom:1px solid #f0ece6;">
+            <select style="font-size:10px;border:1px solid #e8e4dd;border-radius:6px;padding:3px 6px;background:white;"><option>Status: Todos</option></select>
+            <select style="font-size:10px;border:1px solid #e8e4dd;border-radius:6px;padding:3px 6px;background:white;"><option>Categoria: Todas</option></select>
+            <input type="date" style="font-size:10px;border:1px solid #e8e4dd;border-radius:6px;padding:3px 6px;" />
+          </div>
+          <!-- Tabela A Pagar -->
+          <table style="width:100%;border-collapse:collapse;">
+            <thead>
+              <tr style="background:#f9f8f6;font-size:9px;color:#6b7280;text-transform:uppercase;">
+                <th style="padding:5px 10px;text-align:left;">Descrição</th>
+                <th style="padding:5px 10px;text-align:left;">Valor</th>
+                <th style="padding:5px 10px;text-align:left;">Vencimento</th>
+                <th style="padding:5px 10px;text-align:left;">Status</th>
+                <th style="padding:5px 10px;text-align:left;">Ações</th>
+              </tr>
+            </thead>
+            <tbody style="font-size:10px;">
+              <tr style="border-bottom:1px solid #f3f4f6;">
+                <td style="padding:5px 10px;font-weight:500;">Aluguel <span style="color:#9ca3af;font-size:9px;">• Aluguel</span></td>
+                <td style="padding:5px 10px;color:#b91c1c;font-weight:600;">R$ 2.500,00</td>
+                <td style="padding:5px 10px;">01/06/2026</td>
+                <td style="padding:5px 10px;"><span style="background:#fef9c3;color:#a16207;padding:2px 6px;border-radius:4px;font-size:9px;">Pendente</span></td>
+                <td style="padding:5px 10px;color:#9ca3af;">✏ 🗑</td>
+              </tr>
+              <tr style="background:#fafaf9;border-bottom:1px solid #f3f4f6;">
+                <td style="padding:5px 10px;font-weight:500;">Internet <span style="color:#9ca3af;font-size:9px;">• Internet</span></td>
+                <td style="padding:5px 10px;color:#b91c1c;font-weight:600;">R$ 299,00</td>
+                <td style="padding:5px 10px;">10/06/2026</td>
+                <td style="padding:5px 10px;"><span style="background:#dcfce7;color:#15803d;padding:2px 6px;border-radius:4px;font-size:9px;">Pago</span></td>
+                <td style="padding:5px 10px;color:#9ca3af;">✏ 🗑</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Abas internas (A Pagar / A Receber)</h3>
+      <p>Dentro da seção Contas, duas sub-abas. Mais organizado se você raramente quer ver os dois juntos.</p>
+    </div>
+  </div>
+
+</div>
