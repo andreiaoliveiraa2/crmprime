@@ -189,9 +189,15 @@ export default function ResultadoTab({ comissoes, contas, despesasFixas, vendas 
         c.status_empresa !== 'Direto' &&
         c.status_empresa !== 'Cancelado' &&
         c.data_prevista != null &&
-        c.data_prevista <= end   // vitalício iniciado antes ou durante o período
+        c.data_prevista <= end
       )
-      .reduce((s, c) => s + (c.valor_empresa ?? 0), 0)
+      .reduce((s, c) => {
+        // Multiplica pelo número de meses que o vitalício cobre no período
+        // (a partir de data_prevista ou do início do período, o que for mais tarde)
+        const vitStart = c.data_prevista! > start ? c.data_prevista! : start
+        const meses = monthsBetween(vitStart, end)
+        return s + (c.valor_empresa ?? 0) * meses
+      }, 0)
     return carteira + novasVendas
   }, [contas, comissoes, start, end, hasRange])
 
