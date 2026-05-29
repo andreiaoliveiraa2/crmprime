@@ -349,7 +349,7 @@ export default function ComissoesTab({ comissoes, vendas, regras, onAtualizar, c
                     ) : (
                       <span
                         className="text-xs px-2 py-0.5 rounded-full font-medium"
-                        style={c.status_vendedor === 'Recebido' ? { backgroundColor: '#dcfce7', color: '#15803d' } : { backgroundColor: '#fef3c7', color: '#92400e' }}
+                        style={c.status_vendedor === 'Recebido' ? badgeRecebido : badgePendente}
                       >
                         {c.status_vendedor === 'Recebido' ? '✓ Pago' : 'Pendente'}
                       </span>
