@@ -428,8 +428,8 @@ function ContasSubTab({ tipo, contas, cnpjs, categorias, onAtualizar }: ContasSu
     }).sort((a, b) => a.vencimento.localeCompare(b.vencimento))
   }, [contas, filtroStatus, filtroCategoria, filtroEmpresa, dataInicio, dataFim, today])
 
-  const totalPendente = contas.filter(c => c.status === 'Pendente').reduce((s, c) => s + c.valor, 0)
-  const totalRecebido = contas.filter(c => c.status === 'Recebido' || c.status === 'Pago').reduce((s, c) => s + c.valor, 0)
+  const totalPendente = filtered.filter(c => c.status === 'Pendente').reduce((s, c) => s + c.valor, 0)
+  const totalRecebido = filtered.filter(c => c.status === 'Recebido' || c.status === 'Pago').reduce((s, c) => s + c.valor, 0)
   const categoriasUnicas = useMemo(() => [...new Set(contas.map(c => c.categoria).filter(Boolean) as string[])].sort(), [contas])
   const empresasUnicas = useMemo(() => [...new Set(contas.map(c => c.empresa).filter(Boolean) as string[])].sort(), [contas])
 
