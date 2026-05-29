@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useTransition } from 'react'
 import { Pencil, Trash2, Plus, X, FileSpreadsheet, FileText, RefreshCw } from 'lucide-react'
 import { Conta, ContaInsert, CnpjRecebimento, CategoriaDespesa, DespesaFixaInsert } from '@/lib/types'
 import { addMonth } from '@/lib/dateUtils'
 import { createClient } from '@/lib/supabase/client'
+import { gerarContasVitalicioPeriodo } from '@/app/actions/gerarContasVitalicio'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -385,6 +386,7 @@ function ContasSubTab({ tipo, contas, cnpjs, categorias, onAtualizar }: ContasSu
   const [filtroEmpresa, setFiltroEmpresa] = useState('')
   const [dataInicio, setDataInicio] = useState(mv.inicio)
   const [dataFim, setDataFim] = useState(mv.fim)
+  const [, startTransition] = useTransition()
 
   const filtersActive = filtroStatus !== 'Todos' || !!filtroCategoria || !!filtroEmpresa ||
     dataInicio !== mv.inicio || dataFim !== mv.fim
@@ -392,6 +394,26 @@ function ContasSubTab({ tipo, contas, cnpjs, categorias, onAtualizar }: ContasSu
   function limpar() {
     setFiltroStatus('Todos'); setFiltroCategoria(''); setFiltroEmpresa('')
     setDataInicio(mv.inicio); setDataFim(mv.fim)
+  }
+
+  function handleDataFim(novaData: string) {
+    setDataFim(novaData)
+    if (tipo === 'receber' && novaData && dataInicio) {
+      startTransition(async () => {
+        await gerarContasVitalicioPeriodo(dataInicio, novaData)
+        onAtualizar()
+      })
+    }
+  }
+
+  function handleDataInicio(novaData: string) {
+    setDataInicio(novaData)
+    if (tipo === 'receber' && novaData && dataFim) {
+      startTransition(async () => {
+        await gerarContasVitalicioPeriodo(novaData, dataFim)
+        onAtualizar()
+      })
+    }
   }
 
   const filtered = useMemo(() => {
@@ -541,14 +563,14 @@ function ContasSubTab({ tipo, contas, cnpjs, categorias, onAtualizar }: ContasSu
 
         <div className="flex flex-col gap-1">
           <label className="text-xs text-gray-500">De</label>
-          <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)}
+          <input type="date" value={dataInicio} onChange={e => handleDataInicio(e.target.value)}
             className="border rounded-lg px-3 py-1.5 text-xs focus:outline-none"
             style={{ borderColor: '#e8e4dd' }} />
         </div>
 
         <div className="flex flex-col gap-1">
           <label className="text-xs text-gray-500">Até</label>
-          <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)}
+          <input type="date" value={dataFim} onChange={e => handleDataFim(e.target.value)}
             className="border rounded-lg px-3 py-1.5 text-xs focus:outline-none"
             style={{ borderColor: '#e8e4dd' }} />
         </div>
