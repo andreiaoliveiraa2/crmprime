@@ -294,11 +294,14 @@ function ComissoesAReceberSection({ comissoes, vendas, onAtualizar }: {
 
   const pendentes = useMemo(() =>
     comissoes
-      .filter(c =>
-        c.status_empresa === 'Pendente' &&
-        c.data_prevista >= dataInicio &&
-        c.data_prevista <= dataFim
-      )
+      .filter(c => {
+        if (c.status_empresa !== 'Pendente') return false
+        if (!c.data_prevista) return false
+        // Vitalício é recorrente: aparece em qualquer mês a partir de data_prevista
+        if (c.tipo === 'vitalicio') return c.data_prevista <= dataFim
+        // Parcelas: só no mês exato
+        return c.data_prevista >= dataInicio && c.data_prevista <= dataFim
+      })
       .sort((a, b) => {
         if (a.venda_id !== b.venda_id) return a.venda_id.localeCompare(b.venda_id)
         if (a.tipo === 'parcela' && b.tipo === 'vitalicio') return -1
