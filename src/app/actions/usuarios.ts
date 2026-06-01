@@ -83,3 +83,22 @@ export async function reenviarConvite(email: string) {
   const { error } = await admin.auth.admin.inviteUserByEmail(email)
   if (error) throw new Error(error.message)
 }
+
+export async function completarPerfil(authUserId: string, vendedorId: string, nome: string, email: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user || user.id !== authUserId) throw new Error('Não autorizado')
+  if (user.user_metadata?.vendedor_id !== vendedorId) throw new Error('Não autorizado')
+
+  const admin = createAdminClient()
+  const { error } = await admin.from('usuarios').insert({
+    auth_user_id: authUserId,
+    nome,
+    email,
+    perfil: 'vendedor',
+    vendedor_id: vendedorId,
+    ativo: true,
+  })
+  if (error) throw new Error(error.message)
+}

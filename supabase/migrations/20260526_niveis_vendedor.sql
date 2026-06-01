@@ -7,7 +7,8 @@ create table if not exists niveis_vendedor (
 insert into niveis_vendedor (nome) values
   ('Iniciante'),
   ('Experiente'),
-  ('VIP');
+  ('VIP')
+on conflict do nothing;
 
 alter table niveis_vendedor enable row level security;
 

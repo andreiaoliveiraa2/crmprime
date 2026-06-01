@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
-    "start": "next start -H 0.0.0.0",
+    "start": "node .next/standalone/server.js",
     "test": "jest",
     "test:watch": "jest --watch"
   },

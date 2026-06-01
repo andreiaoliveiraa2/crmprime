@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { completarPerfil } from '@/app/actions/usuarios'
 
 interface Props {
   authUserId: string
@@ -16,7 +16,6 @@ export default function CompletarPerfilForm({ authUserId, vendedorId, nomeInicia
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
   const router = useRouter()
-  const supabase = createClient()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -24,23 +23,14 @@ export default function CompletarPerfilForm({ authUserId, vendedorId, nomeInicia
     setLoading(true)
     setErro('')
 
-    const { error } = await supabase.from('usuarios').insert({
-      auth_user_id: authUserId,
-      nome: nome.trim(),
-      email,
-      perfil: 'vendedor',
-      vendedor_id: vendedorId,
-      ativo: true,
-    })
-
-    if (error) {
+    try {
+      await completarPerfil(authUserId, vendedorId, nome.trim(), email)
+      router.push('/dashboard')
+      router.refresh()
+    } catch {
       setErro('Erro ao salvar perfil. Tente novamente.')
       setLoading(false)
-      return
     }
-
-    router.push('/dashboard')
-    router.refresh()
   }
 
   return (

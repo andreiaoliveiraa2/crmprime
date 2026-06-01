@@ -16,10 +16,12 @@ create table if not exists usuarios (
 alter table usuarios enable row level security;
 
 -- Usuário autenticado lê apenas o próprio registro
+drop policy if exists "usuario_le_proprio" on usuarios;
 create policy "usuario_le_proprio" on usuarios
   for select using (auth_user_id = auth.uid());
 
 -- Service role faz tudo (Server Actions usam service role)
+drop policy if exists "service_role_full" on usuarios;
 create policy "service_role_full" on usuarios
   for all using (auth.role() = 'service_role');
 
