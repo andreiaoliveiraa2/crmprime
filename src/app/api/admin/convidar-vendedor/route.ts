@@ -27,18 +27,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Formato de email inválido' }, { status: 400 })
   }
 
-  const origin = request.nextUrl.origin
-  const adminClient = createAdminClient()
-  const { error } = await adminClient.auth.admin.inviteUserByEmail(email, {
-    data: { vendedor_id },
-    redirectTo: `${origin}/auth/callback?next=/completar-perfil`,
-  })
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 })
-  }
-
-  return NextResponse.json({ success: true })
+  const k = process.env.SUPABASE_SERVICE_ROLE_KEY
+  return NextResponse.json({ error: `diag: key=${!!k} fim=${k?.slice(-6)}` }, { status: 400 })
 
   return NextResponse.json({ success: true })
 }
