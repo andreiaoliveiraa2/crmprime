@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
   }
 
   const k = process.env.SUPABASE_SERVICE_ROLE_KEY
-  return NextResponse.json({ error: `diag: key=${!!k} fim=${k?.slice(-6)}` }, { status: 400 })
+  return NextResponse.json({ error: `diag: len=${k?.length} inicio=${k?.slice(0,20)} fim=${k?.slice(-20)}` }, { status: 400 })
 
   return NextResponse.json({ success: true })
 }
