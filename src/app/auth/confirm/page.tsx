@@ -17,17 +17,33 @@ function ConfirmContent() {
       if (!done) { done = true; router.replace(dest) }
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) go(next)
-    })
+    async function handle() {
+      // Tenta ler tokens do hash da URL (fluxo implícito do Supabase)
+      const hash = window.location.hash
+      if (hash) {
+        const params = new URLSearchParams(hash.replace('#', ''))
+        const accessToken = params.get('access_token')
+        const refreshToken = params.get('refresh_token')
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) go(next)
-    })
+        if (accessToken && refreshToken) {
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          })
+          if (data.session) { go(next); return }
+          if (error) { go('/login?erro=confirmacao'); return }
+        }
+      }
 
-    const timer = setTimeout(() => go('/login?erro=confirmacao'), 5000)
+      // Fallback: verifica se já existe sessão ativa (ex: usuário já logado)
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) { go(next); return }
 
-    return () => { subscription.unsubscribe(); clearTimeout(timer) }
+      // Nenhuma sessão encontrada
+      go('/login?erro=confirmacao')
+    }
+
+    handle()
   }, [router, searchParams])
 
   return (
