@@ -1,4 +1,4 @@
-import { GraduationCap, Zap, BookOpen } from 'lucide-react'
+import { GraduationCap, Zap, BookOpen, MessageCircle } from 'lucide-react'
 import Link from 'next/link'
 
 const MODULOS = [
@@ -11,6 +11,17 @@ const MODULOS = [
     subtitulo: 'Método Mensagens que Produzem Apólices',
     descricao: '20 scripts prontos de abordagem e objeção para WhatsApp',
     badge: '20 scripts',
+    disponivel: true,
+  },
+  {
+    href: '/prime-academy/whatsapp-prime',
+    icon: MessageCircle,
+    cor: '#2d1f4e',
+    corBg: 'rgba(45,31,78,0.08)',
+    titulo: 'WhatsApp Prime',
+    subtitulo: 'Guia completo de vendas pelo WhatsApp',
+    descricao: '6 lições de configuração, comunicação e fechamento',
+    badge: '6 lições',
     disponivel: true,
   },
   {
