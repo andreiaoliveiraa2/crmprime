@@ -59,6 +59,9 @@ export async function convidarUsuario(formData: FormData) {
   })
   if (inviteErr) throw new Error(inviteErr.message)
 
+  // Define senha padrão para o vendedor entrar imediatamente
+  await admin.auth.admin.updateUserById(authUser.user.id, { password: 'Prime@2025' })
+
   const { error: dbErr } = await admin.from('usuarios').insert({
     auth_user_id: authUser.user.id,
     nome,

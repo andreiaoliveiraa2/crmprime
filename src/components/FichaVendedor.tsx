@@ -49,11 +49,13 @@ export default function FichaVendedor({ vendedor, vendas, comissoes, usuarioVinc
   const [filtroOp, setFiltroOp]         = useState('')
   const [convidando, setConvidando]     = useState(false)
   const [conviteMsg, setConviteMsg]     = useState('')
+  const [senhaPadrao, setSenhaPadrao]   = useState('')
 
   async function handleConvidar() {
     if (!vendedor.email) { setConviteMsg('Cadastre o e-mail do vendedor primeiro.'); return }
     setConvidando(true)
     setConviteMsg('')
+    setSenhaPadrao('')
     const res = await fetch('/api/admin/convidar-vendedor', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -61,7 +63,12 @@ export default function FichaVendedor({ vendedor, vendas, comissoes, usuarioVinc
     })
     const json = await res.json()
     setConvidando(false)
-    setConviteMsg(res.ok ? 'Convite enviado com sucesso!' : (json.error ?? 'Erro ao enviar convite.'))
+    if (res.ok) {
+      setConviteMsg('Convite enviado!')
+      setSenhaPadrao(json.senha ?? '')
+    } else {
+      setConviteMsg(json.error ?? 'Erro ao enviar convite.')
+    }
   }
 
   const fmt = (v: number) =>
@@ -251,9 +258,14 @@ export default function FichaVendedor({ vendedor, vendas, comissoes, usuarioVinc
                 {conviteMsg && (
                   <span
                     className="text-xs"
-                    style={{ color: conviteMsg.includes('sucesso') ? '#15803d' : '#dc2626' }}
+                    style={{ color: conviteMsg.includes('Convite') ? '#15803d' : '#dc2626' }}
                   >
                     {conviteMsg}
+                  </span>
+                )}
+                {senhaPadrao && (
+                  <span className="text-xs px-2 py-1 rounded-lg" style={{ backgroundColor: '#f0ece6', color: '#2d1f4e' }}>
+                    Senha padrão: <strong>{senhaPadrao}</strong> — mande para o vendedor
                   </span>
                 )}
               </div>
