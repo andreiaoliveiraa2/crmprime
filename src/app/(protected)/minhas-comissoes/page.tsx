@@ -26,11 +26,11 @@ export default async function MinhasComissoesPage() {
 
   const { data: comissoesRaw } = await supabase
     .from('comissoes')
-    .select('*, vendas(cliente_nome, operadora)')
+    .select('*, vendas!inner(cliente_nome, operadora)')
     .order('data_prevista', { ascending: false })
 
   const comissoes = (comissoesRaw ?? []) as (Comissao & {
-    vendas: { cliente_nome: string; operadora: string } | null
+    vendas: { cliente_nome: string; operadora: string }
   })[]
 
   const totalPendente = comissoes
@@ -82,10 +82,10 @@ export default async function MinhasComissoesPage() {
               {comissoes.map(c => (
                 <tr key={c.id} style={{ borderBottom: '1px solid #f0ece6' }}>
                   <td className="px-4 py-3 font-medium" style={{ color: '#2d1f4e' }}>
-                    {c.vendas?.cliente_nome ?? '—'}
+                    {c.vendas.cliente_nome}
                   </td>
                   <td className="px-4 py-3" style={{ color: '#5a4e3c' }}>
-                    {c.vendas?.operadora ?? '—'}
+                    {c.vendas.operadora}
                   </td>
                   <td className="px-4 py-3" style={{ color: '#5a4e3c' }}>{tipoLabel(c)}</td>
                   <td className="px-4 py-3 text-right font-semibold" style={{ color: '#2d1f4e' }}>
