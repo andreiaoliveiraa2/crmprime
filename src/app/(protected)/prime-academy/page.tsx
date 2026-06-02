@@ -1,4 +1,4 @@
-import { GraduationCap, Zap, BookOpen, MessageCircle, Coffee } from 'lucide-react'
+import { GraduationCap, Zap, BookOpen, MessageCircle } from 'lucide-react'
 import Link from 'next/link'
 
 const MODULOS = [
@@ -24,18 +24,7 @@ const MODULOS = [
     badge: '6 lições',
     disponivel: true,
   },
-  {
-    href: '/prime-academy/mnc',
-    icon: Coffee,
-    cor: '#b89a6a',
-    corBg: 'rgba(184,154,106,0.08)',
-    titulo: 'MNC — Mulheres, Negócios & Café',
-    subtitulo: 'Comunidade e formação de mulheres no seguro',
-    descricao: 'Posicionamento, conhecimento técnico e crescimento sustentável',
-    badge: 'Novo',
-    disponivel: true,
-  },
-  {
+{
     href: '#',
     icon: BookOpen,
     cor: '#b89a6a',
