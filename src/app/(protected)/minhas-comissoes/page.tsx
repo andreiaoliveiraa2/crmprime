@@ -27,6 +27,7 @@ export default async function MinhasComissoesPage() {
   const { data: comissoesRaw } = await supabase
     .from('comissoes')
     .select('*, vendas!inner(cliente_nome, operadora)')
+    .eq('tipo', 'parcela')
     .order('data_prevista', { ascending: false })
 
   const comissoes = (comissoesRaw ?? []) as (Comissao & {
