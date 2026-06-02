@@ -27,7 +27,7 @@ export default function LoginPage() {
       setErro('Digite seu e-mail antes de solicitar a recuperação')
       return
     }
-    const redirectTo = `${window.location.origin}/auth/confirm?next=/reset-senha`
+    const redirectTo = `${window.location.origin}/auth/callback?next=/reset-senha`
     const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
     if (error) {
       setErro('Erro ao enviar e-mail. Tente novamente.')

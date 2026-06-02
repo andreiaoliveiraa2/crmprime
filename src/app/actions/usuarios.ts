@@ -4,6 +4,15 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { headers } from 'next/headers'
+
+async function getSiteUrl(): Promise<string> {
+  const h = await headers()
+  const host = h.get('host') ?? ''
+  if (!host) return process.env.NEXT_PUBLIC_SITE_URL ?? 'https://a2primecorretora.com'
+  const proto = host.startsWith('localhost') ? 'http' : (h.get('x-forwarded-proto') ?? 'https')
+  return `${proto}://${host}`
+}
 
 export async function seedAdminAtual(nome: string) {
   const supabase = await createClient()
@@ -42,9 +51,11 @@ export async function convidarUsuario(formData: FormData) {
   if (perfil === 'vendedor' && !vendedor_id) throw new Error('Selecione o vendedor vinculado')
 
   const admin = createAdminClient()
+  const siteUrl = await getSiteUrl()
 
   const { data: authUser, error: inviteErr } = await admin.auth.admin.inviteUserByEmail(email, {
     data: { nome },
+    redirectTo: `${siteUrl}/auth/callback?next=/reset-senha`,
   })
   if (inviteErr) throw new Error(inviteErr.message)
 
@@ -80,7 +91,10 @@ export async function editarUsuario(formData: FormData) {
 
 export async function reenviarConvite(email: string) {
   const admin = createAdminClient()
-  const { error } = await admin.auth.admin.inviteUserByEmail(email)
+  const siteUrl = await getSiteUrl()
+  const { error } = await admin.auth.admin.inviteUserByEmail(email, {
+    redirectTo: `${siteUrl}/auth/callback?next=/reset-senha`,
+  })
   if (error) throw new Error(error.message)
 }
 
