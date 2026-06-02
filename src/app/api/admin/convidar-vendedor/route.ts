@@ -27,18 +27,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Formato de email inválido' }, { status: 400 })
   }
 
-  const origin = request.nextUrl.origin
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin
   const adminClient = createAdminClient()
   const { error } = await adminClient.auth.admin.inviteUserByEmail(email, {
     data: { vendedor_id },
-    redirectTo: `${origin}/auth/callback?next=/completar-perfil`,
+    redirectTo: `${appUrl}/auth/confirm?next=/completar-perfil`,
   })
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 })
   }
-
-  return NextResponse.json({ success: true })
 
   return NextResponse.json({ success: true })
 }
