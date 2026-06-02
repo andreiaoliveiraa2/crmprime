@@ -84,35 +84,32 @@ export default function MpaClient({ scripts }: Props) {
                 {/* Número */}
                 <span
                   className="shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold"
-                  style={isObjecao
-                    ? { backgroundColor: 'rgba(220,38,38,0.08)', color: '#dc2626' }
-                    : { backgroundColor: 'rgba(184,154,106,0.12)', color: '#b89a6a' }
-                  }
+                  style={{ backgroundColor: 'rgba(184,154,106,0.15)', color: '#b89a6a' }}
                 >
                   {script.numero}
                 </span>
 
                 {/* Conteúdo */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-0.5">
-                    <h3 className="text-sm font-semibold text-gray-900">{script.titulo}</h3>
-                  </div>
+                  <h3 className="text-sm font-semibold text-gray-900 mb-0.5">{script.titulo}</h3>
                   <p className="text-xs text-gray-500">{script.descricao}</p>
                   <div className="flex gap-2 mt-1.5">
+                    {/* Tag categoria */}
                     <span
                       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
                       style={isObjecao
-                        ? { backgroundColor: 'rgba(220,38,38,0.08)', color: '#dc2626' }
-                        : { backgroundColor: 'rgba(45,31,78,0.07)', color: '#2d1f4e' }
+                        ? { backgroundColor: 'rgba(45,31,78,0.10)', color: '#2d1f4e' }
+                        : { backgroundColor: 'rgba(184,154,106,0.15)', color: '#8a6f3a' }
                       }
                     >
                       {isObjecao ? 'Objeção' : 'Abordagem'}
                     </span>
+                    {/* Tag formato */}
                     <span
                       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
                       style={isAudio
-                        ? { backgroundColor: 'rgba(124,58,237,0.08)', color: '#7c3aed' }
-                        : { backgroundColor: 'rgba(16,185,129,0.08)', color: '#059669' }
+                        ? { backgroundColor: 'rgba(45,31,78,0.07)', color: '#2d1f4e' }
+                        : { backgroundColor: 'rgba(184,154,106,0.10)', color: '#8a6f3a' }
                       }
                     >
                       {isAudio
@@ -132,9 +129,7 @@ export default function MpaClient({ scripts }: Props) {
               {/* Conteúdo expandido */}
               {aberto && (
                 <div className="border-t border-gray-100 px-4 pb-4 pt-3">
-                  <pre
-                    className="text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed bg-gray-50 rounded-lg p-4"
-                  >
+                  <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed bg-gray-50 rounded-lg p-4">
                     {script.conteudo}
                   </pre>
 
@@ -152,7 +147,7 @@ export default function MpaClient({ scripts }: Props) {
                     onClick={() => copiar(script)}
                     className="mt-3 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-all"
                     style={copiado
-                      ? { backgroundColor: 'rgba(16,185,129,0.1)', color: '#059669' }
+                      ? { backgroundColor: 'rgba(184,154,106,0.15)', color: '#8a6f3a' }
                       : { backgroundColor: 'rgba(45,31,78,0.07)', color: '#2d1f4e' }
                     }
                   >

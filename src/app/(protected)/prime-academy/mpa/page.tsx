@@ -18,7 +18,7 @@ export default function MpaPage() {
       {/* Header */}
       <div
         className="rounded-2xl p-6 mb-6 text-white"
-        style={{ background: 'linear-gradient(135deg, #2d1f4e 0%, #4a2d7a 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #2d1f4e 0%, #3d2a63 100%)' }}
       >
         <div className="flex items-center gap-3 mb-2">
           <div

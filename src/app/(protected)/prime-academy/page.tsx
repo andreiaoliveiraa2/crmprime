@@ -5,8 +5,8 @@ const MODULOS = [
   {
     href: '/prime-academy/mpa',
     icon: Zap,
-    cor: '#7c3aed',
-    corBg: 'rgba(124,58,237,0.08)',
+    cor: '#2d1f4e',
+    corBg: 'rgba(45,31,78,0.08)',
     titulo: 'MPA — ScriptZap',
     subtitulo: 'Método Mensagens que Produzem Apólices',
     descricao: '20 scripts prontos de abordagem e objeção para WhatsApp',
