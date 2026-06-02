@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Users, UserCheck, Calendar,
-  DollarSign, BarChart2, Megaphone, Settings, LogOut, Menu, X,
+  DollarSign, BarChart2, Megaphone, Settings, LogOut, Menu, X, GraduationCap,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -17,16 +17,18 @@ const NAV_ADMIN = [
   { href: '/agenda',        label: 'Agenda',        icon: Calendar, badge: true },
   { href: '/financeiro',    label: 'Financeiro',    icon: DollarSign      },
   { href: '/gestao',        label: 'Gestão',        icon: BarChart2       },
-  { href: '/marketing',     label: 'Marketing',     icon: Megaphone       },
-  { href: '/configuracoes', label: 'Configurações', icon: Settings        },
+  { href: '/marketing',      label: 'Marketing',      icon: Megaphone      },
+  { href: '/prime-academy',  label: 'Prime Academy',  icon: GraduationCap  },
+  { href: '/configuracoes',  label: 'Configurações',  icon: Settings       },
 ]
 
 const NAV_VENDEDOR = [
-  { href: '/dashboard',        label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/crm',              label: 'CRM',       icon: Users           },
-  { href: '/clientes',         label: 'Clientes',  icon: UserCheck       },
-  { href: '/agenda',           label: 'Agenda',    icon: Calendar, badge: true },
-  { href: '/minhas-comissoes', label: 'Comissões', icon: DollarSign      },
+  { href: '/dashboard',        label: 'Dashboard',     icon: LayoutDashboard },
+  { href: '/crm',              label: 'CRM',           icon: Users           },
+  { href: '/clientes',         label: 'Clientes',      icon: UserCheck       },
+  { href: '/agenda',           label: 'Agenda',        icon: Calendar, badge: true },
+  { href: '/minhas-comissoes', label: 'Comissões',     icon: DollarSign      },
+  { href: '/prime-academy',    label: 'Prime Academy', icon: GraduationCap   },
 ]
 
 interface Props {
