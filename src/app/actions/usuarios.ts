@@ -51,16 +51,15 @@ export async function convidarUsuario(formData: FormData) {
   if (perfil === 'vendedor' && !vendedor_id) throw new Error('Selecione o vendedor vinculado')
 
   const admin = createAdminClient()
-  const siteUrl = await getSiteUrl()
 
-  const { data: authUser, error: inviteErr } = await admin.auth.admin.inviteUserByEmail(email, {
-    data: { nome },
-    redirectTo: `${siteUrl}/auth/callback?next=/reset-senha`,
+  // Cria conta direto, sem e-mail — vendedor já entra com Prime@2025
+  const { data: authUser, error: inviteErr } = await admin.auth.admin.createUser({
+    email,
+    password: 'Prime@2025',
+    email_confirm: true,
+    user_metadata: { nome },
   })
   if (inviteErr) throw new Error(inviteErr.message)
-
-  // Define senha padrão para o vendedor entrar imediatamente
-  await admin.auth.admin.updateUserById(authUser.user.id, { password: 'Prime@2025' })
 
   const { error: dbErr } = await admin.from('usuarios').insert({
     auth_user_id: authUser.user.id,
