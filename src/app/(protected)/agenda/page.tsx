@@ -9,17 +9,16 @@ export default async function AgendaPage() {
 
   if (usuario?.perfil === 'vendedor') redirect('/dashboard')
 
-  let query = supabase.from('agenda').select('*').order('data_hora', { ascending: true })
-  if (usuario?.perfil === 'vendedor' && usuario.vendedor_id) {
-    query = query.eq('vendedor_id', usuario.vendedor_id)
-  }
-  const { data: eventos } = await query
+  const { data: eventos } = await supabase
+    .from('agenda')
+    .select('*')
+    .order('data_hora', { ascending: true })
 
   return (
     <div className="p-6 md:p-8">
       <AgendaClient
         eventos={eventos ?? []}
-        vendedorId={usuario?.perfil === 'vendedor' ? (usuario.vendedor_id ?? null) : null}
+        vendedorId={null}
       />
     </div>
   )
