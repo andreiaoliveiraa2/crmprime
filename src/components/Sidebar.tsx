@@ -26,7 +26,6 @@ const NAV_VENDEDOR = [
   { href: '/dashboard',        label: 'Dashboard',     icon: LayoutDashboard },
   { href: '/crm',              label: 'CRM',           icon: Users           },
   { href: '/clientes',         label: 'Clientes',      icon: UserCheck       },
-  { href: '/agenda',           label: 'Agenda',        icon: Calendar, badge: true },
   { href: '/minhas-comissoes', label: 'Comissões',     icon: DollarSign      },
   { href: '/prime-academy',    label: 'Prime Academy', icon: GraduationCap   },
 ]

@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getUsuarioAtual } from '@/lib/getUsuarioAtual'
 import AgendaClient from '@/components/AgendaClient'
@@ -5,6 +6,8 @@ import AgendaClient from '@/components/AgendaClient'
 export default async function AgendaPage() {
   const supabase = await createClient()
   const usuario  = await getUsuarioAtual()
+
+  if (usuario?.perfil === 'vendedor') redirect('/dashboard')
 
   let query = supabase.from('agenda').select('*').order('data_hora', { ascending: true })
   if (usuario?.perfil === 'vendedor' && usuario.vendedor_id) {
