@@ -109,13 +109,15 @@ export async function completarPerfil(authUserId: string, vendedorId: string, no
   if (user.user_metadata?.vendedor_id !== vendedorId) throw new Error('Não autorizado')
 
   const admin = createAdminClient()
-  const { error } = await admin.from('usuarios').insert({
+  const { error } = await admin.from('usuarios').upsert({
     auth_user_id: authUserId,
     nome,
     email,
     perfil: 'vendedor',
     vendedor_id: vendedorId,
     ativo: true,
-  })
+  }, { onConflict: 'auth_user_id' })
   if (error) throw new Error(error.message)
+
+  revalidatePath('/', 'layout')
 }
