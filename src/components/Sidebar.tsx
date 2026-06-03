@@ -5,13 +5,15 @@ import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Users, UserCheck, Calendar,
-  DollarSign, BarChart2, Megaphone, Settings, LogOut, Menu, X, GraduationCap,
+  DollarSign, BarChart2, Megaphone, Settings, LogOut, Menu, X, GraduationCap, Calculator,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { LucideIcon } from 'lucide-react'
 
-type NavItem = { href: string; label: string; icon: LucideIcon; badge?: boolean }
+type NavItem = { href: string; label: string; icon: LucideIcon; badge?: boolean; external?: boolean }
+
+const COTADOR = { href: 'https://cotadorsimplificado.com.br/', label: 'Cotador', icon: Calculator, external: true }
 
 const NAV_ADMIN: NavItem[] = [
   { href: '/dashboard',     label: 'Dashboard',    icon: LayoutDashboard },
@@ -22,6 +24,7 @@ const NAV_ADMIN: NavItem[] = [
   { href: '/gestao',        label: 'Gestão',        icon: BarChart2       },
   { href: '/marketing',      label: 'Marketing',      icon: Megaphone      },
   { href: '/prime-academy',  label: 'Prime Academy',  icon: GraduationCap  },
+  COTADOR,
   { href: '/configuracoes',  label: 'Configurações',  icon: Settings       },
 ]
 
@@ -32,6 +35,7 @@ const NAV_VENDEDOR: NavItem[] = [
   { href: '/agenda',           label: 'Agenda',        icon: Calendar, badge: true },
   { href: '/minhas-comissoes', label: 'Comissões',     icon: DollarSign      },
   { href: '/prime-academy',    label: 'Prime Academy', icon: GraduationCap   },
+  COTADOR,
 ]
 
 interface Props {
@@ -103,22 +107,18 @@ export default function Sidebar({ perfil, nome }: Props) {
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-          {navItems.map(({ href, label, icon: Icon, badge }) => {
+          {navItems.map(({ href, label, icon: Icon, badge, external }) => {
             const active = isActive(href)
             const showBadge = badge && agendaHoje > 0
-            return (
-              <Link
-                key={href}
-                href={href}
-                onClick={() => setAberto(false)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150"
-                style={{
-                  color: active ? '#ffffff' : 'rgba(255,255,255,0.55)',
-                  backgroundColor: active ? 'rgba(184,154,106,0.12)' : 'transparent',
-                  borderLeft: active ? '3px solid #b89a6a' : '3px solid transparent',
-                  paddingLeft: '12px',
-                }}
-              >
+            const itemStyle = {
+              color: active ? '#ffffff' : 'rgba(255,255,255,0.55)',
+              backgroundColor: active ? 'rgba(184,154,106,0.12)' : 'transparent',
+              borderLeft: active ? '3px solid #b89a6a' : '3px solid transparent',
+              paddingLeft: '12px',
+            }
+            const itemClass = "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150"
+            const content = (
+              <>
                 <Icon size={17} />
                 <span className="flex-1">{label}</span>
                 {showBadge && (
@@ -127,6 +127,20 @@ export default function Sidebar({ perfil, nome }: Props) {
                     {agendaHoje}
                   </span>
                 )}
+              </>
+            )
+            if (external) {
+              return (
+                <a key={href} href={href} target="_blank" rel="noopener noreferrer"
+                  className={itemClass} style={itemStyle}>
+                  {content}
+                </a>
+              )
+            }
+            return (
+              <Link key={href} href={href} onClick={() => setAberto(false)}
+                className={itemClass} style={itemStyle}>
+                {content}
               </Link>
             )
           })}
