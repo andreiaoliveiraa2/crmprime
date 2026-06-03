@@ -34,7 +34,8 @@ export default function LeadForm({ lead, vendedorAtual }: Props) {
     lead?.criado_em ? lead.criado_em.slice(0, 10) : hoje()
   )
   const operadorasLista = useOperadoras()
-  const [vendedoresLista, setVendedoresLista] = useState<string[]>([])
+  const [vendedoresLista, setVendedoresLista] = useState<{ id: string; nome: string }[]>([])
+  const [vendedorId, setVendedorId] = useState<string | null>(lead?.vendedor_id ?? vendedorAtual?.id ?? null)
   const [erro, setErro] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -44,11 +45,17 @@ export default function LeadForm({ lead, vendedorAtual }: Props) {
   useEffect(() => {
     supabase
       .from('vendedores')
-      .select('nome')
+      .select('id, nome')
       .eq('ativo', true)
       .order('nome')
       .then(({ data }) => {
-        if (data) setVendedoresLista(data.map((v: { nome: string }) => v.nome))
+        if (!data) return
+        setVendedoresLista(data)
+        // Auto-corrige leads antigos que têm nome mas não têm vendedor_id
+        if (!vendedorId && vendedor) {
+          const encontrado = data.find((v: { id: string; nome: string }) => v.nome === vendedor)
+          if (encontrado) setVendedorId(encontrado.id)
+        }
       })
   }, [])
   const editando = !!lead
@@ -73,7 +80,7 @@ export default function LeadForm({ lead, vendedorAtual }: Props) {
       operadora: operadora.trim() || null,
       responsavel: responsavel.trim() || null,
       vendedor: vendedor.trim() || null,
-      vendedor_id: lead?.vendedor_id ?? vendedorAtual?.id ?? null,
+      vendedor_id: vendedorId,
       observacoes: observacoes.trim() || null,
       etapa: lead?.etapa ?? 'Novo Lead',
       criado_em: dataEntrada ? new Date(dataEntrada).toISOString() : undefined,
@@ -148,7 +155,12 @@ export default function LeadForm({ lead, vendedorAtual }: Props) {
           <select
             id="vendedor"
             value={vendedor}
-            onChange={e => setVendedor(e.target.value)}
+            onChange={e => {
+              const nome = e.target.value
+              setVendedor(nome)
+              const encontrado = vendedoresLista.find(v => v.nome === nome)
+              setVendedorId(encontrado?.id ?? null)
+            }}
             className={inputCls}
             style={{ ...inputStyle, color: vendedor ? '#1a1a1a' : '#9a918a' }}
             disabled={!!vendedorAtual}
@@ -156,7 +168,7 @@ export default function LeadForm({ lead, vendedorAtual }: Props) {
             <option value="">Selecione o vendedor...</option>
             {vendedorAtual
               ? <option value={vendedorAtual.nome}>{vendedorAtual.nome}</option>
-              : vendedoresLista.map(v => <option key={v} value={v}>{v}</option>)
+              : vendedoresLista.map(v => <option key={v.id} value={v.nome}>{v.nome}</option>)
             }
           </select>
         </div>
