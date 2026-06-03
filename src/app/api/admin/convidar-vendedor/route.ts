@@ -34,13 +34,18 @@ export async function POST(request: NextRequest) {
   const { data: created, error } = await adminClient.auth.admin.createUser({
     email,
     password: SENHA_PADRAO,
-    email_confirm: true,
     user_metadata: { vendedor_id },
   })
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 })
   }
+
+  // createUser nao confirma o e-mail automaticamente — updateUserById faz isso
+  await adminClient.auth.admin.updateUserById(created.user.id, {
+    password: SENHA_PADRAO,
+    email_confirm: true,
+  })
 
   return NextResponse.json({ success: true, senha: SENHA_PADRAO })
 }
