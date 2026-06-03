@@ -29,29 +29,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Formato de email inválido' }, { status: 400 })
   }
 
-  const fwdHost  = request.headers.get('x-forwarded-host')
-  const fwdProto = request.headers.get('x-forwarded-proto') ?? 'https'
-  const appUrl   = process.env.NEXT_PUBLIC_SITE_URL
-    ?? (fwdHost ? `${fwdProto}://${fwdHost}` : null)
-    ?? process.env.NEXT_PUBLIC_APP_URL
-    ?? 'https://a2primecorretora.com'
-
   const adminClient = createAdminClient()
 
-  const { data: invited, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
-    data: { vendedor_id },
-    redirectTo: `${appUrl}/auth/callback?next=/reset-senha`,
+  const { data: created, error } = await adminClient.auth.admin.createUser({
+    email,
+    password: SENHA_PADRAO,
+    email_confirm: true,
+    user_metadata: { vendedor_id },
   })
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 })
   }
-
-  // Define senha padrão e confirma e-mail para o vendedor logar direto com Prime@2025
-  await adminClient.auth.admin.updateUserById(invited.user.id, {
-    password: SENHA_PADRAO,
-    email_confirm: true,
-  })
 
   return NextResponse.json({ success: true, senha: SENHA_PADRAO })
 }
