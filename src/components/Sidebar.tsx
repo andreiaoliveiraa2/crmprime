@@ -9,8 +9,11 @@ import {
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import type { LucideIcon } from 'lucide-react'
 
-const NAV_ADMIN = [
+type NavItem = { href: string; label: string; icon: LucideIcon; badge?: boolean }
+
+const NAV_ADMIN: NavItem[] = [
   { href: '/dashboard',     label: 'Dashboard',    icon: LayoutDashboard },
   { href: '/crm',           label: 'CRM',           icon: Users           },
   { href: '/clientes',      label: 'Clientes',      icon: UserCheck       },
@@ -22,7 +25,7 @@ const NAV_ADMIN = [
   { href: '/configuracoes',  label: 'Configurações',  icon: Settings       },
 ]
 
-const NAV_VENDEDOR = [
+const NAV_VENDEDOR: NavItem[] = [
   { href: '/dashboard',        label: 'Dashboard',     icon: LayoutDashboard },
   { href: '/crm',              label: 'CRM',           icon: Users           },
   { href: '/clientes',         label: 'Clientes',      icon: UserCheck       },
