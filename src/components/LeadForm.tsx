@@ -27,7 +27,6 @@ export default function LeadForm({ lead, vendedorAtual }: Props) {
   const [oQueProcura, setOQueProcura] = useState(lead?.o_que_procura ?? '')
   const [tipo_plano, setTipoPlano] = useState(lead?.tipo_plano ?? '')
   const [operadora, setOperadora] = useState(lead?.operadora ?? '')
-  const [responsavel, setResponsavel] = useState(lead?.responsavel ?? '')
   const [vendedor, setVendedor] = useState(lead?.vendedor ?? vendedorAtual?.nome ?? '')
   const [observacoes, setObservacoes] = useState(lead?.observacoes ?? '')
   const [dataEntrada, setDataEntrada] = useState(
@@ -78,7 +77,7 @@ export default function LeadForm({ lead, vendedorAtual }: Props) {
       o_que_procura: oQueProcura.trim() || null,
       tipo_plano: tipo_plano || null,
       operadora: operadora.trim() || null,
-      responsavel: responsavel.trim() || null,
+      responsavel: null,
       vendedor: vendedor.trim() || null,
       vendedor_id: vendedorId,
       observacoes: observacoes.trim() || null,
@@ -171,14 +170,6 @@ export default function LeadForm({ lead, vendedorAtual }: Props) {
               : vendedoresLista.map(v => <option key={v.id} value={v.nome}>{v.nome}</option>)
             }
           </select>
-        </div>
-
-        {/* Responsável */}
-        <div>
-          <label htmlFor="responsavel" className={labelCls} style={labelStyle}>Responsável pelo Atendimento</label>
-          <input id="responsavel" type="text" value={responsavel} onChange={e => setResponsavel(e.target.value)}
-            placeholder="Nome do responsável"
-            className={inputCls} style={inputStyle} />
         </div>
 
         {/* O que procura — ocupa largura total */}
