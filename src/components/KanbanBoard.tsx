@@ -169,11 +169,11 @@ export default function KanbanBoard({ leads, onLeadMoved }: Props) {
                                 </span>
                               </div>
 
-                              {/* Responsável */}
+                              {/* Vendedor */}
                               <div className="flex items-center gap-1">
                                 <User size={10} style={{ color: '#b89a6a' }} />
                                 <span className="text-xs" style={{ color: '#9a918a' }}>
-                                  {l.responsavel ?? '—'}
+                                  {l.vendedor ?? '—'}
                                 </span>
                               </div>
 
