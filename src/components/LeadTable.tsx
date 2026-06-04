@@ -3,9 +3,10 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { Search } from 'lucide-react'
+import { Search, Clock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Lead, EtapaLead, ETAPAS_LEAD } from '@/lib/types'
+import { isParado, diasParado } from '@/lib/leads'
 
 type Filtro = EtapaLead | 'Todos'
 const FILTROS: Filtro[] = ['Todos', ...ETAPAS_LEAD]
@@ -95,7 +96,18 @@ export default function LeadTable({ leads }: Props) {
             )}
             {filtrados.map(l => (
               <tr key={l.id} className="hover:bg-stone-50 transition-colors">
-                <td className="px-6 py-4 font-medium text-stone-800">{l.nome}</td>
+                <td className="px-6 py-4 font-medium text-stone-800">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {l.nome}
+                    {isParado(l) && (
+                      <span className="flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-full whitespace-nowrap"
+                        style={{ backgroundColor: '#fff7ed', color: '#ea580c' }}>
+                        <Clock size={11} />
+                        {diasParado(l)} dias
+                      </span>
+                    )}
+                  </div>
+                </td>
                 <td className="px-6 py-4 text-stone-500">{l.telefone ?? '—'}</td>
                 <td className="px-6 py-4 text-stone-500">{l.tipo_plano ?? '—'}</td>
                 <td className="px-6 py-4">

@@ -61,4 +61,28 @@ describe('LeadTable', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Cotação' }))
     expect(screen.getByText(/nenhum lead encontrado/i)).toBeInTheDocument()
   })
+
+  it('exibe badge de parado ao lado do nome quando >= 5 dias', () => {
+    const leadParado: Lead = {
+      id: '3', nome: 'Eva Souza', telefone: null, tipo_plano: null,
+      operadora: null, responsavel: null, origem: null, o_que_procura: null,
+      observacoes: null, vendedor: null, vendedor_id: null,
+      etapa: 'Cotação', criado_em: '',
+      atualizado_em: new Date(Date.now() - 7 * 86_400_000).toISOString(),
+    }
+    render(<LeadTable leads={[leadParado]} />)
+    expect(screen.getByText(/7 dias/i)).toBeInTheDocument()
+  })
+
+  it('não exibe badge em lead recente', () => {
+    const leadAtivo: Lead = {
+      id: '4', nome: 'Fábio Torres', telefone: null, tipo_plano: null,
+      operadora: null, responsavel: null, origem: null, o_que_procura: null,
+      observacoes: null, vendedor: null, vendedor_id: null,
+      etapa: 'Cotação', criado_em: '',
+      atualizado_em: new Date(Date.now() - 1 * 86_400_000).toISOString(),
+    }
+    render(<LeadTable leads={[leadAtivo]} />)
+    expect(screen.queryByText(/dias/i)).not.toBeInTheDocument()
+  })
 })
