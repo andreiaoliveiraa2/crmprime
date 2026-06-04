@@ -132,6 +132,7 @@ export default function Sidebar({ perfil, nome }: Props) {
             if (external) {
               return (
                 <a key={href} href={href} target="_blank" rel="noopener noreferrer"
+                  onClick={() => setAberto(false)}
                   className={itemClass} style={itemStyle}>
                   {content}
                 </a>

@@ -53,7 +53,7 @@ export default async function DashboardPage() {
   let clientesQuery = supabase.from('clientes').select('*').order('criado_em', { ascending: false })
   let agendaHojeQ   = supabase.from('agenda').select('*').gte('data_hora', inicioDia.toISOString()).lte('data_hora', fimDia.toISOString()).order('data_hora', { ascending: true })
   let agendaSemanaQ = supabase.from('agenda').select('*').gte('data_hora', inicioSemana.toISOString()).lte('data_hora', fimSemana.toISOString()).order('data_hora', { ascending: true }).limit(5)
-  let pendentesQ    = supabase.from('agenda').select('*').eq('status', 'Agendado').lt('data_hora', inicioDia.toISOString()).order('data_hora', { ascending: false }).limit(3)
+  let pendentesQ    = supabase.from('agenda').select('*').eq('status', 'Agendado').lt('data_hora', inicioDia.toISOString()).order('data_hora', { ascending: false })
 
   if (isVendedor && vendedorId) {
     leadsQuery    = leadsQuery.eq('vendedor_id', vendedorId)
