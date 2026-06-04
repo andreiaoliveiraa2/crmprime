@@ -15,6 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "A2 Prime | Corretora de Seguros",
   description: "Sistema de gestão da A2 Prime Corretora de Seguros",
+  manifest: "/manifest.json",
   icons: {
     icon: "/logo-a2prime.png",
     apple: "/logo-a2prime.png",
