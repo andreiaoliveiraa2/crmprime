@@ -4,6 +4,7 @@ import DashboardCard from '@/components/DashboardCard'
 import { Users, ArrowLeftRight, FileText, CheckCircle, Calendar, ChevronRight, AlertCircle } from 'lucide-react'
 import { Lead, Cliente, Compromisso, TIPO_COR, STATUS_COR } from '@/lib/types'
 import Link from 'next/link'
+import AlertaAgenda from '@/components/AlertaAgenda'
 
 const etapaBadge: Record<string, { bg: string; color: string }> = {
   'Novo Lead':     { bg: '#f0f0f0',                color: '#6b7280' },
@@ -134,6 +135,8 @@ export default async function DashboardPage() {
           </div>
         </div>
       </div>
+
+      <AlertaAgenda eventosHoje={eventosHoje} pendentes={pendentes} />
 
       {/* Métricas */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
