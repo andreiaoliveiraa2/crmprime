@@ -10,11 +10,24 @@ export default async function CrmPage() {
   if (usuario?.perfil === 'vendedor' && usuario.vendedor_id) {
     query = query.eq('vendedor_id', usuario.vendedor_id)
   }
-  const { data: leads } = await query
+
+  const [{ data: leadsData }, { data: vendedoresData }] = await Promise.all([
+    query,
+    supabase.from('vendedores').select('id, nome').eq('ativo', true),
+  ])
+
+  const vendedorMap: Record<string, string> = Object.fromEntries(
+    (vendedoresData ?? []).map(v => [v.id, v.nome])
+  )
+
+  const leads = (leadsData ?? []).map(l => ({
+    ...l,
+    vendedor: l.vendedor || (l.vendedor_id ? vendedorMap[l.vendedor_id] : null) || null,
+  }))
 
   return (
     <div className="p-5 md:p-7">
-      <PipelineClient leads={leads ?? []} perfil={usuario?.perfil ?? 'admin'} />
+      <PipelineClient leads={leads} perfil={usuario?.perfil ?? 'admin'} />
     </div>
   )
 }
