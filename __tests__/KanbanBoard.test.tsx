@@ -65,4 +65,28 @@ describe('KanbanBoard', () => {
     expect(screen.getByText('Ana Lima')).toBeInTheDocument()
     expect(screen.getByText('Bruno Costa')).toBeInTheDocument()
   })
+
+  it('exibe badge de parado em lead com 5+ dias sem movimentação', () => {
+    const leadParado: Lead = {
+      id: '3', nome: 'Carlos Dias', telefone: null, tipo_plano: null,
+      operadora: null, responsavel: null, origem: null, o_que_procura: null,
+      observacoes: null, vendedor: null, vendedor_id: null,
+      etapa: 'Cotação', criado_em: '',
+      atualizado_em: new Date(Date.now() - 6 * 86_400_000).toISOString(),
+    }
+    render(<KanbanBoard leads={[leadParado]} onLeadMoved={jest.fn()} />)
+    expect(screen.getByText(/6 dias/i)).toBeInTheDocument()
+  })
+
+  it('não exibe badge em lead atualizado recentemente', () => {
+    const leadAtivo: Lead = {
+      id: '4', nome: 'Daniela Melo', telefone: null, tipo_plano: null,
+      operadora: null, responsavel: null, origem: null, o_que_procura: null,
+      observacoes: null, vendedor: null, vendedor_id: null,
+      etapa: 'Cotação', criado_em: '',
+      atualizado_em: new Date(Date.now() - 2 * 86_400_000).toISOString(),
+    }
+    render(<KanbanBoard leads={[leadAtivo]} onLeadMoved={jest.fn()} />)
+    expect(screen.queryByText(/dias/i)).not.toBeInTheDocument()
+  })
 })

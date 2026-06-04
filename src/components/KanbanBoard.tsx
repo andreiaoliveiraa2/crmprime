@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Lead, EtapaLead, ETAPAS_LEAD } from '@/lib/types'
 import Link from 'next/link'
-import { Plus, Calendar, User, ArrowRight } from 'lucide-react'
+import { Plus, Calendar, User, ArrowRight, Clock } from 'lucide-react'
+import { isParado, diasParado } from '@/lib/leads'
 
 interface Props {
   leads: Lead[]
@@ -139,6 +140,17 @@ export default function KanbanBoard({ leads, onLeadMoved }: Props) {
                                   {l.etapa}
                                 </span>
                               </div>
+
+                              {/* Badge de lead parado */}
+                              {isParado(l) && (
+                                <div className="flex items-center gap-1 mb-1.5">
+                                  <Clock size={13} style={{ color: '#ea580c' }} />
+                                  <span className="text-xs font-medium px-1.5 py-0.5 rounded-full"
+                                    style={{ backgroundColor: '#fff7ed', color: '#ea580c' }}>
+                                    {diasParado(l)} dias
+                                  </span>
+                                </div>
+                              )}
 
                               {/* Tipo de plano · Operadora */}
                               {(l.tipo_plano || l.operadora) && (
