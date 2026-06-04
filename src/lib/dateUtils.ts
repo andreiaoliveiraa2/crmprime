@@ -1,3 +1,8 @@
+export function fmtHora(iso: string): string {
+  const d = new Date(iso)
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+}
+
 export function addMonth(dateStr: string, n: number): string {
   const [y, m, d] = dateStr.split('-').map(Number)
   const totalMonths = (m - 1) + n

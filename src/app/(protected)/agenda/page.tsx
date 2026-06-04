@@ -6,6 +6,17 @@ export default async function AgendaPage() {
   const supabase = await createClient()
   const usuario  = await getUsuarioAtual()
 
+  // Se vendedor não tem vendedor_id no perfil, busca na tabela de vendedores
+  let vendedorId: string | null = null
+  if (usuario?.perfil === 'vendedor') {
+    if (usuario.vendedor_id) {
+      vendedorId = usuario.vendedor_id
+    } else {
+      const { data: vend } = await supabase.from('vendedores').select('id').maybeSingle()
+      vendedorId = vend?.id ?? null
+    }
+  }
+
   // Admin vê só os próprios eventos (vendedor_id IS NULL)
   // Vendedor vê só os seus eventos (RLS já filtra pelo vendedor_id)
   let query = supabase.from('agenda').select('*').order('data_hora', { ascending: true })
@@ -18,7 +29,7 @@ export default async function AgendaPage() {
     <div className="p-6 md:p-8">
       <AgendaClient
         eventos={eventos ?? []}
-        vendedorId={usuario?.perfil === 'vendedor' ? (usuario.vendedor_id ?? null) : null}
+        vendedorId={vendedorId}
       />
     </div>
   )

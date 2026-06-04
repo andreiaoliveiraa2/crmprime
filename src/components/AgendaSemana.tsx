@@ -1,6 +1,7 @@
 'use client'
 
 import { Compromisso } from '@/lib/types'
+import { fmtHora as fmt } from '@/lib/dateUtils'
 
 interface Props {
   eventos: Compromisso[]
@@ -12,11 +13,6 @@ interface Props {
 }
 
 const DIAS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
-
-function fmt(iso: string) {
-  const d = new Date(iso)
-  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
-}
 
 function isoDate(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`

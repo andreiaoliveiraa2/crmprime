@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Bell, Clock, AlertTriangle, ChevronRight } from 'lucide-react'
 import { Compromisso } from '@/lib/types'
+import { fmtHora } from '@/lib/dateUtils'
 
 interface Props {
   eventosHoje: Compromisso[]
@@ -18,11 +19,6 @@ function tempoRestante(iso: string): string {
   const h = Math.floor(min / 60)
   const m = min % 60
   return m > 0 ? `em ${h}h ${m}min` : `em ${h}h`
-}
-
-function fmtHora(iso: string) {
-  const d = new Date(iso)
-  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
 }
 
 function fmtDia(iso: string) {
@@ -42,9 +38,10 @@ export default function AlertaAgenda({ eventosHoje, pendentes }: Props) {
     return () => clearInterval(id)
   }, [router])
 
-  // Próximos nas próximas 2 horas
+  // Captura agora uma vez para que filter e map usem o mesmo instante
+  const agora = Date.now()
   const proximos = eventosHoje.filter(ev => {
-    const diff = new Date(ev.data_hora).getTime() - Date.now()
+    const diff = new Date(ev.data_hora).getTime() - agora
     return ev.status === 'Agendado' && diff > 0 && diff <= 2 * 60 * 60 * 1000
   })
 
@@ -75,7 +72,7 @@ export default function AlertaAgenda({ eventosHoje, pendentes }: Props) {
 
       {/* Próximos nas próximas 2 horas */}
       {proximos.map(ev => {
-        const diff = new Date(ev.data_hora).getTime() - Date.now()
+        const diff = new Date(ev.data_hora).getTime() - agora
         const urgente = diff <= 30 * 60 * 1000
         return (
           <a key={ev.id} href="/agenda"

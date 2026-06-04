@@ -3,6 +3,7 @@ import { getUsuarioAtual } from '@/lib/getUsuarioAtual'
 import DashboardCard from '@/components/DashboardCard'
 import { Users, ArrowLeftRight, FileText, CheckCircle, Calendar, ChevronRight, AlertCircle } from 'lucide-react'
 import { Lead, Cliente, Compromisso, TIPO_COR, STATUS_COR } from '@/lib/types'
+import { fmtHora } from '@/lib/dateUtils'
 import Link from 'next/link'
 import AlertaAgenda from '@/components/AlertaAgenda'
 
@@ -13,11 +14,6 @@ const etapaBadge: Record<string, { bg: string; color: string }> = {
   'Negociação':    { bg: '#ffedd5',                color: '#c2410c' },
   'Vendido':       { bg: '#dcfce7',                color: '#15803d' },
   'Perdido':       { bg: '#fce7f3',                color: '#be185d' },
-}
-
-function fmtHora(iso: string) {
-  const d = new Date(iso)
-  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
 }
 
 function fmtDia(iso: string) {

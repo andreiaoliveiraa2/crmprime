@@ -1,6 +1,7 @@
 'use client'
 
 import { Compromisso, STATUS_COR } from '@/lib/types'
+import { fmtHora as fmt } from '@/lib/dateUtils'
 import { Pencil } from 'lucide-react'
 
 interface Props {
@@ -8,11 +9,6 @@ interface Props {
   feriado?: string
   tiposCores: Record<string, string>
   onEditar: (e: Compromisso) => void
-}
-
-function fmt(iso: string) {
-  const d = new Date(iso)
-  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
 }
 
 function isUrgente(iso: string) {
