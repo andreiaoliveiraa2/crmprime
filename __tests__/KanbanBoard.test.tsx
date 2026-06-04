@@ -29,13 +29,23 @@ jest.mock('next/navigation', () => ({
 }))
 
 const leads: Lead[] = [
-  { id: '1', nome: 'Ana Lima',    telefone: null, tipo_plano: null,    operadora: null, responsavel: null, origem: null, o_que_procura: null, observacoes: null, vendedor: null, etapa: 'Novo Lead',  criado_em: '' },
-  { id: '2', nome: 'Bruno Costa', telefone: null, tipo_plano: 'Saúde', operadora: null, responsavel: null, origem: null, o_que_procura: null, observacoes: null, vendedor: null, etapa: 'Negociação', criado_em: '' },
+  {
+    id: '1', nome: 'Ana Lima', telefone: null, tipo_plano: null,
+    operadora: null, responsavel: null, origem: null, o_que_procura: null,
+    observacoes: null, vendedor: null, vendedor_id: null,
+    etapa: 'Novo Lead', criado_em: '', atualizado_em: '',
+  },
+  {
+    id: '2', nome: 'Bruno Costa', telefone: null, tipo_plano: 'Saúde',
+    operadora: null, responsavel: null, origem: null, o_que_procura: null,
+    observacoes: null, vendedor: null, vendedor_id: null,
+    etapa: 'Negociação', criado_em: '', atualizado_em: '',
+  },
 ]
 
 describe('KanbanBoard', () => {
   it('renders all 6 stage columns in correct order', () => {
-    render(<KanbanBoard leads={leads} />)
+    render(<KanbanBoard leads={leads} onLeadMoved={jest.fn()} />)
     expect(screen.getAllByText('Novo Lead')[0]).toBeInTheDocument()
     expect(screen.getAllByText('Contato Feito')[0]).toBeInTheDocument()
     expect(screen.getAllByText('Cotação')[0]).toBeInTheDocument()
@@ -45,13 +55,13 @@ describe('KanbanBoard', () => {
   })
 
   it('does not render removed stages', () => {
-    render(<KanbanBoard leads={leads} />)
+    render(<KanbanBoard leads={leads} onLeadMoved={jest.fn()} />)
     expect(screen.queryByText('Proposta Enviada')).not.toBeInTheDocument()
     expect(screen.queryByText('Fechado')).not.toBeInTheDocument()
   })
 
   it('shows lead cards', () => {
-    render(<KanbanBoard leads={leads} />)
+    render(<KanbanBoard leads={leads} onLeadMoved={jest.fn()} />)
     expect(screen.getByText('Ana Lima')).toBeInTheDocument()
     expect(screen.getByText('Bruno Costa')).toBeInTheDocument()
   })

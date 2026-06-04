@@ -54,6 +54,7 @@ export interface Lead {
   vendedor_id: string | null
   etapa: EtapaLead
   criado_em: string
+  atualizado_em: string
 }
 
 export const TIPOS_VENDEDOR = ['Interno', 'Afiliado', 'Corretor Parceiro'] as const
@@ -145,7 +146,7 @@ export interface Operadora {
 
 export type OperadoraInsert = Omit<Operadora, 'id' | 'criado_em'>
 
-export type LeadInsert = Omit<Lead, 'id' | 'criado_em'> & { criado_em?: string | null }
+export type LeadInsert = Omit<Lead, 'id' | 'criado_em' | 'atualizado_em'> & { criado_em?: string | null }
 export type VendedorInsert = Omit<Vendedor, 'id' | 'criado_em'>
 
 export type StatusCliente = 'Ativo' | 'Inativo' | 'Cancelado'
