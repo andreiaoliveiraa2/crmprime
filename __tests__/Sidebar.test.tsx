@@ -18,8 +18,16 @@ jest.mock('@/lib/supabase/client', () => ({
   createClient: () => ({
     auth: { signOut: jest.fn().mockResolvedValue({}) },
     from: (table: string) => {
-      if (table === 'agenda') return mockAgendaChain
-      return {}
+      if (table === 'agenda') return {
+        select: () => ({
+          gte: () => ({
+            lte: () => Promise.resolve({ count: 0, error: null }),
+          }),
+        }),
+      }
+      return {
+        select: (_fields: string) => Promise.resolve({ data: [], error: null }),
+      }
     },
   }),
 }))
@@ -57,5 +65,10 @@ describe('Sidebar', () => {
     expect(screen.getByText('Andreia Oliveira')).toBeInTheDocument()
     expect(screen.getByText('CEO · A2 Prime')).toBeInTheDocument()
     expect(screen.getByText('AO')).toBeInTheDocument()
+  })
+
+  it('renders search trigger button', () => {
+    render(<Sidebar perfil="admin" nome="Andreia" />)
+    expect(screen.getByRole('button', { name: /buscar/i })).toBeInTheDocument()
   })
 })

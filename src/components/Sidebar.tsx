@@ -10,6 +10,7 @@ import {
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { LucideIcon } from 'lucide-react'
+import BuscaGlobal from '@/components/BuscaGlobal'
 
 type NavItem = { href: string; label: string; icon: LucideIcon; badge?: boolean; external?: boolean }
 
@@ -104,6 +105,10 @@ export default function Sidebar({ perfil, nome }: Props) {
             style={{ width: '48px', height: '48px' }}
             priority
           />
+        </div>
+
+        <div className="px-3 pt-2 pb-1">
+          <BuscaGlobal />
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
