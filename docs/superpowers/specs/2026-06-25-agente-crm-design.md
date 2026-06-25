@@ -122,31 +122,28 @@ crm-seguros/src/
 
 ### Regra de roteamento (no worker)
 
+O roteamento é baseado **exclusivamente no número do remetente** — sem prefixo, sem convenção de texto. O corretor escreve naturalmente, como faria com um assistente humano.
+
 ```typescript
-function routeMessage(senderPhone: string, content: string, registeredCorretores: string[]): 'mpa' | 'attendance' {
-  const isMpaCommand = content.trim().toUpperCase().startsWith('MPA ');
-  const isCorretor = registeredCorretores.includes(senderPhone);
-
-  if (isCorretor && isMpaCommand) return 'mpa';
-  if (!isCorretor) return 'attendance';
-
-  // Corretor sem prefixo MPA → ignora (resposta do próprio sistema, status, etc.)
-  return 'ignore';
+function routeMessage(senderPhone: string, registeredCorretores: string[]): 'mpa' | 'attendance' {
+  if (registeredCorretores.includes(senderPhone)) return 'mpa';
+  return 'attendance';
 }
 ```
 
+`registeredCorretores` = lista de `whatsapp_phone` da tabela `wa_organization_members`, carregada em cache no worker.
+
 ### Modo MPA
 
-- Remetente: número de WhatsApp mapeado a um `auth.users` do Supabase
-- Trigger: mensagem começa com `"MPA "` (case-insensitive)
-- Exemplos: `"MPA bom dia"`, `"MPA follow up"`, `"MPA post hoje"`
-- Sistema carrega o agente MPA da knowledge base correspondente àquele corretor
-- Gemini recebe: system prompt do MPA + dados do CRM do corretor (leads, clientes, comissões)
+- **Trigger**: número do remetente está cadastrado em `wa_organization_members.whatsapp_phone`
+- O corretor escreve qualquer coisa: `"bom dia"`, `"cria um lead"`, `"me ajuda com follow-up"`, `"preciso de uma postagem"` — tudo vai para o MPA
+- Sistema identifica o corretor pelo número → carrega seus dados do CRM (leads, clientes, comissões) como contexto
+- Gemini recebe: system prompt do MPA + dados do CRM + knowledge base dos 46 agentes
 - Resposta vai de volta ao WhatsApp do corretor
 
 ### Modo Atendimento
 
-- Remetente: número não cadastrado em `auth.users`
+- **Trigger**: número do remetente **não** está cadastrado como corretor
 - Sistema ativa o agente de atendimento (`mode = 'client_attendance'`)
 - Gemini qualifica o lead com perguntas padrão
 - Ao qualificar: cria registro na tabela `leads` do CRM existente
