@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Users, UserCheck, Calendar,
   DollarSign, BarChart2, Megaphone, Settings, LogOut, Menu, X, GraduationCap, Calculator,
+  MessageSquare, Bot, Sparkles,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -17,20 +18,22 @@ type NavItem = { href: string; label: string; icon: LucideIcon; badge?: boolean;
 const COTADOR = { href: 'https://cotadorsimplificado.com.br/', label: 'Cotador', icon: Calculator, external: true }
 
 const NAV_ADMIN: NavItem[] = [
-  { href: '/dashboard',     label: 'Dashboard',    icon: LayoutDashboard },
+  { href: '/dashboard',     label: 'Meu Dia',      icon: LayoutDashboard },
   { href: '/crm',           label: 'CRM',           icon: Users           },
   { href: '/clientes',      label: 'Clientes',      icon: UserCheck       },
   { href: '/agenda',        label: 'Agenda',        icon: Calendar, badge: true },
   { href: '/financeiro',    label: 'Financeiro',    icon: DollarSign      },
   { href: '/gestao',        label: 'Gestão',        icon: BarChart2       },
   { href: '/marketing',      label: 'Marketing',      icon: Megaphone      },
+  { href: '/agentes',        label: 'Agentes',       icon: Bot             },
   { href: '/prime-academy',  label: 'Prime Academy',  icon: GraduationCap  },
   COTADOR,
+  { href: '/whatsapp',       label: 'WhatsApp IA',    icon: MessageSquare  },
   { href: '/configuracoes',  label: 'Configurações',  icon: Settings       },
 ]
 
 const NAV_VENDEDOR: NavItem[] = [
-  { href: '/dashboard',        label: 'Dashboard',     icon: LayoutDashboard },
+  { href: '/dashboard',        label: 'Meu Dia',       icon: LayoutDashboard },
   { href: '/crm',              label: 'CRM',           icon: Users           },
   { href: '/clientes',         label: 'Clientes',      icon: UserCheck       },
   { href: '/agenda',           label: 'Agenda',        icon: Calendar, badge: true },

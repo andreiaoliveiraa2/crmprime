@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
+import MpaChatButton from '@/components/MpaChatButton'
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -27,6 +28,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
     <div className="flex min-h-screen" style={{ backgroundColor: '#f4f1ec' }}>
       <Sidebar perfil={perfil} nome={nome} />
       <main className="flex-1 md:ml-64 print:ml-0">{children}</main>
+      <MpaChatButton />
     </div>
   )
 }

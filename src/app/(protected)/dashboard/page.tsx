@@ -1,333 +1,460 @@
 import { createClient } from '@/lib/supabase/server'
 import { getUsuarioAtual } from '@/lib/getUsuarioAtual'
-import DashboardCard from '@/components/DashboardCard'
-import { Users, ArrowLeftRight, FileText, CheckCircle, Calendar, ChevronRight, AlertCircle } from 'lucide-react'
-import { Lead, Cliente, Compromisso, TIPO_COR, STATUS_COR } from '@/lib/types'
-import { fmtHora } from '@/lib/dateUtils'
+import { Lead, Cliente, Compromisso } from '@/lib/types'
 import Link from 'next/link'
+import { ChevronRight, Sparkles } from 'lucide-react'
 import AlertaAgenda from '@/components/AlertaAgenda'
+import SplashScreen from '@/components/SplashScreen'
 
-const etapaBadge: Record<string, { bg: string; color: string }> = {
-  'Novo Lead':     { bg: '#f0f0f0',                color: '#6b7280' },
-  'Contato Feito': { bg: '#dbeafe',                color: '#1d4ed8' },
-  'Cotação':       { bg: 'rgba(184,154,106,0.15)', color: '#92601a' },
-  'Negociação':    { bg: '#ffedd5',                color: '#c2410c' },
-  'Vendido':       { bg: '#dcfce7',                color: '#15803d' },
-  'Perdido':       { bg: '#fce7f3',                color: '#be185d' },
+function fmtHora(iso: string) {
+  return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 }
 
 function fmtDia(iso: string) {
-  const d = new Date(iso)
-  return d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })
-}
-
-function isUrgente(iso: string) {
-  const diff = new Date(iso).getTime() - Date.now()
-  return diff > 0 && diff < 60 * 60 * 1000
+  return new Date(iso).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })
 }
 
 export default async function DashboardPage() {
   const supabase = await createClient()
-
   const usuario = await getUsuarioAtual()
   const isVendedor = usuario?.perfil === 'vendedor'
   const vendedorId = usuario?.vendedor_id ?? null
-  const nomeUsuario = usuario?.nome ?? 'Você'
+  const nomeUsuario = usuario?.nome?.split(' ')[0] ?? 'Você'
 
   const agora = new Date()
   const inicioDia = new Date(agora); inicioDia.setHours(0,0,0,0)
-  const fimDia    = new Date(agora); fimDia.setHours(23,59,59,999)
-  const inicioSemana = new Date(agora)
-  inicioSemana.setDate(agora.getDate() - agora.getDay() + 1)
-  inicioSemana.setHours(0,0,0,0)
-  const fimSemana = new Date(inicioSemana)
-  fimSemana.setDate(inicioSemana.getDate() + 6)
-  fimSemana.setHours(23,59,59,999)
+  const fimDia = new Date(agora); fimDia.setHours(23,59,59,999)
   const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1)
+  const fimMes = new Date(agora.getFullYear(), agora.getMonth() + 1, 0, 23, 59, 59, 999)
+  const semanaNum = Math.ceil(agora.getDate() / 7)
+  const totalSemanas = Math.ceil(new Date(agora.getFullYear(), agora.getMonth() + 1, 0).getDate() / 7)
+  const mesNome = agora.toLocaleDateString('pt-BR', { month: 'long' })
+  const dataFormatada = agora.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
-  let leadsQuery    = supabase.from('leads').select('*').order('criado_em', { ascending: false })
-  let clientesQuery = supabase.from('clientes').select('*').order('criado_em', { ascending: false })
-  let agendaHojeQ   = supabase.from('agenda').select('*').gte('data_hora', inicioDia.toISOString()).lte('data_hora', fimDia.toISOString()).order('data_hora', { ascending: true })
-  let agendaSemanaQ = supabase.from('agenda').select('*').gte('data_hora', inicioSemana.toISOString()).lte('data_hora', fimSemana.toISOString()).order('data_hora', { ascending: true }).limit(5)
-  let pendentesQ    = supabase.from('agenda').select('*').eq('status', 'Agendado').lt('data_hora', inicioDia.toISOString()).order('data_hora', { ascending: false })
+  let leadsQ = supabase.from('leads').select('*').order('criado_em', { ascending: false })
+  let clientesQ = supabase.from('clientes').select('*')
+  let agendaHojeQ = supabase.from('agenda').select('*').gte('data_hora', inicioDia.toISOString()).lte('data_hora', fimDia.toISOString()).order('data_hora', { ascending: true })
+  let pendentesQ = supabase.from('agenda').select('*').eq('status', 'Agendado').lt('data_hora', inicioDia.toISOString()).order('data_hora', { ascending: false }).limit(5)
+  let vendasMesQ = supabase.from('vendas').select('*').gte('data_venda', inicioMes.toISOString()).lte('data_venda', fimMes.toISOString())
+  const carteiraAgentQ = supabase.from('agente_execucoes').select('ultima_acao, executado_em').eq('agente', 'Carteira').order('executado_em', { ascending: false }).limit(1)
 
   if (isVendedor && vendedorId) {
-    leadsQuery    = leadsQuery.eq('vendedor_id', vendedorId)
-    clientesQuery = clientesQuery.eq('vendedor_id', vendedorId)
-    agendaHojeQ   = agendaHojeQ.eq('vendedor_id', vendedorId)
-    agendaSemanaQ = agendaSemanaQ.eq('vendedor_id', vendedorId)
-    pendentesQ    = pendentesQ.eq('vendedor_id', vendedorId)
+    leadsQ = leadsQ.eq('vendedor_id', vendedorId)
+    clientesQ = clientesQ.eq('vendedor_id', vendedorId)
+    agendaHojeQ = agendaHojeQ.eq('vendedor_id', vendedorId)
+    pendentesQ = pendentesQ.eq('vendedor_id', vendedorId)
   }
 
   const [
     { data: leadsData },
     { data: clientesData },
     { data: eventosHojeData },
-    { data: eventosSemanaData },
     { data: pendentesData },
-  ] = await Promise.all([leadsQuery, clientesQuery, agendaHojeQ, agendaSemanaQ, pendentesQ])
+    { data: vendasMesData },
+    { data: carteiraAgentData },
+  ] = await Promise.all([leadsQ, clientesQ, agendaHojeQ, pendentesQ, vendasMesQ, carteiraAgentQ])
 
-  const leads: Lead[]           = leadsData ?? []
-  const clientes: Cliente[]     = clientesData ?? []
-  const eventosHoje: Compromisso[]   = (eventosHojeData ?? []) as Compromisso[]
-  const eventosSemana: Compromisso[] = (eventosSemanaData ?? []) as Compromisso[]
-  const pendentes: Compromisso[]     = (pendentesData ?? []) as Compromisso[]
+  const leads: Lead[] = leadsData ?? []
+  const clientes: Cliente[] = clientesData ?? []
+  const eventosHoje: Compromisso[] = (eventosHojeData ?? []) as Compromisso[]
+  const pendentes: Compromisso[] = (pendentesData ?? []) as Compromisso[]
+  const vendasMes = vendasMesData ?? []
 
-  const emNegociacao      = leads.filter(l => ['Contato Feito','Cotação','Negociação'].includes(l.etapa)).length
-  const propostasEnviadas = leads.filter(l => l.etapa === 'Cotação').length
-  const clientesMes       = clientes.filter(c => c.criado_em && new Date(c.criado_em) >= inicioMes)
-  const temUrgente        = eventosHoje.some(ev => isUrgente(ev.data_hora) && ev.status === 'Agendado')
-
-  // Donut
-  const DONUT_COLORS = ['#5b3fb5','#b89a6a','#2e8b57','#b5455a','#c48a2a','#4a90c4','#7c6f9e']
-  const operadorasMap: Record<string, number> = {}
-  for (const c of clientesMes) {
-    const op = c.operadora ?? 'Sem operadora'
-    operadorasMap[op] = (operadorasMap[op] ?? 0) + 1
-  }
-  const vendasPorOperadora = Object.entries(operadorasMap)
-    .sort((a,b) => b[1]-a[1])
-    .map(([operadora, count], i) => ({ operadora, count, color: DONUT_COLORS[i % DONUT_COLORS.length] }))
-  const totalOperadoras = vendasPorOperadora.reduce((s,v) => s+v.count, 0)
-  const R = 52, CIRCUNF = 2*Math.PI*R
-  let acumulado = 0
-  const segmentos = vendasPorOperadora.map(v => {
-    const comprimento = totalOperadoras > 0 ? (v.count/totalOperadoras)*CIRCUNF : 0
-    const offset = -acumulado; acumulado += comprimento
-    return { ...v, comprimento, offset }
+  // Dados calculados
+  const leadsAbertos = leads.filter(l => !['Vendido', 'Perdido'].includes(l.etapa))
+  const leadsQuentes = leadsAbertos.filter(l => {
+    const dias = (Date.now() - new Date(l.criado_em).getTime()) / (1000 * 60 * 60 * 24)
+    return dias <= 3 && l.etapa !== 'Novo Lead'
+  })
+  const semRetorno = leadsAbertos.filter(l => {
+    const dias = (Date.now() - new Date(l.atualizado_em).getTime()) / (1000 * 60 * 60 * 24)
+    return dias >= 3
   })
 
-  const leadsRecentes    = leads.filter(l => l.etapa !== 'Vendido' && l.etapa !== 'Perdido').slice(0,3)
-  const clientesRecentes = clientes.slice(0,3)
-  const dataFormatada    = agora.toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long', year:'numeric' })
-  const mesAtual         = agora.toLocaleDateString('pt-BR', { month:'long', year:'numeric' })
+  const clientesAtivos = clientes.filter(c => c.status === 'Ativo')
+  const clientesRisco = clientesAtivos.filter(c => {
+    if (!c.data_vencimento_plano) return false
+    const dias = (new Date(c.data_vencimento_plano).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+    return dias <= 30 && dias >= 0
+  })
+
+  // Comissões por operadora
+  const comissoesPorOp: Record<string, number> = {}
+  for (const v of vendasMes) {
+    const op = v.operadora ?? 'Sem operadora'
+    comissoesPorOp[op] = (comissoesPorOp[op] ?? 0) + (v.valor_plano ?? 0)
+  }
+  const totalComissoes = Object.values(comissoesPorOp).reduce((s, v) => s + v, 0)
+  const comissoesOrdenadas = Object.entries(comissoesPorOp).sort((a, b) => b[1] - a[1])
+
+  // Meta (usando vendas do mês vs meta fixa — pode ser configurável depois)
+  const metaMes = 15000
+  const totalVendas = vendasMes.reduce((s, v) => s + (v.valor_plano ?? 0), 0)
+  const pctMeta = metaMes > 0 ? Math.round((totalVendas / metaMes) * 100) : 0
+  const faltaMeta = Math.max(0, metaMes - totalVendas)
+  const semanasRestantes = Math.max(1, totalSemanas - semanaNum + 1)
+
+  // Funil
+  const abordagens = leads.filter(l => new Date(l.criado_em) >= inicioMes).length
+  const propostas = leads.filter(l => new Date(l.criado_em) >= inicioMes && ['Cotação', 'Negociação', 'Vendido'].includes(l.etapa)).length
+  const vendidos = leads.filter(l => new Date(l.criado_em) >= inicioMes && l.etapa === 'Vendido').length
+
+  // Carteira donut
+  const DONUT_COLORS = ['#5b3fb5', '#b89a6a', '#3b82f6', '#ef4444']
+  const carteira = {
+    ativos: clientesAtivos.length,
+    risco: clientesRisco.length,
+  }
+
+  // Alerta do agente Carteira (gerado pelo cron das 6h)
+  const carteiraAlerta = carteiraAgentData?.[0]?.ultima_acao ?? null
+
+  // Prioridades do dia
+  const prioridades: { titulo: string; detalhe: string; agente?: boolean }[] = []
+  if (carteiraAlerta && carteiraAlerta !== 'Nenhum plano vencendo nos próximos 30 dias.') {
+    prioridades.push({ titulo: '🛡️ Agente Carteira', detalhe: carteiraAlerta, agente: true })
+  }
+  if (leadsQuentes.length > 0) {
+    const l = leadsQuentes[0]
+    prioridades.push({ titulo: `Lead quente: ${l.nome}`, detalhe: `${l.etapa} — responder hoje` })
+  }
+  if (pendentes.length > 0) {
+    prioridades.push({ titulo: `${pendentes.length} compromisso${pendentes.length > 1 ? 's' : ''} pendente${pendentes.length > 1 ? 's' : ''}`, detalhe: 'De dias anteriores — resolver' })
+  }
+  if (semRetorno.length > 0) {
+    prioridades.push({ titulo: `${semRetorno.length} lead${semRetorno.length > 1 ? 's' : ''} sem retorno`, detalhe: 'Mais de 3 dias sem atualização' })
+  }
+  if (prioridades.length === 0) {
+    prioridades.push({ titulo: 'Tudo em dia!', detalhe: 'Nenhuma urgência — aproveite pra prospectar' })
+  }
+
+  const iniciais = (usuario?.nome ?? 'U')
+    .split(' ').filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('')
+
+  const cardStyle = "bg-white hover:shadow-lg transition-all duration-200 cursor-pointer hover:-translate-y-0.5"
+  const cardBorder = { border: '1px solid #e8e4dd', borderRadius: '16px' }
+  const headStyle = "mb-3"
 
   return (
     <div className="p-5 md:p-7 max-w-7xl mx-auto">
+      <SplashScreen nome={nomeUsuario} />
 
-      {/* Cabeçalho */}
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-5">
-        <div className="py-1">
-          <h1 className="font-semibold" style={{ fontSize:'22px', color:'#2d1f4e', lineHeight:'1.3' }}>
-            Olá, {nomeUsuario} 👋
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="font-bold" style={{ fontSize: '24px', color: '#2d1f4e' }}>
+            Meu Dia, <span style={{ background: 'linear-gradient(90deg, #5b3fb5, #b89a6a)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{nomeUsuario}</span>
           </h1>
-          <p className="mt-1" style={{ fontSize:'13px', color:'#7a7065' }}>
-            {eventosHoje.length > 0
-              ? `Você tem ${eventosHoje.length} compromisso${eventosHoje.length>1?'s':''} hoje`
-              : 'Aqui está o resumo do seu dia'}
-          </p>
+          <p className="mt-1 capitalize" style={{ fontSize: '13px', color: '#9a918a' }}>{dataFormatada}</p>
         </div>
-        <div className="flex flex-col items-start md:items-end gap-2">
-          <span className="text-xs font-medium capitalize px-3 py-1.5 rounded-full"
-            style={{ backgroundColor:'rgba(45,31,78,0.07)', color:'#2d1f4e' }}>
-            {dataFormatada}
-          </span>
-          <div className="bg-white px-4 py-3 rounded-xl"
-            style={{ border:'1px solid #e8e4dd', borderLeft:'3px solid #b89a6a', maxWidth:'320px' }}>
-            <p style={{ fontFamily:'Georgia,serif', fontStyle:'italic', fontSize:'12px', color:'#5a4e3c', lineHeight:'1.6' }}>
-              "Consagre ao Senhor tudo o que você faz, e os seus planos serão bem-sucedidos."
+        <div className="flex items-center gap-3">
+          <div className="px-4 py-3 rounded-xl bg-white" style={{ border: '1px solid #e8e4dd', borderLeft: '3px solid #b89a6a', maxWidth: 320 }}>
+            <p style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '12px', color: '#5a4e3c', lineHeight: '1.6' }}>
+              &ldquo;Consagre ao Senhor tudo o que você faz, e os seus planos serão bem-sucedidos.&rdquo;
             </p>
-            <p className="mt-1 text-xs font-medium" style={{ color:'#b89a6a' }}>Provérbios 16:3</p>
+            <p className="mt-1 text-xs font-medium" style={{ color: '#b89a6a' }}>Provérbios 16:3</p>
+          </div>
+          <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-full" style={{ border: '1px solid #e8e4dd' }}>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: 'linear-gradient(135deg, #5b3fb5, #b89a6a)', color: '#fff' }}>{iniciais}</div>
+            <div>
+              <p className="text-xs font-semibold" style={{ color: '#2d1f4e' }}>{usuario?.nome}</p>
+              <p className="text-xs" style={{ color: '#9a918a' }}>{isVendedor ? 'Vendedor' : 'Admin'}</p>
+            </div>
           </div>
         </div>
       </div>
 
       <AlertaAgenda eventosHoje={eventosHoje} pendentes={pendentes} />
 
-      {/* Métricas */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-        <DashboardCard title="Total de Clientes" value={clientes.length} icon={Users}
-          subtitle="clientes ativos na carteira" iconBg="#ede9fb" iconColor="#5b3fb5" />
-        <DashboardCard title="Em Negociação" value={emNegociacao} icon={ArrowLeftRight}
-          subtitle="atendimentos em aberto" iconBg="#fdf4e7" iconColor="#c48a2a" />
-        <DashboardCard title="Em Cotação" value={propostasEnviadas} icon={FileText}
-          subtitle="aguardando retorno" iconBg="#fbe9ef" iconColor="#b5455a" />
-        <DashboardCard title="Fechados no Mês" value={clientesMes.length} icon={CheckCircle}
-          subtitle={`vendas em ${mesAtual}`} iconBg="#e8f5ee" iconColor="#2e8b57" />
-      </div>
+      {/* Grid de Cards */}
+      <div className="grid grid-cols-12 gap-4">
 
-      {/* Compromissos de Hoje + Vendas por Operadora */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4">
+        {/* PRIORIDADES — span 8 */}
+        <Link href="/crm" className={`col-span-12 lg:col-span-8 p-5 ${cardStyle}`} style={{ ...cardBorder, background: 'linear-gradient(120deg, #f8f5ff 0%, #faf8f5 100%)' }}>
+          <div className={headStyle}>
+            <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Resolva primeiro</h3>
+            <p className="text-xs" style={{ color: '#9a918a' }}>As que mais importam hoje</p>
+          </div>
+          <div className="space-y-2.5">
+            {prioridades.slice(0, 3).map((p, i) => (
+              <div key={i} className="flex items-start gap-3 py-2" style={{ borderBottom: i < Math.min(prioridades.length, 3) - 1 ? '1px solid #f0ece6' : 'none' }}>
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0 mt-0.5" style={{ background: p.agente ? 'linear-gradient(135deg, #a855f7, #d4a843)' : 'linear-gradient(135deg, #5b3fb5, #b89a6a)' }}>{i + 1}</div>
+                <div><p className="text-sm font-semibold" style={{ color: '#2d1f4e' }}>{p.titulo}</p><p className="text-xs" style={{ color: '#9a918a' }}>{p.detalhe}</p></div>
+              </div>
+            ))}
+          </div>
+        </Link>
 
-        {/* Lembretes */}
-        <div className="bg-white p-4" style={{ border:'1px solid #e8e4dd', borderRadius:'12px' }}>
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold" style={{ color:'#2d1f4e' }}>Compromissos de Hoje</h3>
-              {temUrgente && (
-                <span className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full"
-                  style={{ backgroundColor:'#fee2e2', color:'#dc2626' }}>
-                  <AlertCircle size={11} /> Em breve
-                </span>
-              )}
+        {/* COMISSÕES — span 4 */}
+        <Link href="/financeiro" className={`col-span-12 lg:col-span-4 p-5 ${cardStyle}`} style={cardBorder}>
+          <div className={headStyle}>
+            <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Vou receber</h3>
+            <p className="text-xs" style={{ color: '#9a918a' }}>este mês</p>
+          </div>
+          <div className="flex items-baseline gap-2 mb-3">
+            <span className="text-2xl font-extrabold" style={{ background: 'linear-gradient(90deg, #22c55e, #86efac)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              R$ {totalComissoes.toLocaleString('pt-BR')}
+            </span>
+          </div>
+          <div className="space-y-2">
+            {comissoesOrdenadas.slice(0, 3).map(([op, val], i) => {
+              const pct = totalComissoes > 0 ? Math.round((val / totalComissoes) * 100) : 0
+              const colors = ['linear-gradient(90deg, #5b3fb5, #8b6fc0)', 'linear-gradient(90deg, #b89a6a, #d4bc8a)', 'linear-gradient(90deg, #3b82f6, #60a5fa)']
+              return (
+                <div key={i} className="flex items-center gap-2 text-xs">
+                  <span className="w-16 truncate" style={{ color: '#9a918a' }}>{op}</span>
+                  <div className="flex-1 h-4 rounded-full overflow-hidden" style={{ backgroundColor: '#f0ece6' }}>
+                    <div className="h-full rounded-full" style={{ width: `${pct}%`, background: colors[i % 3] }} />
+                  </div>
+                  <span className="w-20 text-right font-bold" style={{ color: '#2d1f4e' }}>R$ {val.toLocaleString('pt-BR')}</span>
+                </div>
+              )
+            })}
+          </div>
+        </Link>
+
+        {/* AGENDA — span 4 */}
+        <Link href="/agenda" className={`col-span-12 md:col-span-4 p-5 ${cardStyle}`} style={cardBorder}>
+          <div className={`${headStyle} flex items-center`}>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Agenda</h3>
+              <p className="text-xs" style={{ color: '#9a918a' }}>hoje</p>
             </div>
-            <Link href="/agenda" className="flex items-center gap-0.5 text-xs font-medium" style={{ color:'#b89a6a' }}>
-              Ver agenda <ChevronRight size={12} />
-            </Link>
+            {eventosHoje.length > 0 && <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(91,63,181,0.12)', color: '#5b3fb5' }}>{eventosHoje.length}</span>}
           </div>
-
-          {eventosHoje.length === 0 && pendentes.length === 0
-            ? <p className="text-xs py-6 text-center" style={{ color:'#9a918a' }}>Nenhum compromisso hoje.</p>
+          {eventosHoje.length === 0
+            ? <p className="text-xs py-4 text-center" style={{ color: '#9a918a' }}>Agenda livre hoje</p>
             : <div className="space-y-2">
-                {/* Pendentes de dias anteriores */}
-                {pendentes.map(ev => {
-                  const cor = TIPO_COR[ev.tipo] ?? '#6b7280'
-                  return (
-                    <div key={ev.id} className="flex items-center gap-3 p-2.5 rounded-lg"
-                      style={{ backgroundColor:'#fff7ed', border:'1px solid #fed7aa' }}>
-                      <div className="shrink-0 w-16">
-                        <p className="text-xs font-medium" style={{ color:'#ea580c' }}>{fmtDia(ev.data_hora)}</p>
-                        <p className="text-xs" style={{ color:'#ea580c' }}>{fmtHora(ev.data_hora)}</p>
-                      </div>
-                      <div className="w-1 h-8 rounded-full shrink-0" style={{ backgroundColor: cor }} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate" style={{ color:'#1a1a1a' }}>{ev.titulo}</p>
-                        <p className="text-xs" style={{ color:'#ea580c' }}>Pendente</p>
-                      </div>
-                    </div>
-                  )
-                })}
-
-                {/* Eventos de hoje — máx 3 */}
-                {eventosHoje.slice(0, 3).map(ev => {
-                  const cor = TIPO_COR[ev.tipo] ?? '#6b7280'
-                  const urgente = isUrgente(ev.data_hora) && ev.status === 'Agendado'
-                  const sc = STATUS_COR[ev.status]
-                  return (
-                    <div key={ev.id} className="flex items-center gap-3 p-2.5 rounded-lg"
-                      style={{
-                        backgroundColor: urgente ? '#fef2f2' : '#faf8f5',
-                        border: `1px solid ${urgente ? '#fca5a5' : '#f0ece6'}`,
-                      }}>
-                      <div className="shrink-0 w-16">
-                        <p className="text-sm font-bold" style={{ color: urgente ? '#dc2626' : '#2d1f4e' }}>
-                          {fmtHora(ev.data_hora)}
-                        </p>
-                        {urgente && <p className="text-xs font-semibold" style={{ color:'#dc2626' }}>em breve!</p>}
-                      </div>
-                      <div className="w-1 h-8 rounded-full shrink-0" style={{ backgroundColor: cor }} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate" style={{ color:'#1a1a1a' }}>{ev.titulo}</p>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-xs px-1.5 py-0.5 rounded-full font-medium"
-                            style={{ backgroundColor:`${cor}18`, color:cor }}>{ev.tipo}</span>
-                          <span className="text-xs px-1.5 py-0.5 rounded-full font-medium"
-                            style={{ backgroundColor:sc.bg, color:sc.text }}>{ev.status}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-          }
-        </div>
-
-        {/* Vendas por Operadora */}
-        <div className="bg-white p-4" style={{ border:'1px solid #e8e4dd', borderRadius:'12px' }}>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold" style={{ color:'#2d1f4e' }}>Vendas por Operadora</h3>
-            <span className="text-xs capitalize" style={{ color:'#9a918a' }}>{mesAtual}</span>
-          </div>
-          {totalOperadoras === 0
-            ? <p className="text-xs py-6 text-center" style={{ color:'#9a918a' }}>Nenhuma venda com operadora este mês.</p>
-            : <div className="flex items-center gap-4">
-                <div className="shrink-0">
-                  <svg width="110" height="110" viewBox="0 0 140 140">
-                    <circle cx="70" cy="70" r={R} fill="none" stroke="#f0ece6" strokeWidth="20" />
-                    {segmentos.map((seg, i) => (
-                      <circle key={i} cx="70" cy="70" r={R} fill="none" stroke={seg.color}
-                        strokeWidth="20" strokeDasharray={`${seg.comprimento} ${CIRCUNF}`}
-                        strokeDashoffset={seg.offset} strokeLinecap="butt"
-                        style={{ transform:'rotate(-90deg)', transformOrigin:'70px 70px' }} />
-                    ))}
-                    <text x="70" y="66" textAnchor="middle" style={{ fontFamily:'Segoe UI,sans-serif' }}>
-                      <tspan fontSize="22" fontWeight="700" fill="#2d1f4e">{totalOperadoras}</tspan>
-                    </text>
-                    <text x="70" y="82" textAnchor="middle" style={{ fontFamily:'Segoe UI,sans-serif' }}>
-                      <tspan fontSize="10" fill="#9a918a">vendas</tspan>
-                    </text>
-                  </svg>
-                </div>
-                <div className="flex-1 space-y-1.5">
-                  {segmentos.map((seg, i) => {
-                    const pct = totalOperadoras > 0 ? Math.round((seg.count/totalOperadoras)*100) : 0
-                    return (
-                      <div key={i} className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor:seg.color }} />
-                          <span className="text-xs truncate" style={{ color:'#5a4e3c' }}>{seg.operadora}</span>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-xs font-semibold" style={{ color:'#2d1f4e' }}>{seg.count}</span>
-                          <span className="text-xs w-7 text-right" style={{ color:'#9a918a' }}>{pct}%</span>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-          }
-        </div>
-      </div>
-
-      {/* Leads Recentes + Clientes Recentes */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-3">
-        <div className="bg-white p-4" style={{ border:'1px solid #e8e4dd', borderRadius:'12px' }}>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold" style={{ color:'#2d1f4e' }}>Leads Recentes</h3>
-            <Link href="/crm" className="flex items-center gap-0.5 text-xs font-medium" style={{ color:'#b89a6a' }}>
-              Ver todos <ChevronRight size={12} />
-            </Link>
-          </div>
-          {leadsRecentes.length === 0
-            ? <p className="text-xs py-6 text-center" style={{ color:'#9a918a' }}>Nenhum lead cadastrado.</p>
-            : <ul className="divide-y" style={{ borderColor:'#f0ece6' }}>
-                {leadsRecentes.map(l => {
-                  const badge = etapaBadge[l.etapa] ?? { bg:'#f0f0f0', color:'#6b7280' }
-                  return (
-                    <li key={l.id} className="py-2 flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium truncate" style={{ color:'#1a1a1a' }}>{l.nome}</p>
-                        <p className="text-xs mt-0.5" style={{ color:'#9a918a' }}>
-                          {[l.tipo_plano, l.operadora].filter(Boolean).join(' · ') || '—'}
-                        </p>
-                      </div>
-                      <span className="shrink-0 text-xs font-medium px-2.5 py-0.5 rounded-full whitespace-nowrap"
-                        style={{ backgroundColor:badge.bg, color:badge.color }}>{l.etapa}</span>
-                    </li>
-                  )
-                })}
-              </ul>
-          }
-        </div>
-
-        <div className="bg-white p-4" style={{ border:'1px solid #e8e4dd', borderRadius:'12px' }}>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold" style={{ color:'#2d1f4e' }}>Clientes Recentes</h3>
-            <Link href="/clientes" className="flex items-center gap-0.5 text-xs font-medium" style={{ color:'#b89a6a' }}>
-              Ver todos <ChevronRight size={12} />
-            </Link>
-          </div>
-          {clientesRecentes.length === 0
-            ? <p className="text-xs py-6 text-center" style={{ color:'#9a918a' }}>Nenhum cliente cadastrado ainda.</p>
-            : <ul className="divide-y" style={{ borderColor:'#f0ece6' }}>
-                {clientesRecentes.map(c => (
-                  <li key={c.id} className="py-2 flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate" style={{ color:'#1a1a1a' }}>{c.nome}</p>
-                      <p className="text-xs mt-0.5" style={{ color:'#9a918a' }}>
-                        {[c.operadora, c.quantidade_vidas ? `${c.quantidade_vidas} vidas` : null].filter(Boolean).join(' · ') || '—'}
-                      </p>
-                    </div>
-                    <span className="shrink-0 text-xs font-medium px-2.5 py-0.5 rounded-full"
-                      style={{ backgroundColor:'#dcfce7', color:'#15803d' }}>Ativo</span>
-                  </li>
+                {eventosHoje.slice(0, 4).map(ev => (
+                  <div key={ev.id} className="flex items-start gap-2 text-sm">
+                    <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: '#5b3fb5' }} />
+                    <div><b style={{ color: '#2d1f4e' }}>{fmtHora(ev.data_hora)}</b> <span style={{ color: '#5a4e3c' }}>— {ev.titulo}</span></div>
+                  </div>
                 ))}
-              </ul>
+              </div>
           }
-        </div>
-      </div>
+        </Link>
 
+        {/* CARTEIRA — span 4 */}
+        <Link href="/clientes" className={`col-span-12 md:col-span-4 p-5 ${cardStyle}`} style={cardBorder}>
+          <div className={headStyle}>
+            <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Carteira</h3>
+            <p className="text-xs" style={{ color: '#9a918a' }}>clientes ativos</p>
+          </div>
+          <div className="flex items-center gap-6">
+            <div className="text-center">
+              <p className="text-3xl font-extrabold" style={{ color: '#2d1f4e' }}>{carteira.ativos}</p>
+              <p className="text-xs" style={{ color: '#9a918a' }}>ativos</p>
+            </div>
+            <div className="flex-1 space-y-1.5">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: '#5b3fb5' }} />
+                <span style={{ color: '#5a4e3c' }}>Ativos</span>
+                <span className="ml-auto font-bold" style={{ color: '#2d1f4e' }}>{clientesAtivos.length}</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: '#ef4444' }} />
+                <span style={{ color: '#ef4444' }}>Em risco</span>
+                <span className="ml-auto font-bold" style={{ color: '#ef4444' }}>{carteira.risco}</span>
+              </div>
+            </div>
+          </div>
+        </Link>
+
+        {/* PENDÊNCIAS — span 4 */}
+        <Link href="/agenda" className={`col-span-12 md:col-span-4 p-5 ${cardStyle}`} style={cardBorder}>
+          <div className={`${headStyle} flex items-center`}>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Pendências</h3>
+              <p className="text-xs" style={{ color: '#9a918a' }}>precisam de ação</p>
+            </div>
+            {pendentes.length > 0 && <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(212,168,67,0.15)', color: '#b89a6a' }}>{pendentes.length}</span>}
+          </div>
+          {pendentes.length === 0
+            ? <p className="text-xs py-4 text-center" style={{ color: '#9a918a' }}>Tudo em dia!</p>
+            : <div className="space-y-2">
+                {pendentes.slice(0, 3).map(ev => (
+                  <div key={ev.id} className="flex items-start gap-2 text-sm">
+                    <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: '#b89a6a' }} />
+                    <div><b style={{ color: '#2d1f4e' }}>{ev.titulo}</b> <span className="text-xs" style={{ color: '#9a918a' }}>{fmtDia(ev.data_hora)}</span></div>
+                  </div>
+                ))}
+              </div>
+          }
+        </Link>
+
+        {/* META DO MÊS — span 4 */}
+        <div className={`col-span-12 md:col-span-4 p-5 ${cardStyle}`} style={cardBorder}>
+          <div className={headStyle}>
+            <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Meta do mês</h3>
+            <p className="text-xs" style={{ color: '#9a918a' }}>{mesNome} · semana {semanaNum} de {totalSemanas}</p>
+          </div>
+          {/* Barra total */}
+          <div className="flex items-baseline gap-2 mb-1.5">
+            <span className="text-xl font-extrabold" style={{ background: 'linear-gradient(90deg, #22c55e, #86efac)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              R$ {totalVendas.toLocaleString('pt-BR')}
+            </span>
+            <span className="text-xs" style={{ color: '#9a918a' }}>/ R$ {metaMes.toLocaleString('pt-BR')}</span>
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full ml-auto" style={{ backgroundColor: pctMeta >= 80 ? 'rgba(34,197,94,0.12)' : 'rgba(212,168,67,0.15)', color: pctMeta >= 80 ? '#22c55e' : '#b89a6a' }}>{pctMeta}%</span>
+          </div>
+          <div className="h-2.5 rounded-full overflow-hidden mb-4" style={{ backgroundColor: '#f0ece6' }}>
+            <div className="h-full rounded-full" style={{ width: `${Math.min(100, pctMeta)}%`, background: 'linear-gradient(90deg, #22c55e, #86efac)' }} />
+          </div>
+          {/* Funil */}
+          <div className="rounded-xl p-3 mb-2" style={{ backgroundColor: '#faf8f5', border: '1px solid #f0ece6' }}>
+            <p className="text-xs font-bold mb-2" style={{ color: '#9a918a' }}>FUNIL DO MÊS</p>
+            <div className="flex justify-between text-center">
+              <div><p className="text-lg font-extrabold" style={{ color: '#5b3fb5' }}>{abordagens}</p><p className="text-xs" style={{ color: '#9a918a' }}>Abordagens</p></div>
+              <span className="self-center" style={{ color: '#d4d0cc' }}>→</span>
+              <div><p className="text-lg font-extrabold" style={{ color: '#b89a6a' }}>{propostas}</p><p className="text-xs" style={{ color: '#9a918a' }}>Propostas</p></div>
+              <span className="self-center" style={{ color: '#d4d0cc' }}>→</span>
+              <div><p className="text-lg font-extrabold" style={{ color: '#22c55e' }}>{vendidos}</p><p className="text-xs" style={{ color: '#9a918a' }}>Vendas</p></div>
+            </div>
+          </div>
+          <p className="text-xs text-center" style={{ color: '#9a918a' }}>
+            Falta <b style={{ color: '#b89a6a' }}>R$ {faltaMeta.toLocaleString('pt-BR')}</b> · ~<b style={{ color: '#b89a6a' }}>R$ {Math.round(faltaMeta / semanasRestantes).toLocaleString('pt-BR')}</b>/semana
+          </p>
+        </div>
+
+        {/* LEADS RECENTES — span 4 */}
+        <Link href="/crm" className={`col-span-12 md:col-span-4 p-5 ${cardStyle}`} style={cardBorder}>
+          <div className={`${headStyle} flex items-center`}>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Leads recentes</h3>
+              <p className="text-xs" style={{ color: '#9a918a' }}>em negociação</p>
+            </div>
+            {leadsAbertos.length > 0 && <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>{leadsAbertos.length}</span>}
+          </div>
+          {leadsAbertos.length === 0
+            ? <p className="text-xs py-4 text-center" style={{ color: '#9a918a' }}>Nenhum lead aberto</p>
+            : <div className="space-y-2">
+                {leadsAbertos.slice(0, 4).map(l => {
+                  const etapaCor: Record<string, string> = { 'Novo Lead': '#9a918a', 'Contato Feito': '#3b82f6', 'Cotação': '#b89a6a', 'Negociação': '#ef4444' }
+                  return (
+                    <div key={l.id} className="flex items-start gap-2 text-sm">
+                      <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: etapaCor[l.etapa] ?? '#9a918a' }} />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold truncate" style={{ color: '#2d1f4e' }}>{l.nome}</p>
+                        <p className="text-xs" style={{ color: '#9a918a' }}>{l.etapa}{l.operadora ? ` · ${l.operadora}` : ''}</p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+          }
+        </Link>
+
+        {/* VENDAS POR OPERADORA — span 4 */}
+        <Link href="/financeiro" className={`col-span-12 md:col-span-4 p-5 ${cardStyle}`} style={cardBorder}>
+          <div className={headStyle}>
+            <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Vendas por operadora</h3>
+            <p className="text-xs" style={{ color: '#9a918a' }}>{mesNome}</p>
+          </div>
+          {vendasMes.length === 0
+            ? <p className="text-xs py-4 text-center" style={{ color: '#9a918a' }}>Nenhuma venda este mês</p>
+            : <div className="space-y-2">
+                {comissoesOrdenadas.slice(0, 5).map(([op, val], i) => (
+                  <div key={i} className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: DONUT_COLORS[i % DONUT_COLORS.length] }} />
+                      <span style={{ color: '#5a4e3c' }}>{op}</span>
+                    </div>
+                    <span className="font-bold" style={{ color: '#2d1f4e' }}>{vendasMes.filter(v => v.operadora === op).length} vendas</span>
+                  </div>
+                ))}
+              </div>
+          }
+        </Link>
+
+        {/* POSTS DE HOJE — span 4 */}
+        <Link href="/mpa" className={`col-span-12 md:col-span-4 p-5 ${cardStyle}`} style={cardBorder}>
+          <div className={`${headStyle} flex items-center`}>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Posts de hoje</h3>
+              <p className="text-xs" style={{ color: '#9a918a' }}>seus 2 perfis, prontos</p>
+            </div>
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(91,63,181,0.12)', color: '#5b3fb5' }}>2</span>
+          </div>
+          <div className="space-y-2">
+            <div className="rounded-xl p-3" style={{ backgroundColor: '#faf8f5', border: '1px solid #f0ece6' }}>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-bold" style={{ color: '#b89a6a' }}>EMPRESA</span>
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full ml-auto" style={{ backgroundColor: 'rgba(91,63,181,0.12)', color: '#5b3fb5' }}>19h</span>
+              </div>
+              <p className="text-xs font-semibold" style={{ color: '#2d1f4e' }}>Clique para gerar com IA</p>
+            </div>
+            <div className="rounded-xl p-3" style={{ backgroundColor: '#faf8f5', border: '1px solid #f0ece6' }}>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-bold" style={{ color: '#5b3fb5' }}>PESSOAL</span>
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full ml-auto" style={{ backgroundColor: 'rgba(184,154,106,0.15)', color: '#b89a6a' }}>12h</span>
+              </div>
+              <p className="text-xs font-semibold" style={{ color: '#2d1f4e' }}>Clique para gerar com IA</p>
+            </div>
+          </div>
+        </Link>
+
+        {/* STORIES DE HOJE — span 4 */}
+        <Link href="/mpa" className={`col-span-12 md:col-span-4 p-5 ${cardStyle}`} style={cardBorder}>
+          <div className={`${headStyle} flex items-center`}>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Stories de hoje</h3>
+              <p className="text-xs" style={{ color: '#9a918a' }}>sua rotina, pronta</p>
+            </div>
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(212,168,67,0.15)', color: '#b89a6a' }}>5</span>
+          </div>
+          <div className="space-y-2">
+            <div className="rounded-xl p-3" style={{ backgroundColor: '#faf8f5', border: '1px solid #f0ece6' }}>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-xs font-bold" style={{ color: '#b89a6a' }}>EMPRESA · 3 telas</span>
+              </div>
+              <div className="flex gap-1.5 flex-wrap">
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(91,63,181,0.12)', color: '#5b3fb5' }}>Dica</span>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.12)', color: '#3b82f6' }}>Enquete</span>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.12)', color: '#22c55e' }}>CTA</span>
+              </div>
+            </div>
+            <div className="rounded-xl p-3" style={{ backgroundColor: '#faf8f5', border: '1px solid #f0ece6' }}>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-xs font-bold" style={{ color: '#5b3fb5' }}>PESSOAL · 2 telas</span>
+              </div>
+              <div className="flex gap-1.5 flex-wrap">
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(212,168,67,0.15)', color: '#b89a6a' }}>Bastidores</span>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(91,63,181,0.12)', color: '#5b3fb5' }}>Caixinha</span>
+              </div>
+            </div>
+          </div>
+        </Link>
+
+        {/* SEMANA DE CONTEÚDO — span 8 */}
+        <Link href="/mpa" className={`col-span-12 lg:col-span-8 p-5 ${cardStyle}`} style={cardBorder}>
+          <div className={`${headStyle} flex items-center`}>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Sua semana de conteúdo</h3>
+              <p className="text-xs" style={{ color: '#9a918a' }}>variado: carrossel, post e reels</p>
+            </div>
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.12)', color: '#3b82f6' }}>5 agendados</span>
+          </div>
+          <div className="grid grid-cols-5 gap-2">
+            {[
+              { dia: 'SEG', tipo: 'Carrossel', tema: 'Carência', bg: 'linear-gradient(135deg, #5b3fb5, #b89a6a)', color: '#fff' },
+              { dia: 'TER', tipo: 'Post', tema: 'Frase', bg: 'rgba(212,168,67,0.15)', color: '#b89a6a' },
+              { dia: 'QUA', tipo: 'Reels', tema: 'Mito x verdade', bg: 'rgba(239,68,68,0.12)', color: '#ef4444' },
+              { dia: 'QUI', tipo: 'Carrossel', tema: 'Objeção', bg: 'linear-gradient(135deg, #5b3fb5, #b89a6a)', color: '#fff' },
+              { dia: 'SEX', tipo: 'Stories', tema: 'Bastidores', bg: 'rgba(59,130,246,0.12)', color: '#3b82f6' },
+            ].map((item, i) => (
+              <div key={i} className="rounded-xl p-3 text-center" style={{ backgroundColor: '#faf8f5', border: '1px solid #f0ece6' }}>
+                <p className="text-xs mb-2" style={{ color: '#9a918a' }}>{item.dia}</p>
+                <div className="w-8 h-8 rounded-lg mx-auto mb-2 flex items-center justify-center" style={{ background: item.bg, color: item.color }}>
+                  <Sparkles size={14} />
+                </div>
+                <p className="text-xs font-semibold" style={{ color: '#2d1f4e' }}>{item.tipo}</p>
+                <p className="text-xs mt-0.5" style={{ color: '#9a918a' }}>{item.tema}</p>
+              </div>
+            ))}
+          </div>
+        </Link>
+
+      </div>
     </div>
   )
 }
