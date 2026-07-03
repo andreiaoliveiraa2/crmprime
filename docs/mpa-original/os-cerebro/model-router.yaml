@@ -1,0 +1,132 @@
+version: "1.0"
+purpose: "Roteamento por capacidade, custo e risco para operacao de corretora de saude. Preencha provider_model no ambiente local se quiser nomes especificos."
+
+model_slots:
+  router-cheap:
+    role: "classificacao, resumo, ledger, triagem, agenda"
+    cost: "very_low"
+    reasoning: "low"
+    context_need: "small"
+    provider_model: "${MPA_MODEL_ROUTER:-auto-cheap}"
+
+  prospeccao-balanced:
+    role: "qualificacao de lead, perfil, abordagem inicial"
+    cost: "medium"
+    reasoning: "medium"
+    context_need: "medium"
+    provider_model: "${MPA_MODEL_PROSPECCAO:-auto-balanced}"
+
+  comercial-frontier:
+    role: "cotacao, proposta, comparativo, fechamento, negociacao"
+    cost: "high"
+    reasoning: "high"
+    context_need: "medium"
+    provider_model: "${MPA_MODEL_COMERCIAL:-auto-frontier}"
+
+  atendimento-balanced:
+    role: "resposta ao segurado, duvida, suporte, encaminhamento"
+    cost: "medium"
+    reasoning: "medium"
+    context_need: "medium"
+    provider_model: "${MPA_MODEL_ATENDIMENTO:-auto-balanced-conversation}"
+
+  carteira-balanced:
+    role: "retencao, diagnostico de risco, reativacao, upsell"
+    cost: "medium"
+    reasoning: "medium"
+    context_need: "medium"
+    provider_model: "${MPA_MODEL_CARTEIRA:-auto-balanced}"
+
+  operadoras-balanced:
+    role: "consulta a operadora, status de proposta, comissao, prazos"
+    cost: "medium"
+    reasoning: "medium"
+    context_need: "medium"
+    provider_model: "${MPA_MODEL_OPERADORAS:-auto-balanced}"
+
+  copywriter-balanced:
+    role: "scripts de venda, argumentacao, objecoes, WhatsApp"
+    cost: "medium"
+    reasoning: "medium"
+    context_need: "medium"
+    provider_model: "${MPA_MODEL_COPYWRITER:-auto-balanced-creative}"
+
+  conteudo-balanced:
+    role: "posts, conteudo educativo, legendas, hashtags"
+    cost: "medium"
+    reasoning: "medium"
+    context_need: "medium"
+    provider_model: "${MPA_MODEL_CONTEUDO:-auto-balanced-creative}"
+
+  automation-balanced:
+    role: "blueprints de automacao, SOPs, workflows, triggers"
+    cost: "medium"
+    reasoning: "medium"
+    context_need: "medium"
+    provider_model: "${MPA_MODEL_AUTOMATION:-auto-balanced}"
+
+  reviewer-frontier:
+    role: "gate bloqueante, revisao de proposta, validacao de cobertura, risco regulatorio"
+    cost: "high"
+    reasoning: "high"
+    context_need: "small"
+    provider_model: "${MPA_MODEL_REVIEWER:-auto-frontier}"
+
+routes:
+  intake: "router-cheap"
+  task_breakdown: "router-cheap"
+  context_pack: "router-cheap"
+  agenda: "router-cheap"
+  indicacoes: "router-cheap"
+  prospeccao: "prospeccao-balanced"
+  qualificacao_lead: "prospeccao-balanced"
+  cotacao: "comercial-frontier"
+  proposta: "comercial-frontier"
+  comparativo: "comercial-frontier"
+  fechamento: "comercial-frontier"
+  atendimento: "atendimento-balanced"
+  pos_venda: "atendimento-balanced"
+  carteira: "carteira-balanced"
+  retencao: "carteira-balanced"
+  operadoras: "operadoras-balanced"
+  comissao: "operadoras-balanced"
+  script_venda: "copywriter-balanced"
+  objecao: "copywriter-balanced"
+  whatsapp_flow: "copywriter-balanced"
+  conteudo: "conteudo-balanced"
+  social_media: "conteudo-balanced"
+  relatorios: "router-cheap"
+  financeiro: "router-cheap"
+  automacao: "automation-balanced"
+  qa_soft: "router-cheap"
+  qa_blocking: "reviewer-frontier"
+  gate_cotacao: "reviewer-frontier"
+  gate_proposta: "reviewer-frontier"
+  gate_conteudo: "reviewer-frontier"
+
+upgrade_policy:
+  - trigger: "gate_fail_same_issue_twice"
+    action: "upgrade_one_slot"
+  - trigger: "cotacao_ou_proposta_com_valor_real"
+    action: "use_comercial-frontier"
+  - trigger: "promessa_de_cobertura"
+    action: "use_reviewer-frontier_and_require_confirmation"
+  - trigger: "envio_de_proposta_real"
+    action: "use_reviewer-frontier_and_require_confirmation"
+  - trigger: "whatsapp_disparo_real"
+    action: "use_reviewer-frontier_and_require_confirmation"
+  - trigger: "automacao_com_api_write"
+    action: "use_reviewer-frontier_and_require_confirmation"
+  - trigger: "conteudo_com_cobertura_medica"
+    action: "use_reviewer-frontier"
+  - trigger: "risco_regulatorio_ans"
+    action: "use_reviewer-frontier"
+  - trigger: "formatacao_simples_ou_resumo"
+    action: "downgrade_to_router-cheap"
+
+budget_policy:
+  max_reference_files_per_task: 2
+  max_primary_diretrizes_per_task: 1
+  max_optional_diretrizes_per_task: 1
+  prefer_summary_over_full_history: true
+  require_handoff_after_each_task: true

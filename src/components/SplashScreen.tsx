@@ -105,7 +105,7 @@ export default function SplashScreen({ nome }: { nome: string }) {
           animation: 'splashPulse 2s ease-in-out infinite',
         }}
       >
-        <span className="text-white font-extrabold text-2xl">MPA</span>
+        <span className="text-white font-extrabold text-lg tracking-tight">NextIA</span>
       </div>
 
       <h2

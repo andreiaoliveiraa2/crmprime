@@ -1,0 +1,46 @@
+# clients-map.yaml
+# Mapa global de leads e segurados. Sem tokens, sem segredos, sem CPF.
+# Dados sensiveis (CPF, historico medico, tokens de portal) ficam em .env ou em
+# arquivos protegidos — nunca neste mapa.
+
+leads: []
+segurados: []
+
+# Exemplo de lead:
+# leads:
+#   - slug: "joao-silva-pj"
+#     display_name: "Joao Silva"
+#     tipo: "PJ"
+#     cnpj_env: "LEAD_JOAO_SILVA_CNPJ"
+#     vidas: 15
+#     faixa_etaria: "25-45"
+#     regiao: "Joao Pessoa/PB"
+#     canal_origem: "indicacao"
+#     operadora_interesse: ["Hapvida", "Bradesco Saude"]
+#     status: "qualificado"
+#     workspace: "05_WORKSPACE/leads/joao-silva-pj"
+#     responsavel: "[Nome]"
+#     ultima_interacao: "2026-06-15"
+#     proxima_acao: "enviar cotacao comparativa"
+#     objecoes: ["preco", "carencia"]
+#     urgencia: "alta"
+
+# Exemplo de segurado:
+# segurados:
+#   - slug: "maria-santos"
+#     display_name: "Maria Santos"
+#     tipo: "PF"
+#     operadora: "SulAmerica"
+#     plano: "Especial 100 Nacional"
+#     acomodacao: "apartamento"
+#     vidas: 3
+#     regiao: "Joao Pessoa/PB"
+#     data_inicio: "2025-01-15"
+#     aniversario_contrato: "01-15"
+#     status_apolice: "ativo"
+#     workspace: "05_WORKSPACE/segurados/maria-santos"
+#     comissao_env: "SEGURADO_MARIA_SANTOS_COMISSAO"
+#     carencias_restantes: "nenhuma"
+#     nps: "promotor"
+#     indicacoes_feitas: 2
+#     responsavel: "[Nome]"
