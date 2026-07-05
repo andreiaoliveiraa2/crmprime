@@ -70,7 +70,7 @@ export default function MpaPage() {
           <Sparkles size={20} color="#fff" />
         </div>
         <div>
-          <h1 className="text-lg font-semibold" style={{ color: '#2d1f4e' }}>NextIA</h1>
+          <h1 className="text-lg font-semibold" style={{ color: '#2d1f4e' }}>MPA</h1>
           <p className="text-xs" style={{ color: '#9a918a' }}>Sua equipe digital de IA — 46 agentes prontos</p>
         </div>
       </div>
@@ -83,7 +83,7 @@ export default function MpaPage() {
               style={{ background: 'linear-gradient(135deg, #5b3fb5, #b89a6a)' }}>
               <Sparkles size={32} color="#fff" />
             </div>
-            <h2 className="text-xl font-semibold mb-2" style={{ color: '#2d1f4e' }}>Olá! Sou o NextIA</h2>
+            <h2 className="text-xl font-semibold mb-2" style={{ color: '#2d1f4e' }}>Olá! Sou o MPA</h2>
             <p className="text-sm mb-6" style={{ color: '#9a918a', maxWidth: '400px' }}>
               Coordeno sua equipe digital de 5 super-heróis. Me diga o que precisa e eu aciono o herói certo.
             </p>
