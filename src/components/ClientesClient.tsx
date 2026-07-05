@@ -211,7 +211,7 @@ export default function ClientesClient({ clientes }: Props) {
                     </td>
                     <td className="px-4 py-3" style={{ color: '#5a4e3c' }}>{c.vendedor ?? '—'}</td>
                     <td className="px-4 py-3 whitespace-nowrap" style={{ color: '#5a4e3c' }}>
-                      {c.data_venda ? new Date(c.data_venda).toLocaleDateString('pt-BR') : '—'}
+                      {c.data_venda ? new Date(c.data_venda + 'T12:00:00').toLocaleDateString('pt-BR') : '—'}
                     </td>
                     <td className="px-4 py-3" style={{ color: '#5a4e3c' }}>{c.contato ?? '—'}</td>
                     <td className="px-4 py-3">
