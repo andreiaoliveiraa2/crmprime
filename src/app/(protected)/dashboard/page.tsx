@@ -2,9 +2,12 @@ import { createClient } from '@/lib/supabase/server'
 import { getUsuarioAtual } from '@/lib/getUsuarioAtual'
 import { Lead, Cliente, Compromisso } from '@/lib/types'
 import Link from 'next/link'
-import { ChevronRight, Sparkles } from 'lucide-react'
+import {
+  ChevronRight, Sparkles, ListChecks, Wallet, Calendar, Users,
+  AlertCircle, Target, TrendingUp, PieChart, Image as ImageIcon,
+  Camera, CalendarDays, Shield,
+} from 'lucide-react'
 import AlertaAgenda from '@/components/AlertaAgenda'
-import SplashScreen from '@/components/SplashScreen'
 
 function fmtHora(iso: string) {
   return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
@@ -78,7 +81,7 @@ export default async function DashboardPage() {
     return dias <= 30 && dias >= 0
   })
 
-  // Comissões por operadora
+  // Comissões por operadora (valor)
   const comissoesPorOp: Record<string, number> = {}
   for (const v of vendasMes) {
     const op = v.operadora ?? 'Sem operadora'
@@ -86,6 +89,25 @@ export default async function DashboardPage() {
   }
   const totalComissoes = Object.values(comissoesPorOp).reduce((s, v) => s + v, 0)
   const comissoesOrdenadas = Object.entries(comissoesPorOp).sort((a, b) => b[1] - a[1])
+
+  // Vendas por operadora (contagem) — para o donut
+  const DONUT_COLORS = ['#5b3fb5', '#b89a6a', '#2e8b57', '#b5455a', '#c48a2a', '#4a90c4', '#7c6f9e']
+  const vendasPorOpMap: Record<string, number> = {}
+  for (const v of vendasMes) {
+    const op = v.operadora ?? 'Sem operadora'
+    vendasPorOpMap[op] = (vendasPorOpMap[op] ?? 0) + 1
+  }
+  const vendasPorOperadora = Object.entries(vendasPorOpMap)
+    .sort((a, b) => b[1] - a[1])
+    .map(([operadora, count], i) => ({ operadora, count, color: DONUT_COLORS[i % DONUT_COLORS.length] }))
+  const totalVendasCount = vendasMes.length
+  const R = 52, CIRCUNF = 2 * Math.PI * R
+  let acumulado = 0
+  const segmentos = vendasPorOperadora.map(v => {
+    const comprimento = totalVendasCount > 0 ? (v.count / totalVendasCount) * CIRCUNF : 0
+    const offset = -acumulado; acumulado += comprimento
+    return { ...v, comprimento, offset }
+  })
 
   // Meta (usando vendas do mês vs meta fixa — pode ser configurável depois)
   const metaMes = 15000
@@ -99,8 +121,7 @@ export default async function DashboardPage() {
   const propostas = leads.filter(l => new Date(l.criado_em) >= inicioMes && ['Cotação', 'Negociação', 'Vendido'].includes(l.etapa)).length
   const vendidos = leads.filter(l => new Date(l.criado_em) >= inicioMes && l.etapa === 'Vendido').length
 
-  // Carteira donut
-  const DONUT_COLORS = ['#5b3fb5', '#b89a6a', '#3b82f6', '#ef4444']
+  // Carteira
   const carteira = {
     ativos: clientesAtivos.length,
     risco: clientesRisco.length,
@@ -112,7 +133,7 @@ export default async function DashboardPage() {
   // Prioridades do dia
   const prioridades: { titulo: string; detalhe: string; agente?: boolean }[] = []
   if (carteiraAlerta && carteiraAlerta !== 'Nenhum plano vencendo nos próximos 30 dias.') {
-    prioridades.push({ titulo: '🛡️ Agente Carteira', detalhe: carteiraAlerta, agente: true })
+    prioridades.push({ titulo: 'Agente Carteira', detalhe: carteiraAlerta, agente: true })
   }
   if (leadsQuentes.length > 0) {
     const l = leadsQuentes[0]
@@ -131,16 +152,16 @@ export default async function DashboardPage() {
   const iniciais = (usuario?.nome ?? 'U')
     .split(' ').filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('')
 
-  const cardStyle = "bg-white hover:shadow-lg transition-all duration-200 cursor-pointer hover:-translate-y-0.5"
-  const cardBorder = { border: '1px solid #e8e4dd', borderRadius: '16px' }
-  const headStyle = "mb-3"
+  // Sistema de cards: densidade do dashboard antigo (p-4, cantos 12px)
+  const cardBase = "bg-white p-4 hover:shadow-md transition-all duration-200"
+  const cardGrey = { border: '1px solid #e8e4dd', borderRadius: '12px' }
+  const cardGold = { border: '2px solid #d4af7a', borderRadius: '12px' }
 
   return (
     <div className="p-5 md:p-7 max-w-7xl mx-auto">
-      <SplashScreen nome={nomeUsuario} />
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-5">
         <div>
           <h1 className="font-bold" style={{ fontSize: '24px', color: '#2d1f4e' }}>
             Meu Dia, <span style={{ background: 'linear-gradient(90deg, #5b3fb5, #b89a6a)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{nomeUsuario}</span>
@@ -167,29 +188,42 @@ export default async function DashboardPage() {
       <AlertaAgenda eventosHoje={eventosHoje} pendentes={pendentes} />
 
       {/* Grid de Cards */}
-      <div className="grid grid-cols-12 gap-4">
+      <div className="grid grid-cols-12 gap-3">
 
-        {/* PRIORIDADES — span 8 */}
-        <Link href="/crm" className={`col-span-12 lg:col-span-8 p-5 ${cardStyle}`} style={{ ...cardBorder, background: 'linear-gradient(120deg, #f8f5ff 0%, #faf8f5 100%)' }}>
-          <div className={headStyle}>
-            <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Resolva primeiro</h3>
-            <p className="text-xs" style={{ color: '#9a918a' }}>As que mais importam hoje</p>
+        {/* PRIORIDADES — span 8 (faixa dourada de topo) */}
+        <Link href="/crm" className={`col-span-12 lg:col-span-8 ${cardBase}`} style={{ ...cardGold, background: 'linear-gradient(120deg, #f8f5ff 0%, #faf8f5 100%)' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="p-2 rounded-lg shrink-0" style={{ backgroundColor: 'rgba(184,154,106,0.14)' }}>
+              <ListChecks size={15} style={{ color: '#b89a6a' }} />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Resolva primeiro</h3>
+              <p className="text-xs" style={{ color: '#9a918a' }}>As que mais importam hoje</p>
+            </div>
+            <ChevronRight size={16} style={{ color: '#d4c9bc' }} />
           </div>
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             {prioridades.slice(0, 3).map((p, i) => (
-              <div key={i} className="flex items-start gap-3 py-2" style={{ borderBottom: i < Math.min(prioridades.length, 3) - 1 ? '1px solid #f0ece6' : 'none' }}>
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0 mt-0.5" style={{ background: p.agente ? 'linear-gradient(135deg, #a855f7, #d4a843)' : 'linear-gradient(135deg, #5b3fb5, #b89a6a)' }}>{i + 1}</div>
+              <div key={i} className="flex items-start gap-3 py-1.5" style={{ borderBottom: i < Math.min(prioridades.length, 3) - 1 ? '1px solid #f0ece6' : 'none' }}>
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 text-white" style={{ background: p.agente ? 'linear-gradient(135deg, #a855f7, #d4a843)' : 'linear-gradient(135deg, #5b3fb5, #b89a6a)' }}>
+                  {p.agente ? <Shield size={13} /> : <span className="text-xs font-bold">{i + 1}</span>}
+                </div>
                 <div><p className="text-sm font-semibold" style={{ color: '#2d1f4e' }}>{p.titulo}</p><p className="text-xs" style={{ color: '#9a918a' }}>{p.detalhe}</p></div>
               </div>
             ))}
           </div>
         </Link>
 
-        {/* COMISSÕES — span 4 */}
-        <Link href="/financeiro" className={`col-span-12 lg:col-span-4 p-5 ${cardStyle}`} style={cardBorder}>
-          <div className={headStyle}>
-            <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Vou receber</h3>
-            <p className="text-xs" style={{ color: '#9a918a' }}>este mês</p>
+        {/* COMISSÕES — span 4 (faixa dourada de topo) */}
+        <Link href="/financeiro" className={`col-span-12 lg:col-span-4 ${cardBase}`} style={cardGold}>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="p-2 rounded-lg shrink-0" style={{ backgroundColor: 'rgba(34,197,94,0.12)' }}>
+              <Wallet size={15} style={{ color: '#22c55e' }} />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Vou receber</h3>
+              <p className="text-xs" style={{ color: '#9a918a' }}>este mês</p>
+            </div>
           </div>
           <div className="flex items-baseline gap-2 mb-3">
             <span className="text-2xl font-extrabold" style={{ background: 'linear-gradient(90deg, #22c55e, #86efac)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
@@ -214,8 +248,11 @@ export default async function DashboardPage() {
         </Link>
 
         {/* AGENDA — span 4 */}
-        <Link href="/agenda" className={`col-span-12 md:col-span-4 p-5 ${cardStyle}`} style={cardBorder}>
-          <div className={`${headStyle} flex items-center`}>
+        <Link href="/agenda" className={`col-span-12 md:col-span-4 ${cardBase}`} style={cardGrey}>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="p-2 rounded-lg shrink-0" style={{ backgroundColor: 'rgba(91,63,181,0.12)' }}>
+              <Calendar size={15} style={{ color: '#5b3fb5' }} />
+            </div>
             <div className="flex-1">
               <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Agenda</h3>
               <p className="text-xs" style={{ color: '#9a918a' }}>hoje</p>
@@ -236,10 +273,15 @@ export default async function DashboardPage() {
         </Link>
 
         {/* CARTEIRA — span 4 */}
-        <Link href="/clientes" className={`col-span-12 md:col-span-4 p-5 ${cardStyle}`} style={cardBorder}>
-          <div className={headStyle}>
-            <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Carteira</h3>
-            <p className="text-xs" style={{ color: '#9a918a' }}>clientes ativos</p>
+        <Link href="/clientes" className={`col-span-12 md:col-span-4 ${cardBase}`} style={cardGrey}>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="p-2 rounded-lg shrink-0" style={{ backgroundColor: 'rgba(184,154,106,0.14)' }}>
+              <Users size={15} style={{ color: '#b89a6a' }} />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Carteira</h3>
+              <p className="text-xs" style={{ color: '#9a918a' }}>clientes ativos</p>
+            </div>
           </div>
           <div className="flex items-center gap-6">
             <div className="text-center">
@@ -262,8 +304,11 @@ export default async function DashboardPage() {
         </Link>
 
         {/* PENDÊNCIAS — span 4 */}
-        <Link href="/agenda" className={`col-span-12 md:col-span-4 p-5 ${cardStyle}`} style={cardBorder}>
-          <div className={`${headStyle} flex items-center`}>
+        <Link href="/agenda" className={`col-span-12 md:col-span-4 ${cardBase}`} style={cardGrey}>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="p-2 rounded-lg shrink-0" style={{ backgroundColor: 'rgba(212,168,67,0.15)' }}>
+              <AlertCircle size={15} style={{ color: '#b89a6a' }} />
+            </div>
             <div className="flex-1">
               <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Pendências</h3>
               <p className="text-xs" style={{ color: '#9a918a' }}>precisam de ação</p>
@@ -284,10 +329,15 @@ export default async function DashboardPage() {
         </Link>
 
         {/* META DO MÊS — span 4 */}
-        <div className={`col-span-12 md:col-span-4 p-5 ${cardStyle}`} style={cardBorder}>
-          <div className={headStyle}>
-            <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Meta do mês</h3>
-            <p className="text-xs" style={{ color: '#9a918a' }}>{mesNome} · semana {semanaNum} de {totalSemanas}</p>
+        <div className={`col-span-12 md:col-span-4 ${cardBase}`} style={cardGrey}>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="p-2 rounded-lg shrink-0" style={{ backgroundColor: 'rgba(34,197,94,0.12)' }}>
+              <Target size={15} style={{ color: '#22c55e' }} />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Meta do mês</h3>
+              <p className="text-xs" style={{ color: '#9a918a' }}>{mesNome} · semana {semanaNum} de {totalSemanas}</p>
+            </div>
           </div>
           {/* Barra total */}
           <div className="flex items-baseline gap-2 mb-1.5">
@@ -305,9 +355,9 @@ export default async function DashboardPage() {
             <p className="text-xs font-bold mb-2" style={{ color: '#9a918a' }}>FUNIL DO MÊS</p>
             <div className="flex justify-between text-center">
               <div><p className="text-lg font-extrabold" style={{ color: '#5b3fb5' }}>{abordagens}</p><p className="text-xs" style={{ color: '#9a918a' }}>Abordagens</p></div>
-              <span className="self-center" style={{ color: '#d4d0cc' }}>→</span>
+              <span className="self-center"><ChevronRight size={14} style={{ color: '#d4d0cc' }} /></span>
               <div><p className="text-lg font-extrabold" style={{ color: '#b89a6a' }}>{propostas}</p><p className="text-xs" style={{ color: '#9a918a' }}>Propostas</p></div>
-              <span className="self-center" style={{ color: '#d4d0cc' }}>→</span>
+              <span className="self-center"><ChevronRight size={14} style={{ color: '#d4d0cc' }} /></span>
               <div><p className="text-lg font-extrabold" style={{ color: '#22c55e' }}>{vendidos}</p><p className="text-xs" style={{ color: '#9a918a' }}>Vendas</p></div>
             </div>
           </div>
@@ -317,8 +367,11 @@ export default async function DashboardPage() {
         </div>
 
         {/* LEADS RECENTES — span 4 */}
-        <Link href="/crm" className={`col-span-12 md:col-span-4 p-5 ${cardStyle}`} style={cardBorder}>
-          <div className={`${headStyle} flex items-center`}>
+        <Link href="/crm" className={`col-span-12 md:col-span-4 ${cardBase}`} style={cardGrey}>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="p-2 rounded-lg shrink-0" style={{ backgroundColor: 'rgba(239,68,68,0.12)' }}>
+              <TrendingUp size={15} style={{ color: '#ef4444' }} />
+            </div>
             <div className="flex-1">
               <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Leads recentes</h3>
               <p className="text-xs" style={{ color: '#9a918a' }}>em negociação</p>
@@ -344,31 +397,64 @@ export default async function DashboardPage() {
           }
         </Link>
 
-        {/* VENDAS POR OPERADORA — span 4 */}
-        <Link href="/financeiro" className={`col-span-12 md:col-span-4 p-5 ${cardStyle}`} style={cardBorder}>
-          <div className={headStyle}>
-            <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Vendas por operadora</h3>
-            <p className="text-xs" style={{ color: '#9a918a' }}>{mesNome}</p>
+        {/* VENDAS POR OPERADORA — span 4 (donut) */}
+        <Link href="/financeiro" className={`col-span-12 md:col-span-4 ${cardBase}`} style={cardGrey}>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="p-2 rounded-lg shrink-0" style={{ backgroundColor: 'rgba(91,63,181,0.12)' }}>
+              <PieChart size={15} style={{ color: '#5b3fb5' }} />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Vendas por operadora</h3>
+              <p className="text-xs capitalize" style={{ color: '#9a918a' }}>{mesNome}</p>
+            </div>
           </div>
-          {vendasMes.length === 0
+          {totalVendasCount === 0
             ? <p className="text-xs py-4 text-center" style={{ color: '#9a918a' }}>Nenhuma venda este mês</p>
-            : <div className="space-y-2">
-                {comissoesOrdenadas.slice(0, 5).map(([op, val], i) => (
-                  <div key={i} className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: DONUT_COLORS[i % DONUT_COLORS.length] }} />
-                      <span style={{ color: '#5a4e3c' }}>{op}</span>
-                    </div>
-                    <span className="font-bold" style={{ color: '#2d1f4e' }}>{vendasMes.filter(v => v.operadora === op).length} vendas</span>
-                  </div>
-                ))}
+            : <div className="flex items-center gap-4">
+                <div className="shrink-0">
+                  <svg width="104" height="104" viewBox="0 0 140 140">
+                    <circle cx="70" cy="70" r={R} fill="none" stroke="#f0ece6" strokeWidth="20" />
+                    {segmentos.map((seg, i) => (
+                      <circle key={i} cx="70" cy="70" r={R} fill="none" stroke={seg.color}
+                        strokeWidth="20" strokeDasharray={`${seg.comprimento} ${CIRCUNF}`}
+                        strokeDashoffset={seg.offset} strokeLinecap="butt"
+                        style={{ transform: 'rotate(-90deg)', transformOrigin: '70px 70px' }} />
+                    ))}
+                    <text x="70" y="66" textAnchor="middle" style={{ fontFamily: 'Segoe UI, sans-serif' }}>
+                      <tspan fontSize="22" fontWeight="700" fill="#2d1f4e">{totalVendasCount}</tspan>
+                    </text>
+                    <text x="70" y="82" textAnchor="middle" style={{ fontFamily: 'Segoe UI, sans-serif' }}>
+                      <tspan fontSize="10" fill="#9a918a">vendas</tspan>
+                    </text>
+                  </svg>
+                </div>
+                <div className="flex-1 space-y-1.5">
+                  {segmentos.map((seg, i) => {
+                    const pct = totalVendasCount > 0 ? Math.round((seg.count / totalVendasCount) * 100) : 0
+                    return (
+                      <div key={i} className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: seg.color }} />
+                          <span className="text-xs truncate" style={{ color: '#5a4e3c' }}>{seg.operadora}</span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-xs font-semibold" style={{ color: '#2d1f4e' }}>{seg.count}</span>
+                          <span className="text-xs w-7 text-right" style={{ color: '#9a918a' }}>{pct}%</span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
           }
         </Link>
 
         {/* POSTS DE HOJE — span 4 */}
-        <Link href="/mpa" className={`col-span-12 md:col-span-4 p-5 ${cardStyle}`} style={cardBorder}>
-          <div className={`${headStyle} flex items-center`}>
+        <Link href="/mpa" className={`col-span-12 md:col-span-4 ${cardBase}`} style={cardGrey}>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="p-2 rounded-lg shrink-0" style={{ backgroundColor: 'rgba(91,63,181,0.12)' }}>
+              <ImageIcon size={15} style={{ color: '#5b3fb5' }} />
+            </div>
             <div className="flex-1">
               <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Posts de hoje</h3>
               <p className="text-xs" style={{ color: '#9a918a' }}>seus 2 perfis, prontos</p>
@@ -394,8 +480,11 @@ export default async function DashboardPage() {
         </Link>
 
         {/* STORIES DE HOJE — span 4 */}
-        <Link href="/mpa" className={`col-span-12 md:col-span-4 p-5 ${cardStyle}`} style={cardBorder}>
-          <div className={`${headStyle} flex items-center`}>
+        <Link href="/mpa" className={`col-span-12 md:col-span-4 ${cardBase}`} style={cardGrey}>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="p-2 rounded-lg shrink-0" style={{ backgroundColor: 'rgba(212,168,67,0.15)' }}>
+              <Camera size={15} style={{ color: '#b89a6a' }} />
+            </div>
             <div className="flex-1">
               <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Stories de hoje</h3>
               <p className="text-xs" style={{ color: '#9a918a' }}>sua rotina, pronta</p>
@@ -426,8 +515,11 @@ export default async function DashboardPage() {
         </Link>
 
         {/* SEMANA DE CONTEÚDO — span 8 */}
-        <Link href="/mpa" className={`col-span-12 lg:col-span-8 p-5 ${cardStyle}`} style={cardBorder}>
-          <div className={`${headStyle} flex items-center`}>
+        <Link href="/mpa" className={`col-span-12 lg:col-span-8 ${cardBase}`} style={cardGrey}>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="p-2 rounded-lg shrink-0" style={{ backgroundColor: 'rgba(59,130,246,0.12)' }}>
+              <CalendarDays size={15} style={{ color: '#3b82f6' }} />
+            </div>
             <div className="flex-1">
               <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Sua semana de conteúdo</h3>
               <p className="text-xs" style={{ color: '#9a918a' }}>variado: carrossel, post e reels</p>
