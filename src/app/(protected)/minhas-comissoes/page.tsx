@@ -28,6 +28,7 @@ export default async function MinhasComissoesPage() {
     .from('comissoes')
     .select('*, vendas!inner(cliente_nome, operadora)')
     .eq('tipo', 'parcela')
+    .gt('valor_vendedor', 0)
     .order('data_prevista', { ascending: false })
 
   const comissoes = (comissoesRaw ?? []) as (Comissao & {
