@@ -101,10 +101,18 @@ export async function getEventosGoogleAgenda(inicio: Date, fim: Date): Promise<E
       .eq('chave', 'google_ical_url')
       .maybeSingle()
     if (!data?.ativo || !data.valor) return []
-    const url = String(data.valor).replace(/^webcal:\/\//i, 'https://')
-    const res = await fetch(url, { next: { revalidate: 600 } })
-    if (!res.ok) return []
-    return parseIcs(await res.text(), inicio, fim)
+    // Pode ter VÁRIAS agendas (uma URL por linha/vírgula) — junta os eventos de todas.
+    const urls = String(data.valor)
+      .split(/[\n,;]+/).map(u => u.trim()).filter(Boolean)
+      .map(u => u.replace(/^webcal:\/\//i, 'https://'))
+    const listas = await Promise.all(urls.map(async url => {
+      try {
+        const res = await fetch(url, { next: { revalidate: 600 } })
+        if (!res.ok) return []
+        return parseIcs(await res.text(), inicio, fim)
+      } catch { return [] }
+    }))
+    return listas.flat().sort((a, b) => a.data_hora.localeCompare(b.data_hora))
   } catch (e) {
     console.error('[googleAgenda] falha ao ler feed:', e)
     return []

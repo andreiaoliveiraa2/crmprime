@@ -40,16 +40,16 @@ export default function IntegracaoAgendaCard({ urlAtual }: { urlAtual: string })
         <h3 className="text-base font-semibold" style={{ color: '#2d1f4e' }}>Integração — Google Agenda</h3>
       </div>
       <p className="text-sm mb-4" style={{ color: '#7a7065' }}>
-        Cole o <b>link secreto</b> da sua Google Agenda pra ver seus compromissos aqui no sistema (na Agenda e no Meu Dia). É só leitura — o sistema mostra, nunca altera sua agenda.
+        Cole o <b>link secreto</b> de cada agenda do Google que você quer ver aqui (na Agenda e no Meu Dia). Pode colar <b>vários</b> — <b>um por linha</b>. É só leitura: o sistema mostra, nunca altera sua agenda.
       </p>
 
-      <label className="block text-sm font-medium mb-1" style={{ color: '#9a918a' }}>Endereço secreto no formato iCal</label>
-      <input
-        type="text"
+      <label className="block text-sm font-medium mb-1" style={{ color: '#9a918a' }}>Endereço(s) secreto(s) no formato iCal — um por linha</label>
+      <textarea
         value={url}
         onChange={e => setUrl(e.target.value)}
-        placeholder="https://calendar.google.com/calendar/ical/.../basic.ics"
-        className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2"
+        rows={4}
+        placeholder={'https://calendar.google.com/calendar/ical/.../basic.ics\nhttps://calendar.google.com/calendar/ical/.../basic.ics'}
+        className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 font-mono"
         style={{ border: '1px solid #e8e4dd' }}
       />
 
@@ -75,14 +75,14 @@ export default function IntegracaoAgendaCard({ urlAtual }: { urlAtual: string })
       )}
 
       <div className="mt-5 rounded-xl p-3 text-xs leading-relaxed" style={{ backgroundColor: '#faf8f5', border: '1px solid #f0ece6', color: '#5a4e3c' }}>
-        <b style={{ color: '#2d1f4e' }}>Onde pegar o link (no computador):</b>
+        <b style={{ color: '#2d1f4e' }}>Onde pegar os links (no computador):</b>
         <ol className="list-decimal ml-4 mt-1 space-y-0.5">
           <li>Abra <b>calendar.google.com</b></li>
-          <li>Passe o mouse na sua agenda (em &ldquo;Minhas agendas&rdquo;) → clique nos <b>3 pontinhos</b> → <b>Configurações e compartilhamento</b></li>
-          <li>Role até <b>Integrar agenda</b></li>
-          <li>Copie o <b>&ldquo;Endereço secreto no formato iCal&rdquo;</b> (termina em .ics) e cole aqui</li>
+          <li>Em &ldquo;Minhas agendas&rdquo;, passe o mouse na agenda que você quer (ex: <b>Consultas Médicas</b>, <b>Fazenda Aluguel</b>...) → <b>3 pontinhos</b> → <b>Configurações e compartilhamento</b></li>
+          <li>Role até <b>Integrar agenda</b> → copie o <b>&ldquo;Endereço secreto no formato iCal&rdquo;</b> (termina em .ics)</li>
+          <li>Cole aqui. <b>Repita pra cada agenda</b> que quiser ver — cole uma por linha 👆</li>
         </ol>
-        <p className="mt-1.5">🔒 Esse link é secreto — não compartilhe com ninguém.</p>
+        <p className="mt-1.5">💡 Dica: seus compromissos costumam estar nas agendas de <b>baixo</b> da lista, não na principal. 🔒 Esses links são secretos — não compartilhe.</p>
       </div>
     </div>
   )

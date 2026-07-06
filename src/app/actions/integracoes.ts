@@ -39,19 +39,24 @@ export async function salvarGoogleIcalUrl(formData: FormData) {
   revalidatePath('/configuracoes')
 }
 
-export async function testarGoogleIcal(url: string): Promise<{ ok: boolean; qtd?: number; erro?: string }> {
+export async function testarGoogleIcal(urls: string): Promise<{ ok: boolean; qtd?: number; erro?: string }> {
   await assertAdmin()
-  const limpa = url.trim().replace(/^webcal:\/\//i, 'https://')
-  if (!limpa) return { ok: false, erro: 'Cole o link primeiro.' }
-  try {
-    const res = await fetch(limpa, { cache: 'no-store' })
-    if (!res.ok) return { ok: false, erro: `O link retornou erro ${res.status}. Confira se copiou o endereço secreto certo.` }
-    const hoje = new Date()
-    const ini = new Date(hoje); ini.setDate(hoje.getDate() - 30)
-    const fim = new Date(hoje); fim.setDate(hoje.getDate() + 60)
-    const qtd = parseIcs(await res.text(), ini, fim).length
-    return { ok: true, qtd }
-  } catch (e) {
-    return { ok: false, erro: (e as Error).message }
+  const lista = urls.split(/[\n,;]+/).map(u => u.trim()).filter(Boolean)
+  if (!lista.length) return { ok: false, erro: 'Cole pelo menos um link.' }
+  const hoje = new Date()
+  const ini = new Date(hoje); ini.setDate(hoje.getDate() - 30)
+  const fim = new Date(hoje); fim.setDate(hoje.getDate() + 60)
+  let total = 0
+  const erros: string[] = []
+  for (const u of lista) {
+    try {
+      const res = await fetch(u.replace(/^webcal:\/\//i, 'https://'), { cache: 'no-store' })
+      if (!res.ok) { erros.push(`um link retornou erro ${res.status}`); continue }
+      total += parseIcs(await res.text(), ini, fim).length
+    } catch (e) {
+      erros.push((e as Error).message)
+    }
   }
+  if (erros.length === lista.length) return { ok: false, erro: erros[0] ?? 'Nenhum link funcionou.' }
+  return { ok: true, qtd: total }
 }
