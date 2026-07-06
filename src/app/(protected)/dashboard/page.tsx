@@ -149,38 +149,35 @@ export default async function DashboardPage() {
     prioridades.push({ titulo: 'Tudo em dia!', detalhe: 'Nenhuma urgência — aproveite pra prospectar' })
   }
 
-  const iniciais = (usuario?.nome ?? 'U')
-    .split(' ').filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('')
-
   // Sistema de cards: densidade do dashboard antigo (p-4, cantos 12px)
   const cardBase = "bg-white p-4 hover:shadow-md transition-all duration-200"
   const cardGrey = { border: '1px solid #e8e4dd', borderRadius: '12px' }
   const cardGold = { border: '2px solid #d4af7a', borderRadius: '12px' }
 
   return (
-    <div className="p-5 md:p-7 max-w-7xl mx-auto">
+    <div className="px-5 md:px-7 pt-10 md:pt-14 pb-6 md:pb-8 max-w-7xl mx-auto">
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-5">
-        <div>
-          <h1 className="font-bold" style={{ fontSize: '24px', color: '#2d1f4e' }}>
-            Meu Dia, <span style={{ background: 'linear-gradient(90deg, #5b3fb5, #b89a6a)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{nomeUsuario}</span>
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
+        <div className="py-1">
+          <h1 className="font-semibold" style={{ fontSize: '22px', color: '#2d1f4e', lineHeight: '1.3' }}>
+            Olá, {nomeUsuario} 👋
           </h1>
-          <p className="mt-1 capitalize" style={{ fontSize: '13px', color: '#9a918a' }}>{dataFormatada}</p>
+          <p className="mt-1" style={{ fontSize: '13px', color: '#7a7065' }}>
+            {eventosHoje.length > 0
+              ? `Você tem ${eventosHoje.length} compromisso${eventosHoje.length > 1 ? 's' : ''} hoje`
+              : 'Aqui está o resumo do seu dia'}
+          </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col items-start md:items-end gap-2">
+          <span className="text-xs font-medium capitalize px-3 py-1.5 rounded-full" style={{ backgroundColor: 'rgba(45,31,78,0.07)', color: '#2d1f4e' }}>
+            {dataFormatada}
+          </span>
           <div className="px-4 py-3 rounded-xl bg-white" style={{ border: '1px solid #e8e4dd', borderLeft: '3px solid #b89a6a', maxWidth: 320 }}>
             <p style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '12px', color: '#5a4e3c', lineHeight: '1.6' }}>
               &ldquo;Consagre ao Senhor tudo o que você faz, e os seus planos serão bem-sucedidos.&rdquo;
             </p>
             <p className="mt-1 text-xs font-medium" style={{ color: '#b89a6a' }}>Provérbios 16:3</p>
-          </div>
-          <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-full" style={{ border: '1px solid #e8e4dd' }}>
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: 'linear-gradient(135deg, #5b3fb5, #b89a6a)', color: '#fff' }}>{iniciais}</div>
-            <div>
-              <p className="text-xs font-semibold" style={{ color: '#2d1f4e' }}>{usuario?.nome}</p>
-              <p className="text-xs" style={{ color: '#9a918a' }}>{isVendedor ? 'Vendedor' : 'Admin'}</p>
-            </div>
           </div>
         </div>
       </div>
