@@ -19,6 +19,20 @@ const statusCor: Record<string, { bg: string; text: string }> = {
   'Cancelado': { bg: '#fee2e2', text: '#b91c1c' },
 }
 
+// Indicador de estorno: cliente com menos de 12 meses ativos está na zona de
+// risco (se cancelar antes, a operadora estorna a comissão). Calcula os meses
+// a partir da data de início do plano.
+const PRAZO_ESTORNO = 12
+function mesesAtivo(dataInicio: string | null | undefined): number | null {
+  if (!dataInicio) return null
+  const inicio = new Date(dataInicio + 'T12:00:00')
+  if (isNaN(inicio.getTime())) return null
+  const agora = new Date()
+  let m = (agora.getFullYear() - inicio.getFullYear()) * 12 + (agora.getMonth() - inicio.getMonth())
+  if (agora.getDate() < inicio.getDate()) m -= 1
+  return Math.max(0, m)
+}
+
 const selectCls = 'border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2'
 const selectStyle = (val: string) => ({ borderColor: '#e8e4dd', color: val ? '#1a1a1a' : '#9a918a' })
 
@@ -175,7 +189,7 @@ export default function ClientesClient({ clientes }: Props) {
           <table className="w-full text-sm">
             <thead>
               <tr style={{ backgroundColor: '#2d1f4e' }}>
-                {['Nome', 'Status', 'Operadora', 'Tipo de Plano', 'Valor', 'Vendedor', 'Data da Venda', 'Telefone', 'Ações'].map(col => (
+                {['Nome', 'Status', 'Operadora', 'Tempo ativo', 'Valor', 'Vendedor', 'Data da Venda', 'Telefone', 'Ações'].map(col => (
                   <th key={col} className="text-left px-4 py-3 text-xs font-semibold text-white whitespace-nowrap">
                     {col}
                   </th>
@@ -203,7 +217,24 @@ export default function ClientesClient({ clientes }: Props) {
                       </span>
                     </td>
                     <td className="px-4 py-3" style={{ color: '#5a4e3c' }}>{c.operadora ?? '—'}</td>
-                    <td className="px-4 py-3" style={{ color: '#5a4e3c' }}>{c.tipo_plano ?? '—'}</td>
+                    <td className="px-4 py-3">
+                      {(() => {
+                        const m = mesesAtivo(c.data_inicio_plano)
+                        if (m === null) return <span className="text-xs" style={{ color: '#9a918a' }}>—</span>
+                        const risco = m < PRAZO_ESTORNO
+                        const cor = risco
+                          ? { bg: '#fee2e2', text: '#b91c1c', dot: '#ef4444' }
+                          : { bg: '#dcfce7', text: '#15803d', dot: '#22c55e' }
+                        return (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-semibold"
+                            title={risco ? `Em risco de estorno — faltam ${PRAZO_ESTORNO - m} ${PRAZO_ESTORNO - m === 1 ? 'mês' : 'meses'} pra completar 12` : 'Seguro — passou de 12 meses'}
+                            style={{ backgroundColor: cor.bg, color: cor.text }}>
+                            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cor.dot }} />
+                            {m}m
+                          </span>
+                        )
+                      })()}
+                    </td>
                     <td className="px-4 py-3 font-medium" style={{ color: '#15803d' }}>
                       {c.valor_plano != null
                         ? `R$ ${c.valor_plano.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
