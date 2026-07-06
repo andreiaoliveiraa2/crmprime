@@ -5,6 +5,8 @@ import AlterarSenhaForm from '@/components/AlterarSenhaForm'
 import CnpjRecebimentoSection from '@/components/CnpjRecebimentoSection'
 import CategoriasDespesaSection from '@/components/CategoriasDespesaSection'
 import NiveisVendedorSection from '@/components/NiveisVendedorSection'
+import IntegracaoAgendaCard from '@/components/IntegracaoAgendaCard'
+import { getGoogleIcalUrl } from '@/app/actions/integracoes'
 import { CnpjRecebimento, CategoriaDespesa, NivelVendedor } from '@/lib/types'
 
 export default async function ConfiguracoesPage() {
@@ -27,6 +29,7 @@ export default async function ConfiguracoesPage() {
   const cnpjs = (cnpjsRaw ?? []) as CnpjRecebimento[]
   const categorias = (categoriasRaw ?? []) as CategoriaDespesa[]
   const niveis = (niveisRaw ?? []) as NivelVendedor[]
+  const googleIcalUrl = await getGoogleIcalUrl()
 
   return (
     <div className="p-6 md:p-8">
@@ -78,6 +81,9 @@ export default async function ConfiguracoesPage() {
 
         {/* Níveis de Vendedor */}
         <NiveisVendedorSection niveis={niveis} />
+
+        {/* Integração — Google Agenda */}
+        <IntegracaoAgendaCard urlAtual={googleIcalUrl} />
 
         {/* Alterar senha */}
         <AlterarSenhaForm />
