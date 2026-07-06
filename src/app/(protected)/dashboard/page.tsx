@@ -8,6 +8,7 @@ import {
   Camera, CalendarDays, Shield,
 } from 'lucide-react'
 import AlertaAgenda from '@/components/AlertaAgenda'
+import { getEventosGoogleAgenda } from '@/lib/googleAgenda'
 
 function fmtHora(iso: string) {
   return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
@@ -61,6 +62,16 @@ export default async function DashboardPage() {
   const clientes: Cliente[] = clientesData ?? []
   const eventosHoje: Compromisso[] = (eventosHojeData ?? []) as Compromisso[]
   const pendentes: Compromisso[] = (pendentesData ?? []) as Compromisso[]
+
+  // Google Agenda (só admin): mescla os compromissos do Google de hoje no card "Agenda"
+  let agendaHoje: Compromisso[] = eventosHoje
+  if (!isVendedor) {
+    const googleHoje = (await getEventosGoogleAgenda(inicioDia, fimDia)).map(g => ({
+      id: g.id, titulo: g.titulo, data_hora: g.data_hora,
+      tipo: 'Google', status: 'Google', vendedor_id: null,
+    }) as unknown as Compromisso)
+    agendaHoje = [...eventosHoje, ...googleHoje].sort((a, b) => a.data_hora.localeCompare(b.data_hora))
+  }
   const vendasMes = vendasMesData ?? []
 
   // Dados calculados
@@ -254,17 +265,20 @@ export default async function DashboardPage() {
               <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Agenda</h3>
               <p className="text-xs" style={{ color: '#9a918a' }}>hoje</p>
             </div>
-            {eventosHoje.length > 0 && <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(91,63,181,0.12)', color: '#5b3fb5' }}>{eventosHoje.length}</span>}
+            {agendaHoje.length > 0 && <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(91,63,181,0.12)', color: '#5b3fb5' }}>{agendaHoje.length}</span>}
           </div>
-          {eventosHoje.length === 0
+          {agendaHoje.length === 0
             ? <p className="text-xs py-4 text-center" style={{ color: '#9a918a' }}>Agenda livre hoje</p>
             : <div className="space-y-2">
-                {eventosHoje.slice(0, 4).map(ev => (
-                  <div key={ev.id} className="flex items-start gap-2 text-sm">
-                    <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: '#5b3fb5' }} />
-                    <div><b style={{ color: '#2d1f4e' }}>{fmtHora(ev.data_hora)}</b> <span style={{ color: '#5a4e3c' }}>— {ev.titulo}</span></div>
-                  </div>
-                ))}
+                {agendaHoje.slice(0, 4).map(ev => {
+                  const ehGoogle = String(ev.id).startsWith('google-')
+                  return (
+                    <div key={ev.id} className="flex items-start gap-2 text-sm">
+                      <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: ehGoogle ? '#4285F4' : '#5b3fb5' }} />
+                      <div><b style={{ color: '#2d1f4e' }}>{fmtHora(ev.data_hora)}</b> <span style={{ color: '#5a4e3c' }}>— {ev.titulo}</span>{ehGoogle && <span className="text-xs ml-1" style={{ color: '#4285F4' }}>· Google</span>}</div>
+                    </div>
+                  )
+                })}
               </div>
           }
         </Link>

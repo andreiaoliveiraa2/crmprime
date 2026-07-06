@@ -67,6 +67,7 @@ export default function AgendaClient({ eventos: inicial, vendedorId }: Props) {
       if (data) {
         const map: Record<string, string> = {}
         for (const t of data as { nome: string; cor: string }[]) map[t.nome] = t.cor
+        map['Google'] = '#4285F4'
         setTiposCores(map)
       }
     })
@@ -174,7 +175,7 @@ export default function AgendaClient({ eventos: inicial, vendedorId }: Props) {
           eventos={eventosFiltrados()}
           feriado={feriados[isoDate(dataSelecionada)]}
           tiposCores={tiposCores}
-          onEditar={ev => { setEventoEditando(ev); setModalAberto(true) }}
+          onEditar={ev => { if (String(ev.id).startsWith('google-')) return; setEventoEditando(ev); setModalAberto(true) }}
         />
       )}
       {visao === 'semana' && (
@@ -183,7 +184,7 @@ export default function AgendaClient({ eventos: inicial, vendedorId }: Props) {
           semanaInicio={semanaIni}
           feriados={feriados}
           tiposCores={tiposCores}
-          onEditar={ev => { setEventoEditando(ev); setModalAberto(true) }}
+          onEditar={ev => { if (String(ev.id).startsWith('google-')) return; setEventoEditando(ev); setModalAberto(true) }}
           onDiaClick={irParaDia}
         />
       )}

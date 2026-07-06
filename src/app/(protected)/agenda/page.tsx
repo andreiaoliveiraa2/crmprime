@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { getUsuarioAtual } from '@/lib/getUsuarioAtual'
 import AgendaClient from '@/components/AgendaClient'
+import { getEventosGoogleAgenda } from '@/lib/googleAgenda'
+import { Compromisso } from '@/lib/types'
 
 export default async function AgendaPage() {
   const supabase = await createClient()
@@ -25,10 +27,23 @@ export default async function AgendaPage() {
   }
   const { data: eventos } = await query
 
+  // Google Agenda (só admin): mescla os eventos do Google num range amplo (mês atual ±1)
+  let eventosFinais: Compromisso[] = (eventos ?? []) as Compromisso[]
+  if (usuario?.perfil === 'admin') {
+    const hoje = new Date()
+    const ini = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1)
+    const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 2, 0)
+    const googleEvs = (await getEventosGoogleAgenda(ini, fim)).map(g => ({
+      id: g.id, titulo: g.titulo, data_hora: g.data_hora,
+      tipo: 'Google', status: 'Google', vendedor_id: null, descricao: g.local ?? null,
+    }) as unknown as Compromisso)
+    eventosFinais = [...eventosFinais, ...googleEvs]
+  }
+
   return (
     <div className="p-6 md:p-8">
       <AgendaClient
-        eventos={eventos ?? []}
+        eventos={eventosFinais}
         vendedorId={vendedorId}
       />
     </div>
