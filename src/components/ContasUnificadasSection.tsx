@@ -373,7 +373,7 @@ interface ContasSubTabProps {
   onAtualizar: () => void
 }
 
-function ContasSubTab({ tipo, contas, cnpjs, categorias, onAtualizar }: ContasSubTabProps) {
+export function ContasSubTab({ tipo, contas, cnpjs, categorias, onAtualizar }: ContasSubTabProps) {
   const supabase = createClient()
   const mv = useMemo(currentMonth, [])
   const today = todayStr()
