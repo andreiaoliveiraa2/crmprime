@@ -10,10 +10,19 @@ export default async function GestaoPage() {
   if (!usuario || usuario.perfil !== 'admin') redirect('/dashboard')
 
   const supabase = await createClient()
-  const [{ data: vendedores }, { data: niveisRaw }] = await Promise.all([
+  const agora = new Date()
+  const mesRef = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-01`
+
+  const [{ data: vendedores }, { data: niveisRaw }, { data: operadorasRaw }, { data: metasEmpresa }] = await Promise.all([
     supabase.from('vendedores').select('*').order('nome'),
     supabase.from('niveis_vendedor').select('*').order('nome'),
+    supabase.from('operadoras').select('nome').order('nome'),
+    supabase.from('metas').select('operadora, meta_valor').is('vendedor_id', null).eq('mes_referencia', mesRef),
   ])
+
+  const operadoras = (operadorasRaw ?? []).map((o: { nome: string }) => o.nome)
+  const metasIniciais: Record<string, number> = {}
+  for (const m of (metasEmpresa ?? []) as { operadora: string; meta_valor: number }[]) metasIniciais[m.operadora] = m.meta_valor
 
   return (
     <div className="p-6 md:p-8">
@@ -31,6 +40,9 @@ export default async function GestaoPage() {
       <GestaoClient
         vendedores={vendedores ?? []}
         niveis={(niveisRaw ?? []) as NivelVendedor[]}
+        operadoras={operadoras}
+        mesRef={mesRef}
+        metasEmpresaIniciais={metasIniciais}
       />
     </div>
   )

@@ -5,16 +5,20 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Vendedor, TIPOS_VENDEDOR, NivelVendedor } from '@/lib/types'
 import { Plus, Search, Eye, Pencil, UserX, Trash2 } from 'lucide-react'
+import MetasEditor from '@/components/MetasEditor'
 
 interface Props {
   vendedores: Vendedor[]
   niveis: NivelVendedor[]
+  operadoras: string[]
+  mesRef: string
+  metasEmpresaIniciais: Record<string, number>
 }
 
 const selectCls = 'border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2'
 const selectStyle = { borderColor: '#e8e4dd' }
 
-export default function GestaoClient({ vendedores: inicial, niveis }: Props) {
+export default function GestaoClient({ vendedores: inicial, niveis, operadoras, mesRef, metasEmpresaIniciais }: Props) {
   const [lista, setLista]                     = useState(inicial)
   const [busca, setBusca]                     = useState('')
   const [filtroTipo, setFiltroTipo]     = useState('')
@@ -251,6 +255,12 @@ export default function GestaoClient({ vendedores: inicial, niveis }: Props) {
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div className="mt-8">
+        <h2 className="text-sm font-bold mb-1" style={{ color: '#2d1f4e' }}>Meta da empresa · este mês</h2>
+        <p className="text-xs mb-3" style={{ color: '#9a918a' }}>Aparece no seu Meu Dia. Some por operadora.</p>
+        <MetasEditor operadoras={operadoras} vendedorId={null} mesRef={mesRef} iniciais={metasEmpresaIniciais} />
       </div>
     </div>
   )

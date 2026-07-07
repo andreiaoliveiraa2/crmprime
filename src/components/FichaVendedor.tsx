@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { Vendedor, Venda, Comissao } from '@/lib/types'
 import { Pencil, ArrowLeft } from 'lucide-react'
+import MetasEditor from '@/components/MetasEditor'
 
 interface UsuarioVinculado {
   id: string
@@ -16,6 +17,9 @@ interface Props {
   vendas: Venda[]
   comissoes: Comissao[]
   usuarioVinculado: UsuarioVinculado | null
+  operadoras: string[]
+  mesRef: string
+  metasIniciais: Record<string, number>
 }
 
 const cardCls = 'bg-white rounded-2xl p-6 mb-4'
@@ -42,7 +46,7 @@ function Campo({ label, value }: { label: string; value: string | number | null 
   )
 }
 
-export default function FichaVendedor({ vendedor, vendas, comissoes, usuarioVinculado }: Props) {
+export default function FichaVendedor({ vendedor, vendas, comissoes, usuarioVinculado, operadoras: operadorasMetas, mesRef, metasIniciais }: Props) {
   const [tab, setTab]                   = useState<'cadastral' | 'producao'>('cadastral')
   const [filtroInicio, setFiltroInicio] = useState(inicioPadrao)
   const [filtroFim, setFiltroFim]       = useState(fimPadrao)
@@ -472,6 +476,12 @@ export default function FichaVendedor({ vendedor, vendas, comissoes, usuarioVinc
           </div>
         </>
       )}
+
+      <div className="mt-6">
+        <h2 className="text-sm font-bold mb-1" style={{ color: '#2d1f4e' }}>Meta deste vendedor · este mês</h2>
+        <p className="text-xs mb-3" style={{ color: '#9a918a' }}>Aparece no Meu Dia dele. Você pode mudar quando quiser.</p>
+        <MetasEditor operadoras={operadorasMetas} vendedorId={vendedor.id} mesRef={mesRef} iniciais={metasIniciais} />
+      </div>
     </div>
   )
 }
