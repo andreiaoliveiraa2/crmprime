@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import AlertaAgenda from '@/components/AlertaAgenda'
 import { getEventosGoogleAgenda } from '@/lib/googleAgenda'
+import { resumoVouReceberVendedor } from '@/lib/vouReceberVendedor'
 
 function fmtHora(iso: string) {
   return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
@@ -73,6 +74,29 @@ export default async function DashboardPage() {
     agendaHoje = [...eventosHoje, ...googleHoje].sort((a, b) => a.data_hora.localeCompare(b.data_hora))
   }
   const vendasMes = vendasMesData ?? []
+
+  // Comissões do vendedor (RLS já limita às dele) para o card "Vou receber".
+  let vouReceber = { totalReceber: 0, esteMes: 0, porOperadora: [] as { operadora: string; valor: number }[] }
+  if (isVendedor) {
+    const { data: comissoesVend } = await supabase
+      .from('comissoes')
+      .select('valor_vendedor, status_vendedor, data_prevista, vendas!inner(operadora)')
+      .eq('tipo', 'parcela')
+      .gt('valor_vendedor', 0)
+    const linhas = (comissoesVend ?? []).map((c: {
+      valor_vendedor: number; status_vendedor: string; data_prevista: string
+      vendas: { operadora: string } | { operadora: string }[] | null
+    }) => {
+      const venda = Array.isArray(c.vendas) ? c.vendas[0] : c.vendas
+      return {
+        valor_vendedor: c.valor_vendedor,
+        status_vendedor: c.status_vendedor,
+        data_prevista: c.data_prevista,
+        operadora: venda?.operadora ?? 'Sem operadora',
+      }
+    })
+    vouReceber = resumoVouReceberVendedor(linhas, agora)
+  }
 
   // Dados calculados
   const leadsAbertos = leads.filter(l => !['Vendido', 'Perdido'].includes(l.etapa))
@@ -222,37 +246,69 @@ export default async function DashboardPage() {
           </div>
         </Link>
 
-        {/* COMISSÕES — span 4 (faixa dourada de topo) */}
-        <Link href="/financeiro" className={`col-span-12 lg:col-span-4 ${cardBase}`} style={cardGold}>
+        {/* VOU RECEBER — span 4 (faixa dourada de topo) */}
+        <Link href={isVendedor ? '/minhas-comissoes' : '/financeiro'} className={`col-span-12 lg:col-span-4 ${cardBase}`} style={cardGold}>
           <div className="flex items-center gap-2 mb-3">
             <div className="p-2 rounded-lg shrink-0" style={{ backgroundColor: 'rgba(34,197,94,0.12)' }}>
               <Wallet size={15} style={{ color: '#22c55e' }} />
             </div>
             <div className="flex-1">
               <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Vou receber</h3>
-              <p className="text-xs" style={{ color: '#9a918a' }}>este mês</p>
+              <p className="text-xs" style={{ color: '#9a918a' }}>{isVendedor ? 'total a receber' : 'este mês'}</p>
             </div>
           </div>
-          <div className="flex items-baseline gap-2 mb-3">
-            <span className="text-2xl font-extrabold" style={{ background: 'linear-gradient(90deg, #22c55e, #86efac)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              R$ {totalComissoes.toLocaleString('pt-BR')}
-            </span>
-          </div>
-          <div className="space-y-2">
-            {comissoesOrdenadas.slice(0, 3).map(([op, val], i) => {
-              const pct = totalComissoes > 0 ? Math.round((val / totalComissoes) * 100) : 0
-              const colors = ['linear-gradient(90deg, #5b3fb5, #8b6fc0)', 'linear-gradient(90deg, #b89a6a, #d4bc8a)', 'linear-gradient(90deg, #3b82f6, #60a5fa)']
-              return (
-                <div key={i} className="flex items-center gap-2 text-xs">
-                  <span className="w-16 truncate" style={{ color: '#9a918a' }}>{op}</span>
-                  <div className="flex-1 h-4 rounded-full overflow-hidden" style={{ backgroundColor: '#f0ece6' }}>
-                    <div className="h-full rounded-full" style={{ width: `${pct}%`, background: colors[i % 3] }} />
-                  </div>
-                  <span className="w-20 text-right font-bold" style={{ color: '#2d1f4e' }}>R$ {val.toLocaleString('pt-BR')}</span>
-                </div>
-              )
-            })}
-          </div>
+
+          {isVendedor ? (
+            <>
+              <div className="flex items-baseline gap-2 mb-3">
+                <span className="text-2xl font-extrabold" style={{ background: 'linear-gradient(90deg, #22c55e, #86efac)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                  R$ {vouReceber.totalReceber.toLocaleString('pt-BR')}
+                </span>
+                <span className="text-xs" style={{ color: '#9a918a' }}>· R$ {vouReceber.esteMes.toLocaleString('pt-BR')} este mês</span>
+              </div>
+              <div className="space-y-2">
+                {vouReceber.porOperadora.slice(0, 3).map(({ operadora, valor }, i) => {
+                  const pct = vouReceber.totalReceber > 0 ? Math.round((valor / vouReceber.totalReceber) * 100) : 0
+                  const colors = ['linear-gradient(90deg, #5b3fb5, #8b6fc0)', 'linear-gradient(90deg, #b89a6a, #d4bc8a)', 'linear-gradient(90deg, #3b82f6, #60a5fa)']
+                  return (
+                    <div key={operadora} className="flex items-center gap-2 text-xs">
+                      <span className="w-16 truncate" style={{ color: '#9a918a' }}>{operadora}</span>
+                      <div className="flex-1 h-4 rounded-full overflow-hidden" style={{ backgroundColor: '#f0ece6' }}>
+                        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: colors[i % 3] }} />
+                      </div>
+                      <span className="w-20 text-right font-bold" style={{ color: '#2d1f4e' }}>R$ {valor.toLocaleString('pt-BR')}</span>
+                    </div>
+                  )
+                })}
+                {vouReceber.porOperadora.length === 0 && (
+                  <p className="text-xs py-2 text-center" style={{ color: '#9a918a' }}>Nada a receber por enquanto</p>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-baseline gap-2 mb-3">
+                <span className="text-2xl font-extrabold" style={{ background: 'linear-gradient(90deg, #22c55e, #86efac)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                  R$ {totalComissoes.toLocaleString('pt-BR')}
+                </span>
+              </div>
+              <div className="space-y-2">
+                {comissoesOrdenadas.slice(0, 3).map(([op, val], i) => {
+                  const pct = totalComissoes > 0 ? Math.round((val / totalComissoes) * 100) : 0
+                  const colors = ['linear-gradient(90deg, #5b3fb5, #8b6fc0)', 'linear-gradient(90deg, #b89a6a, #d4bc8a)', 'linear-gradient(90deg, #3b82f6, #60a5fa)']
+                  return (
+                    <div key={i} className="flex items-center gap-2 text-xs">
+                      <span className="w-16 truncate" style={{ color: '#9a918a' }}>{op}</span>
+                      <div className="flex-1 h-4 rounded-full overflow-hidden" style={{ backgroundColor: '#f0ece6' }}>
+                        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: colors[i % 3] }} />
+                      </div>
+                      <span className="w-20 text-right font-bold" style={{ color: '#2d1f4e' }}>R$ {val.toLocaleString('pt-BR')}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
         </Link>
 
         {/* AGENDA — span 4 */}
@@ -409,7 +465,7 @@ export default async function DashboardPage() {
         </Link>
 
         {/* VENDAS POR OPERADORA — span 4 (donut) */}
-        <Link href="/financeiro" className={`col-span-12 md:col-span-4 ${cardBase}`} style={cardGrey}>
+        <Link href={isVendedor ? '/clientes' : '/financeiro'} className={`col-span-12 md:col-span-4 ${cardBase}`} style={cardGrey}>
           <div className="flex items-center gap-2 mb-3">
             <div className="p-2 rounded-lg shrink-0" style={{ backgroundColor: 'rgba(91,63,181,0.12)' }}>
               <PieChart size={15} style={{ color: '#5b3fb5' }} />
