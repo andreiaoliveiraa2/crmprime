@@ -4,12 +4,14 @@ import { Lead, Cliente, Compromisso } from '@/lib/types'
 import Link from 'next/link'
 import {
   ChevronRight, Sparkles, ListChecks, Wallet, Calendar, Users,
-  AlertCircle, Target, TrendingUp, PieChart, Image as ImageIcon,
+  AlertCircle, TrendingUp, PieChart, Image as ImageIcon,
   Camera, CalendarDays, Shield,
 } from 'lucide-react'
 import AlertaAgenda from '@/components/AlertaAgenda'
 import { getEventosGoogleAgenda } from '@/lib/googleAgenda'
 import { resumoVouReceberVendedor } from '@/lib/vouReceberVendedor'
+import { calcularMetas } from '@/lib/calcularMetas'
+import MetaMesCard from '@/components/MetaMesCard'
 
 function fmtHora(iso: string) {
   return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
@@ -144,17 +146,26 @@ export default async function DashboardPage() {
     return { ...v, comprimento, offset }
   })
 
-  // Meta (usando vendas do mês vs meta fixa — pode ser configurável depois)
-  const metaMes = 15000
-  const totalVendas = vendasMes.reduce((s, v) => s + (v.valor_plano ?? 0), 0)
-  const pctMeta = metaMes > 0 ? Math.round((totalVendas / metaMes) * 100) : 0
-  const faltaMeta = Math.max(0, metaMes - totalVendas)
+  // Meta do mês por operadora: empresa (admin) ou do próprio vendedor (RLS limita a leitura).
   const semanasRestantes = Math.max(1, totalSemanas - semanaNum + 1)
+  const mesRef = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-01`
+  let metasQ = supabase.from('metas').select('operadora, meta_valor').eq('mes_referencia', mesRef)
+  metasQ = isVendedor ? metasQ.eq('vendedor_id', vendedorId) : metasQ.is('vendedor_id', null)
+  const { data: metasData } = await metasQ
 
-  // Funil
-  const abordagens = leads.filter(l => new Date(l.criado_em) >= inicioMes).length
-  const propostas = leads.filter(l => new Date(l.criado_em) >= inicioMes && ['Cotação', 'Negociação', 'Vendido'].includes(l.etapa)).length
-  const vendidos = leads.filter(l => new Date(l.criado_em) >= inicioMes && l.etapa === 'Vendido').length
+  const vendidoPorOperadora = Object.entries(
+    vendasMes.reduce((acc: Record<string, number>, v) => {
+      const op = v.operadora ?? 'Sem operadora'
+      acc[op] = (acc[op] ?? 0) + (v.valor_plano ?? 0)
+      return acc
+    }, {}),
+  ).map(([operadora, vendido]) => ({ operadora, vendido }))
+
+  const resumoMeta = calcularMetas(
+    (metasData ?? []) as { operadora: string; meta_valor: number }[],
+    vendidoPorOperadora,
+    semanasRestantes,
+  )
 
   // Carteira
   const carteira = {
@@ -395,43 +406,8 @@ export default async function DashboardPage() {
           }
         </Link>
 
-        {/* META DO MÊS — span 4 */}
-        <div className={`col-span-12 md:col-span-4 ${cardBase}`} style={cardGrey}>
-          <div className="flex items-center gap-2 mb-3">
-            <div className="p-2 rounded-lg shrink-0" style={{ backgroundColor: 'rgba(34,197,94,0.12)' }}>
-              <Target size={15} style={{ color: '#22c55e' }} />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Meta do mês</h3>
-              <p className="text-xs" style={{ color: '#9a918a' }}>{mesNome} · semana {semanaNum} de {totalSemanas}</p>
-            </div>
-          </div>
-          {/* Barra total */}
-          <div className="flex items-baseline gap-2 mb-1.5">
-            <span className="text-xl font-extrabold" style={{ background: 'linear-gradient(90deg, #22c55e, #86efac)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              R$ {totalVendas.toLocaleString('pt-BR')}
-            </span>
-            <span className="text-xs" style={{ color: '#9a918a' }}>/ R$ {metaMes.toLocaleString('pt-BR')}</span>
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full ml-auto" style={{ backgroundColor: pctMeta >= 80 ? 'rgba(34,197,94,0.12)' : 'rgba(212,168,67,0.15)', color: pctMeta >= 80 ? '#22c55e' : '#b89a6a' }}>{pctMeta}%</span>
-          </div>
-          <div className="h-2.5 rounded-full overflow-hidden mb-4" style={{ backgroundColor: '#f0ece6' }}>
-            <div className="h-full rounded-full" style={{ width: `${Math.min(100, pctMeta)}%`, background: 'linear-gradient(90deg, #22c55e, #86efac)' }} />
-          </div>
-          {/* Funil */}
-          <div className="rounded-xl p-3 mb-2" style={{ backgroundColor: '#faf8f5', border: '1px solid #f0ece6' }}>
-            <p className="text-xs font-bold mb-2" style={{ color: '#9a918a' }}>FUNIL DO MÊS</p>
-            <div className="flex justify-between text-center">
-              <div><p className="text-lg font-extrabold" style={{ color: '#5b3fb5' }}>{abordagens}</p><p className="text-xs" style={{ color: '#9a918a' }}>Abordagens</p></div>
-              <span className="self-center"><ChevronRight size={14} style={{ color: '#d4d0cc' }} /></span>
-              <div><p className="text-lg font-extrabold" style={{ color: '#b89a6a' }}>{propostas}</p><p className="text-xs" style={{ color: '#9a918a' }}>Propostas</p></div>
-              <span className="self-center"><ChevronRight size={14} style={{ color: '#d4d0cc' }} /></span>
-              <div><p className="text-lg font-extrabold" style={{ color: '#22c55e' }}>{vendidos}</p><p className="text-xs" style={{ color: '#9a918a' }}>Vendas</p></div>
-            </div>
-          </div>
-          <p className="text-xs text-center" style={{ color: '#9a918a' }}>
-            Falta <b style={{ color: '#b89a6a' }}>R$ {faltaMeta.toLocaleString('pt-BR')}</b> · ~<b style={{ color: '#b89a6a' }}>R$ {Math.round(faltaMeta / semanasRestantes).toLocaleString('pt-BR')}</b>/semana
-          </p>
-        </div>
+        {/* META DO MÊS — span 4 (por operadora) */}
+        <MetaMesCard resumo={resumoMeta} subtitulo={`${mesNome} · semana ${semanaNum} de ${totalSemanas}`} />
 
         {/* LEADS RECENTES — span 4 */}
         <Link href="/crm" className={`col-span-12 md:col-span-4 ${cardBase}`} style={cardGrey}>
