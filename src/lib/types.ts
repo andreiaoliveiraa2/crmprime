@@ -386,3 +386,14 @@ export interface Usuario {
   criado_em: string
 }
 export type UsuarioInsert = Omit<Usuario, 'id' | 'criado_em'>
+
+export interface Meta {
+  id: string
+  vendedor_id: string | null
+  mes_referencia: string   // 'YYYY-MM-01'
+  operadora: string
+  meta_valor: number
+  criado_em: string
+  atualizado_em: string
+}
+export type MetaInsert = Omit<Meta, 'id' | 'criado_em' | 'atualizado_em'>
