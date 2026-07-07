@@ -33,9 +33,9 @@ jest.mock('@/lib/supabase/client', () => ({
 }))
 
 describe('Sidebar', () => {
-  it('renders all 8 navigation items', () => {
-    render(<Sidebar />)
-    expect(screen.getByText('Dashboard')).toBeInTheDocument()
+  it('renders the admin navigation items', () => {
+    render(<Sidebar perfil="admin" nome="Andreia Oliveira" />)
+    expect(screen.getByText('Meu Dia')).toBeInTheDocument()
     expect(screen.getByText('CRM')).toBeInTheDocument()
     expect(screen.getByText('Clientes')).toBeInTheDocument()
     expect(screen.getByText('Agenda')).toBeInTheDocument()
@@ -45,25 +45,33 @@ describe('Sidebar', () => {
     expect(screen.getByText('Configurações')).toBeInTheDocument()
   })
 
+  it('renders the vendedor navigation items and hides admin-only ones', () => {
+    render(<Sidebar perfil="vendedor" nome="Alessandro" />)
+    expect(screen.getByText('Comissões')).toBeInTheDocument()
+    expect(screen.queryByText('Financeiro')).not.toBeInTheDocument()
+    expect(screen.queryByText('Gestão')).not.toBeInTheDocument()
+    expect(screen.queryByText('Configurações')).not.toBeInTheDocument()
+  })
+
   it('does not render Pipeline', () => {
-    render(<Sidebar />)
+    render(<Sidebar perfil="admin" nome="Andreia Oliveira" />)
     expect(screen.queryByText('Pipeline')).not.toBeInTheDocument()
   })
 
   it('renders logout button', () => {
-    render(<Sidebar />)
+    render(<Sidebar perfil="admin" nome="Andreia Oliveira" />)
     expect(screen.getByText('Sair')).toBeInTheDocument()
   })
 
-  it('renders brand name', () => {
-    render(<Sidebar />)
-    expect(screen.getByText('A2 Prime')).toBeInTheDocument()
+  it('renders brand logo', () => {
+    render(<Sidebar perfil="admin" nome="Andreia Oliveira" />)
+    expect(screen.getByAltText('A2 Prime')).toBeInTheDocument()
   })
 
-  it('renders user footer', () => {
-    render(<Sidebar />)
+  it('renders user footer from props', () => {
+    render(<Sidebar perfil="admin" nome="Andreia Oliveira" />)
     expect(screen.getByText('Andreia Oliveira')).toBeInTheDocument()
-    expect(screen.getByText('CEO · A2 Prime')).toBeInTheDocument()
+    expect(screen.getByText('Admin · A2 Prime')).toBeInTheDocument()
     expect(screen.getByText('AO')).toBeInTheDocument()
   })
 
