@@ -44,12 +44,17 @@ export default async function DashboardPage() {
   let pendentesQ = supabase.from('agenda').select('*').eq('status', 'Agendado').lt('data_hora', inicioDia.toISOString()).order('data_hora', { ascending: false }).limit(5)
   let vendasMesQ = supabase.from('vendas').select('*').gte('data_venda', inicioMes.toISOString()).lte('data_venda', fimMes.toISOString())
   const carteiraAgentQ = supabase.from('agente_execucoes').select('ultima_acao, executado_em').eq('agente', 'Carteira').order('executado_em', { ascending: false }).limit(1)
+  let proximosQ = supabase.from('agenda').select('*')
+    .gte('data_hora', inicioDia.toISOString())
+    .order('data_hora', { ascending: true })
+    .limit(4)
 
   if (isVendedor && vendedorId) {
     leadsQ = leadsQ.eq('vendedor_id', vendedorId)
     clientesQ = clientesQ.eq('vendedor_id', vendedorId)
     agendaHojeQ = agendaHojeQ.eq('vendedor_id', vendedorId)
     pendentesQ = pendentesQ.eq('vendedor_id', vendedorId)
+    proximosQ = proximosQ.eq('vendedor_id', vendedorId)
   }
 
   const [
@@ -59,23 +64,30 @@ export default async function DashboardPage() {
     { data: pendentesData },
     { data: vendasMesData },
     { data: carteiraAgentData },
-  ] = await Promise.all([leadsQ, clientesQ, agendaHojeQ, pendentesQ, vendasMesQ, carteiraAgentQ])
+    { data: proximosData },
+  ] = await Promise.all([leadsQ, clientesQ, agendaHojeQ, pendentesQ, vendasMesQ, carteiraAgentQ, proximosQ])
 
   const leads: Lead[] = leadsData ?? []
   const clientes: Cliente[] = clientesData ?? []
   const eventosHoje: Compromisso[] = (eventosHojeData ?? []) as Compromisso[]
   const pendentes: Compromisso[] = (pendentesData ?? []) as Compromisso[]
 
-  // Google Agenda (só admin): mescla os compromissos do Google de hoje no card "Agenda"
-  let agendaHoje: Compromisso[] = eventosHoje
+  const vendasMes = vendasMesData ?? []
+
+  // Card "Agenda": mostra os PRÓXIMOS compromissos (não só de hoje) pra nunca ficar vazio.
+  // Admin: mescla os eventos do Google dos próximos 7 dias.
+  const proximos: Compromisso[] = (proximosData ?? []) as Compromisso[]
+  let proximosAgenda: Compromisso[] = proximos
   if (!isVendedor) {
-    const googleHoje = (await getEventosGoogleAgenda(inicioDia, fimDia)).map(g => ({
+    const fim7 = new Date(agora); fim7.setDate(fim7.getDate() + 7)
+    const googleProx = (await getEventosGoogleAgenda(inicioDia, fim7)).map(g => ({
       id: g.id, titulo: g.titulo, data_hora: g.data_hora,
       tipo: 'Google', status: 'Google', vendedor_id: null,
     }) as unknown as Compromisso)
-    agendaHoje = [...eventosHoje, ...googleHoje].sort((a, b) => a.data_hora.localeCompare(b.data_hora))
+    proximosAgenda = [...proximos, ...googleProx]
+      .sort((a, b) => a.data_hora.localeCompare(b.data_hora))
+      .slice(0, 4)
   }
-  const vendasMes = vendasMesData ?? []
 
   // Comissões do vendedor (RLS já limita às dele) para o card "Vou receber".
   let vouReceber = { totalReceber: 0, esteMes: 0, porOperadora: [] as { operadora: string; valor: number }[] }
@@ -330,19 +342,19 @@ export default async function DashboardPage() {
             </div>
             <div className="flex-1">
               <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Agenda</h3>
-              <p className="text-xs" style={{ color: '#9a918a' }}>hoje</p>
+              <p className="text-xs" style={{ color: '#9a918a' }}>próximos</p>
             </div>
-            {agendaHoje.length > 0 && <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(91,63,181,0.12)', color: '#5b3fb5' }}>{agendaHoje.length}</span>}
+            {proximosAgenda.length > 0 && <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(91,63,181,0.12)', color: '#5b3fb5' }}>{proximosAgenda.length}</span>}
           </div>
-          {agendaHoje.length === 0
-            ? <p className="text-xs py-4 text-center" style={{ color: '#9a918a' }}>Agenda livre hoje</p>
+          {proximosAgenda.length === 0
+            ? <p className="text-xs py-4 text-center" style={{ color: '#9a918a' }}>Nenhum compromisso agendado</p>
             : <div className="space-y-2">
-                {agendaHoje.slice(0, 4).map(ev => {
+                {proximosAgenda.slice(0, 4).map(ev => {
                   const ehGoogle = String(ev.id).startsWith('google-')
                   return (
                     <div key={ev.id} className="flex items-start gap-2 text-sm">
                       <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: ehGoogle ? '#4285F4' : '#5b3fb5' }} />
-                      <div><b style={{ color: '#2d1f4e' }}>{fmtHora(ev.data_hora)}</b> <span style={{ color: '#5a4e3c' }}>— {ev.titulo}</span>{ehGoogle && <span className="text-xs ml-1" style={{ color: '#4285F4' }}>· Google</span>}</div>
+                      <div><b style={{ color: '#2d1f4e' }}>{fmtDia(ev.data_hora)} {fmtHora(ev.data_hora)}</b> <span style={{ color: '#5a4e3c' }}>— {ev.titulo}</span>{ehGoogle && <span className="text-xs ml-1" style={{ color: '#4285F4' }}>· Google</span>}</div>
                     </div>
                   )
                 })}
