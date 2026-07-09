@@ -13,12 +13,14 @@ import { resumoVouReceberVendedor } from '@/lib/vouReceberVendedor'
 import { calcularMetas } from '@/lib/calcularMetas'
 import MetaMesCard from '@/components/MetaMesCard'
 
+// Este é um server component: roda no fuso do servidor (VPS em UTC).
+// Sem timeZone, 09:40 apareceria como 12:40. Fixa Brasil pra bater com a Agenda.
 function fmtHora(iso: string) {
-  return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
 }
 
 function fmtDia(iso: string) {
-  return new Date(iso).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })
+  return new Date(iso).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', timeZone: 'America/Sao_Paulo' })
 }
 
 export default async function DashboardPage() {
