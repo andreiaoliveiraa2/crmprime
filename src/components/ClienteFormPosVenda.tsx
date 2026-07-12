@@ -13,6 +13,7 @@ interface Props {
   cliente?: Cliente
   vendedorAtual?: { id: string; nome: string } | null
   leadPrefill?: Lead | null
+  mostrarVitalicio?: boolean
 }
 
 const inputCls = 'w-full border rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 transition-shadow'
@@ -22,7 +23,7 @@ const labelStyle = { color: '#2d1f4e' }
 const sectionTitleCls = 'text-sm font-bold mb-4 pb-2 border-b'
 const sectionTitleStyle = { color: '#2d1f4e', borderColor: '#e8e4dd' }
 
-export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefill }: Props) {
+export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefill, mostrarVitalicio = true }: Props) {
   // Dados Pessoais
   const [nome, setNome]                   = useState(cliente?.nome ?? leadPrefill?.nome ?? '')
   const [cpf, setCpf]                     = useState(cliente?.cpf ?? '')
@@ -254,8 +255,30 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
       vitalicio_inicio:              faseCliente === 'vitalicio' && !(cliente?.vitalicio_inicio) ? new Date().toISOString().split('T')[0] : (cliente?.vitalicio_inicio ?? null),
     }
 
+    // Perfil sem acesso ao vitalício: o save não toca nesses campos (preserva o banco)
+    const payloadFinal: Partial<ClienteInsert> = { ...payload }
+    if (!mostrarVitalicio) {
+      delete payloadFinal.fase_cliente
+      delete payloadFinal.vitalicio_valor_estimado
+      delete payloadFinal.vitalicio_dia_previsto
+      delete payloadFinal.vitalicio_inicio
+      delete payloadFinal.comissao
+    }
+
     if (editando) {
-      const { error } = await supabase.from('clientes').update(payload).eq('id', cliente.id)
+      // O vendedor não recebe a fase real do cliente — busca no banco pra não
+      // recriar venda de um cliente que já é vitalício
+      let faseRealVitalicio = cliente.fase_cliente === 'vitalicio'
+      if (!mostrarVitalicio) {
+        const { data: faseRow } = await supabase
+          .from('clientes')
+          .select('fase_cliente')
+          .eq('id', cliente.id)
+          .maybeSingle()
+        faseRealVitalicio = faseRow?.fase_cliente === 'vitalicio'
+      }
+
+      const { error } = await supabase.from('clientes').update(payloadFinal).eq('id', cliente.id)
       if (error) { setErro(`Erro: ${error.message}`); setLoading(false); return }
 
       const empresa = corretoraResponsavel.trim() || null
@@ -266,7 +289,7 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
       } else if (faseCliente === 'vitalicio' && cliente.fase_cliente !== 'vitalicio') {
         const erroCancelamento = await cancelarVendasParaVitalicio(cliente.id)
         if (erroCancelamento) { setErro(erroCancelamento); setLoading(false); return }
-      } else if (status === 'Ativo' && payload.valor_plano && payload.operadora && faseCliente !== 'vitalicio') {
+      } else if (status === 'Ativo' && payload.valor_plano && payload.operadora && faseCliente !== 'vitalicio' && !faseRealVitalicio) {
         const { data: vendaExistente } = await supabase
           .from('vendas')
           .select('id')
@@ -311,7 +334,7 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
         }
       }
     } else {
-      const { data: novoCliente, error } = await supabase.from('clientes').insert(payload).select().single()
+      const { data: novoCliente, error } = await supabase.from('clientes').insert(payloadFinal).select().single()
       if (error) { setErro(`Erro: ${error.message}`); setLoading(false); return }
 
       const empresa = corretoraResponsavel.trim() || null
@@ -580,36 +603,40 @@ export default function ClienteFormPosVenda({ cliente, vendedorAtual, leadPrefil
             </select>
           </div>
 
-          {/* Fase do cliente */}
-          <div className="md:col-span-2">
-            <label className={labelCls} style={labelStyle}>Fase do Cliente</label>
-            <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid #e8e4dd', width: 'fit-content' }}>
-              {(['ativo', 'vitalicio'] as const).map(f => (
-                <button key={f} type="button" onClick={() => setFaseCliente(f)}
-                  className="px-5 py-2 text-sm font-medium transition-colors"
-                  style={{ backgroundColor: faseCliente === f ? '#2d1f4e' : '#fff', color: faseCliente === f ? '#fff' : '#9a918a' }}>
-                  {f === 'ativo' ? 'Ativo com parcelas' : 'Vitalício'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {faseCliente === 'vitalicio' && (
+          {mostrarVitalicio && (
             <>
-              <div>
-                <label className={labelCls} style={labelStyle}>Valor Estimado Mensal (R$)</label>
-                <input type="number" step="0.01" min="0" value={vitalicioValor}
-                  onChange={e => setVitalicioValor(e.target.value)}
-                  placeholder="Ex: 350.00" className={inputCls} style={inputStyle} />
-                <p className="text-xs mt-1" style={{ color: '#9a918a' }}>Valor aproximado que entra todo mês</p>
+              {/* Fase do cliente */}
+              <div className="md:col-span-2">
+                <label className={labelCls} style={labelStyle}>Fase do Cliente</label>
+                <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid #e8e4dd', width: 'fit-content' }}>
+                  {(['ativo', 'vitalicio'] as const).map(f => (
+                    <button key={f} type="button" onClick={() => setFaseCliente(f)}
+                      className="px-5 py-2 text-sm font-medium transition-colors"
+                      style={{ backgroundColor: faseCliente === f ? '#2d1f4e' : '#fff', color: faseCliente === f ? '#fff' : '#9a918a' }}>
+                      {f === 'ativo' ? 'Ativo com parcelas' : 'Vitalício'}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div>
-                <label className={labelCls} style={labelStyle}>Dia Previsto de Recebimento</label>
-                <input type="number" step="1" min="1" max="31" value={vitaliicioDia}
-                  onChange={e => setVitaliicioDia(e.target.value)}
-                  placeholder="Ex: 10" className={inputCls} style={inputStyle} />
-                <p className="text-xs mt-1" style={{ color: '#9a918a' }}>Dia do mês em que costuma entrar</p>
-              </div>
+
+              {faseCliente === 'vitalicio' && (
+                <>
+                  <div>
+                    <label className={labelCls} style={labelStyle}>Valor Estimado Mensal (R$)</label>
+                    <input type="number" step="0.01" min="0" value={vitalicioValor}
+                      onChange={e => setVitalicioValor(e.target.value)}
+                      placeholder="Ex: 350.00" className={inputCls} style={inputStyle} />
+                    <p className="text-xs mt-1" style={{ color: '#9a918a' }}>Valor aproximado que entra todo mês</p>
+                  </div>
+                  <div>
+                    <label className={labelCls} style={labelStyle}>Dia Previsto de Recebimento</label>
+                    <input type="number" step="1" min="1" max="31" value={vitaliicioDia}
+                      onChange={e => setVitaliicioDia(e.target.value)}
+                      placeholder="Ex: 10" className={inputCls} style={inputStyle} />
+                    <p className="text-xs mt-1" style={{ color: '#9a918a' }}>Dia do mês em que costuma entrar</p>
+                  </div>
+                </>
+              )}
             </>
           )}
 
