@@ -5,10 +5,12 @@
 
 ## Objetivo
 
-O vendedor não pode ver os valores financeiros da corretora: a comissão do cliente
+Pro vendedor, o vitalício **não existe**: nenhuma menção (palavra, fase, selo ou
+campo) e nenhum valor financeiro da corretora — a comissão do cliente
 (`clientes.comissao`) e os valores da carteira vitalícia (`vitalicio_valor_estimado`,
 `vitalicio_dia_previsto`). Ele continua vendo o resto da ficha dos clientes dele,
-inclusive as Observações e a fase (Ativo/Vitalício) — só não vê nem edita valores.
+inclusive as Observações. Só o admin vê e mexe no vitalício; a transição de fase
+continua sendo manual e feita pelo admin.
 
 ## O que já está protegido (não mexer)
 
@@ -29,10 +31,10 @@ inclusive as Observações e a fase (Ativo/Vitalício) — só não vê nem edit
 
 ## Decisões (Andreia, 12/07)
 
-- Esconder **só os valores** — o vendedor continua vendo que o cliente é fase
-  Vitalício e continua vendo as Observações.
-- **Fase do cliente**: só admin muda. Pro vendedor a fase vira um selo fixo
-  (read-only), sem botão de troca.
+- **Nenhuma menção a vitalício pro vendedor** — nem a palavra, nem fase, nem selo,
+  nem campos. Pra ele o cliente aparece como um cliente comum. As Observações
+  continuam visíveis.
+- **Fase do cliente**: só admin vê e muda (a transição segue manual, feita pelo admin).
 - Abordagem **B**: esconder na UI **e** o servidor remove os campos sensíveis dos
   dados antes de mandar a página pro vendedor (o valor nunca chega no navegador).
   Sem mudança no banco (RLS por linha já existe; proteção por coluna foi descartada
@@ -54,49 +56,52 @@ inclusive as Observações e a fase (Ativo/Vitalício) — só não vê nem edit
 - Se vendedor, **apagar do objeto antes de passar pro form**:
   `comissao`, `vitalicio_valor_estimado`, `vitalicio_dia_previsto`
   (setar `null` — o form já trata `null`).
-- Passar prop nova `podeEditarVitalicio: boolean` (true = admin) pro
+- Se vendedor, apagar também `fase_cliente` e `vitalicio_inicio` do objeto (o
+  navegador dele não recebe nem o indício de que o cliente é vitalício).
+- Passar prop nova `mostrarVitalicio: boolean` (true = admin) pro
   `ClienteFormPosVenda`.
 
 ### 3. Formulário (`ClienteFormPosVenda.tsx`)
 
-Prop nova `podeEditarVitalicio?: boolean` (default `true`, pra não quebrar os outros
+Prop nova `mostrarVitalicio?: boolean` (default `true`, pra não quebrar os outros
 usos do form — cliente novo, pós-venda — que hoje são fluxos onde o form já recebe
 o que precisa).
 
-Quando `podeEditarVitalicio === false`:
-- **Fase do Cliente**: em vez do toggle, mostrar um selo estático com a fase atual
-  ("Ativo com parcelas" ou "Vitalício").
-- **Não renderizar** os campos "Valor Estimado Mensal (R$)" e "Dia Previsto".
+Quando `mostrarVitalicio === false`:
+- **Não renderizar NADA da seção vitalício**: nem o toggle "Fase do Cliente", nem
+  selo, nem os campos "Valor Estimado Mensal (R$)" e "Dia Previsto". A palavra
+  "vitalício" não aparece em lugar nenhum da tela.
 - **No payload de save**: não incluir as chaves `fase_cliente`,
   `vitalicio_valor_estimado`, `vitalicio_dia_previsto`, `vitalicio_inicio` e
   `comissao` (montar o payload e deletar essas chaves, ou montá-lo condicionalmente).
-  Assim o update preserva o que está no banco em vez de sobrescrever com null.
+  No UPDATE isso preserva o que está no banco; no INSERT o banco aplica o default
+  (`fase_cliente` tem `DEFAULT 'ativo'` na migração 20260527).
 - A lógica `cancelarVendasParaVitalicio` (transição ativo→vitalício no save) fica
-  inalcançável pro vendedor, já que `faseCliente` não muda — sem mudança nela.
+  inalcançável pro vendedor, já que `faseCliente` nunca muda — sem mudança nela.
 
 ### 4. Fluxo de dados
 
 - Nenhuma migração; nenhuma mudança de RLS.
 - Admin: comportamento idêntico ao atual.
-- Vendedor: os três campos sensíveis chegam como `null` do servidor e a UI nem os
-  mostra; o save não toca neles.
+- Vendedor: os campos sensíveis chegam como `null` do servidor, a UI não menciona
+  vitalício em lugar nenhum e o save não toca nesses campos.
 
 ### Erros / casos de borda
 
-- Cliente sem fase (`fase_cliente` null): selo mostra "Ativo com parcelas"
-  (mesmo default do estado atual do form).
-- Vendedor criando cliente NOVO: form usado com default `podeEditarVitalicio=true`
-  hoje; a página `/clientes/novo` deve passar o flag também — vendedor cria cliente
-  sempre como fase "ativo" (selo fixo), sem campos de vitalício.
+- Vendedor criando cliente NOVO (`/clientes/novo`): a página passa o flag também —
+  sem menção a vitalício; o cliente entra como fase "ativo" pelo default do banco.
 - `getUsuarioAtual()` retornando null (sessão quebrada): tratar como vendedor
   (esconder) — o mais restritivo.
+- Cliente vitalício aberto pelo vendedor (caso raro; a carteira importada é do
+  vendedor guarda-chuva "A2 Prime"): ele vê a ficha normal, sem a palavra vitalício,
+  e o save não altera a fase.
 
 ### Testes (Jest, `__tests__/`)
 
 1. Ficha: admin vê o campo Comissão; vendedor não vê.
-2. Form com `podeEditarVitalicio=false`: não renderiza toggle de fase nem campos de
-   valor; mostra o selo da fase.
-3. Form com `podeEditarVitalicio=false`: payload do save não contém
+2. Form com `mostrarVitalicio=false`: não renderiza toggle de fase, selo nem campos
+   de valor; a palavra "vitalício" não aparece.
+3. Form com `mostrarVitalicio=false`: payload do save não contém
    `fase_cliente`/`vitalicio_*`/`comissao`.
 4. Form default (admin): comportamento atual preservado (toggle + campos).
 
