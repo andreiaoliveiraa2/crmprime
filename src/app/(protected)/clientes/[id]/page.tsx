@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { getUsuarioAtual } from '@/lib/getUsuarioAtual'
 import { Pencil, ArrowLeft } from 'lucide-react'
 
 interface Props {
@@ -49,6 +50,8 @@ function fmtMoeda(val: number | null | undefined) {
 export default async function FichaClientePage({ params }: Props) {
   const { id } = await params
   const supabase = await createClient()
+  const usuario = await getUsuarioAtual()
+  const isAdmin = usuario?.perfil === 'admin'
   const { data: c, error } = await supabase.from('clientes').select('*').eq('id', id).single()
 
   if (error || !c) notFound()
@@ -131,7 +134,7 @@ export default async function FichaClientePage({ params }: Props) {
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <Campo label="Vendedor" value={c.vendedor} />
-            <Campo label="Comissão" value={fmtMoeda(c.comissao)} />
+            {isAdmin && <Campo label="Comissão" value={fmtMoeda(c.comissao)} />}
             {c.observacoes && (
               <div className="col-span-2 md:col-span-3">
                 <span className={labelCls} style={labelStyle}>Observações</span>
