@@ -3,9 +3,8 @@ import { getUsuarioAtual } from '@/lib/getUsuarioAtual'
 import { Lead, Cliente, Compromisso } from '@/lib/types'
 import Link from 'next/link'
 import {
-  ChevronRight, Sparkles, ListChecks, Wallet, Calendar, Users,
-  AlertCircle, TrendingUp, PieChart, Image as ImageIcon,
-  Camera, CalendarDays, Shield,
+  ChevronRight, ListChecks, Wallet, Calendar, Users,
+  AlertCircle, TrendingUp, PieChart, Shield,
 } from 'lucide-react'
 import AlertaAgenda from '@/components/AlertaAgenda'
 import { getEventosGoogleAgenda } from '@/lib/googleAgenda'
@@ -504,103 +503,6 @@ export default async function DashboardPage() {
                 </div>
               </div>
           }
-        </Link>
-
-        {/* POSTS DE HOJE — span 4 */}
-        <Link href="/mpa" className={`col-span-12 md:col-span-4 ${cardBase}`} style={cardGrey}>
-          <div className="flex items-center gap-2 mb-3">
-            <div className="p-2 rounded-lg shrink-0" style={{ backgroundColor: 'rgba(91,63,181,0.12)' }}>
-              <ImageIcon size={15} style={{ color: '#5b3fb5' }} />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Posts de hoje</h3>
-              <p className="text-xs" style={{ color: '#9a918a' }}>seus 2 perfis, prontos</p>
-            </div>
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(91,63,181,0.12)', color: '#5b3fb5' }}>2</span>
-          </div>
-          <div className="space-y-2">
-            <div className="rounded-xl p-3" style={{ backgroundColor: '#faf8f5', border: '1px solid #f0ece6' }}>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-bold" style={{ color: '#b89a6a' }}>EMPRESA</span>
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full ml-auto" style={{ backgroundColor: 'rgba(91,63,181,0.12)', color: '#5b3fb5' }}>19h</span>
-              </div>
-              <p className="text-xs font-semibold" style={{ color: '#2d1f4e' }}>Clique para gerar com IA</p>
-            </div>
-            <div className="rounded-xl p-3" style={{ backgroundColor: '#faf8f5', border: '1px solid #f0ece6' }}>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-bold" style={{ color: '#5b3fb5' }}>PESSOAL</span>
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full ml-auto" style={{ backgroundColor: 'rgba(184,154,106,0.15)', color: '#b89a6a' }}>12h</span>
-              </div>
-              <p className="text-xs font-semibold" style={{ color: '#2d1f4e' }}>Clique para gerar com IA</p>
-            </div>
-          </div>
-        </Link>
-
-        {/* STORIES DE HOJE — span 4 */}
-        <Link href="/mpa" className={`col-span-12 md:col-span-4 ${cardBase}`} style={cardGrey}>
-          <div className="flex items-center gap-2 mb-3">
-            <div className="p-2 rounded-lg shrink-0" style={{ backgroundColor: 'rgba(212,168,67,0.15)' }}>
-              <Camera size={15} style={{ color: '#b89a6a' }} />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Stories de hoje</h3>
-              <p className="text-xs" style={{ color: '#9a918a' }}>sua rotina, pronta</p>
-            </div>
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(212,168,67,0.15)', color: '#b89a6a' }}>5</span>
-          </div>
-          <div className="space-y-2">
-            <div className="rounded-xl p-3" style={{ backgroundColor: '#faf8f5', border: '1px solid #f0ece6' }}>
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="text-xs font-bold" style={{ color: '#b89a6a' }}>EMPRESA · 3 telas</span>
-              </div>
-              <div className="flex gap-1.5 flex-wrap">
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(91,63,181,0.12)', color: '#5b3fb5' }}>Dica</span>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.12)', color: '#3b82f6' }}>Enquete</span>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.12)', color: '#22c55e' }}>CTA</span>
-              </div>
-            </div>
-            <div className="rounded-xl p-3" style={{ backgroundColor: '#faf8f5', border: '1px solid #f0ece6' }}>
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="text-xs font-bold" style={{ color: '#5b3fb5' }}>PESSOAL · 2 telas</span>
-              </div>
-              <div className="flex gap-1.5 flex-wrap">
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(212,168,67,0.15)', color: '#b89a6a' }}>Bastidores</span>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(91,63,181,0.12)', color: '#5b3fb5' }}>Caixinha</span>
-              </div>
-            </div>
-          </div>
-        </Link>
-
-        {/* SEMANA DE CONTEÚDO — span 8 */}
-        <Link href="/mpa" className={`col-span-12 lg:col-span-8 ${cardBase}`} style={cardGrey}>
-          <div className="flex items-center gap-2 mb-3">
-            <div className="p-2 rounded-lg shrink-0" style={{ backgroundColor: 'rgba(59,130,246,0.12)' }}>
-              <CalendarDays size={15} style={{ color: '#3b82f6' }} />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-sm font-bold" style={{ color: '#2d1f4e' }}>Sua semana de conteúdo</h3>
-              <p className="text-xs" style={{ color: '#9a918a' }}>variado: carrossel, post e reels</p>
-            </div>
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.12)', color: '#3b82f6' }}>5 agendados</span>
-          </div>
-          <div className="grid grid-cols-5 gap-2">
-            {[
-              { dia: 'SEG', tipo: 'Carrossel', tema: 'Carência', bg: 'linear-gradient(135deg, #5b3fb5, #b89a6a)', color: '#fff' },
-              { dia: 'TER', tipo: 'Post', tema: 'Frase', bg: 'rgba(212,168,67,0.15)', color: '#b89a6a' },
-              { dia: 'QUA', tipo: 'Reels', tema: 'Mito x verdade', bg: 'rgba(239,68,68,0.12)', color: '#ef4444' },
-              { dia: 'QUI', tipo: 'Carrossel', tema: 'Objeção', bg: 'linear-gradient(135deg, #5b3fb5, #b89a6a)', color: '#fff' },
-              { dia: 'SEX', tipo: 'Stories', tema: 'Bastidores', bg: 'rgba(59,130,246,0.12)', color: '#3b82f6' },
-            ].map((item, i) => (
-              <div key={i} className="rounded-xl p-3 text-center" style={{ backgroundColor: '#faf8f5', border: '1px solid #f0ece6' }}>
-                <p className="text-xs mb-2" style={{ color: '#9a918a' }}>{item.dia}</p>
-                <div className="w-8 h-8 rounded-lg mx-auto mb-2 flex items-center justify-center" style={{ background: item.bg, color: item.color }}>
-                  <Sparkles size={14} />
-                </div>
-                <p className="text-xs font-semibold" style={{ color: '#2d1f4e' }}>{item.tipo}</p>
-                <p className="text-xs mt-0.5" style={{ color: '#9a918a' }}>{item.tema}</p>
-              </div>
-            ))}
-          </div>
         </Link>
 
       </div>
