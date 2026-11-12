@@ -16,7 +16,7 @@ export default async function GestaoPage() {
   const [{ data: vendedores }, { data: niveisRaw }, { data: operadorasRaw }, { data: metasEmpresa }] = await Promise.all([
     supabase.from('vendedores').select('*').order('nome'),
     supabase.from('niveis_vendedor').select('*').order('nome'),
-    supabase.from('operadoras').select('nome').order('nome'),
+    supabase.from('operadoras').select('nome').eq('ativo', true).order('nome'),
     supabase.from('metas').select('operadora, meta_valor').is('vendedor_id', null).eq('mes_referencia', mesRef),
   ])
 

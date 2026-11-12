@@ -15,7 +15,7 @@ export default async function FichaVendedorPage({
   const [{ data: vendedor }, { data: usuarioVendedor }, { data: operadorasRaw }, { data: metasVend }] = await Promise.all([
     supabase.from('vendedores').select('*').eq('id', id).single(),
     supabase.from('usuarios').select('id, perfil, ativo').eq('vendedor_id', id).maybeSingle(),
-    supabase.from('operadoras').select('nome').order('nome'),
+    supabase.from('operadoras').select('nome').eq('ativo', true).order('nome'),
     supabase.from('metas').select('operadora, meta_valor').eq('vendedor_id', id).eq('mes_referencia', mesRef),
   ])
 

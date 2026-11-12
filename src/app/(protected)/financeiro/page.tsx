@@ -23,7 +23,7 @@ export default async function FinanceiroPage() {
     supabase.from('comissoes').select('*').order('criado_em', { ascending: false }).limit(5000),
     supabase.from('regras_comissao').select('*'),
     supabase.from('cnpjs_recebimento').select('*').order('nome'),
-    supabase.from('operadoras').select('id, nome').order('nome'),
+    supabase.from('operadoras').select('id, nome').eq('ativo', true).order('nome'),
     supabase.from('despesas_fixas').select('*').order('nome'),
     supabase.from('categorias_despesa').select('*').eq('ativo', true).order('nome'),
   ])
